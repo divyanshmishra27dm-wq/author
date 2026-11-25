@@ -244,14 +244,6 @@ async def convert_pptx_endpoint(file: UploadFile = File(...)):
             except Exception:
                 pass
 
-        # Read standalone HTML content
-        with open(result["html_path"], "r", encoding="utf-8") as f:
-            html_content = f.read()
-
-        # Read SCORM 2004 ZIP as base64
-        with open(result["scorm_zip_path"], "rb") as f:
-            scorm_zip_base64 = base64.b64encode(f.read()).decode("utf-8")
-
         # Preview URL is the exact converted HTML for this uploaded presentation
         encoded_name = urllib.parse.quote(base_name)
         preview_url = f"/{encoded_name}.html"
@@ -265,8 +257,6 @@ async def convert_pptx_endpoint(file: UploadFile = File(...)):
             "preview_url": preview_url,
             "html_url": preview_url,
             "scorm_zip_url": f"/{encoded_name}_SCORM2004.zip",
-            "html_content": html_content,
-            "scorm_zip_base64": scorm_zip_base64,
             "course_data": result.get("course_data", {})
         }
     finally:

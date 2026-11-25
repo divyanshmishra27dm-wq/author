@@ -430,7 +430,7 @@ Return strictly valid json matching this schema:
     if api_key:
         try:
             print("Calling LiteLLM (azure-gpt-l1) to create interactive activities (MCQ, Drag & Drop, Blanks, Match)...")
-            resp = requests.post(endpoint, headers=headers, json=payload, timeout=25)
+            resp = requests.post(endpoint, headers=headers, json=payload, timeout=6)
             if resp.status_code == 200:
                 content = resp.json().get("choices", [{}])[0].get("message", {}).get("content", "{}")
                 parsed = json.loads(content)
