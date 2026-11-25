@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>__PPTX_NAME__</title>
+
+  <style>
+    :root {
+      --bg-canvas: #eef2f5;
+      --bg-card: #ffffff;
+      --border-color: #cbd5e1;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --accent: #2563eb;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      min-height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg-canvas);
+    }
+
+    /* ââ Main wrapper: column flex (viewport row + control bar) ââ */
+    #player-wrapper {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      background-color: var(--bg-canvas);
+      overflow: hidden;
+    }
+
+    /* ââ Middle row: notes panel + slide area side by side ââ */
+    .content-row {
+      flex: 1;
+      display: flex;
+      flex-direction: row;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    /* ââ Slide Notes side panel (identical to normal converter) ââ */
+    .notes-panel {
+      width: 0;
+      min-width: 0;
+      background-color: #f8fafc;
+      border-right: 1px solid #cbd5e1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: width 0.3s ease, min-width 0.3s ease;
+      flex-shrink: 0;
+    }
+    .notes-panel.open {
+      width: 260px;
+      min-width: 260px;
+    }
+    .notes-panel-header {
+      padding: 12px 14px;
+      border-bottom: 1px solid #e2e8f0;
+      font-weight: 700;
+      color: #1e293b;
+      font-size: 0.88rem;
+      letter-spacing: 0.02em;
+      background: #f1f5f9;
+      flex-shrink: 0;
+    }
+    .notes-panel-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 14px;
+      font-size: 0.82rem;
+      line-height: 1.65;
+      color: #334155;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .notes-panel-body::-webkit-scrollbar { width: 6px; }
+    .notes-panel-body::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    .notes-empty {
+      color: #94a3b8;
+      font-style: italic;
+    }
+
+    /* ââ Slide viewport ââ */
+    .slide-viewport {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px;
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    #interactive-slide-container {
+      width: 100%;
+      height: auto;
+      max-width: 100%;
+      max-height: 100%;
+      aspect-ratio: 16 / 9;
+      position: relative;
+      overflow: hidden;
+      background-color: #ffffff;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+      border-radius: 4px;
+    }
+
+    #interactive-slide-bg {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      cursor: pointer;
+      overflow: hidden;
+    }
+
+    .slide-bg-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-size: 100% 100%;
+      background-repeat: no-repeat;
+      background-position: center;
+      transition: opacity 0.22s ease-in-out;
+      pointer-events: none;
+      opacity: 0;
+      z-index: 1;
+    }
+    .slide-bg-layer.active {
+      opacity: 1;
+      z-index: 2;
+    }
+    /* Previous step image: held fully visible underneath while the next one fades in,
+       so only the newly revealed shapes animate instead of the whole slide dimming. */
+    .slide-bg-layer.under {
+      opacity: 1;
+      z-index: 1;
+    }
+
+    /* Click-to-reveal content: transparent pictures laid over the finished slide, so
+       every reveal the viewer makes stays on screen (like PowerPoint). */
+    #slide-overlays-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .reveal-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-size: 100% 100%;
+      background-repeat: no-repeat;
+      background-position: center;
+      opacity: 0;
+    }
+    .reveal-overlay.shown {
+      opacity: 1;
+    }
+
+    #slide-hotspots-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 50;
+    }
+
+    .hyperlink-hotspot {
+      position: absolute;
+      z-index: 100;
+      cursor: pointer;
+      background-color: transparent !important;
+      outline: none !important;
+      border: none !important;
+      box-shadow: none !important;
+      pointer-events: auto;
+    }
+    .hyperlink-hotspot:hover {
+      background-color: transparent !important;
+      outline: none !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+
+    /* ââ Bottom control bar ââ */
+    .control-bar {
+      height: 52px;
+      background-color: #e2e8f0;
+      border-top: 1px solid #cbd5e1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      z-index: 90;
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    .menu-toggle-btn {
+      background-color: #ffffff;
+      border: 1px solid #cbd5e1;
+      color: #334155;
+      padding: 6px 14px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .menu-toggle-btn:hover { background-color: #f8fafc; border-color: #94a3b8; }
+    .menu-toggle-btn.active { background-color: #eff6ff; border-color: #2563eb; color: #2563eb; }
+
+    .nav-pill {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background-color: #cbd5e1;
+      padding: 3px 8px;
+      border-radius: 20px;
+    }
+
+    .nav-btn {
+      background-color: #ffffff;
+      border: none;
+      color: #334155;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .nav-btn:hover { background-color: #f8fafc; color: #0f172a; transform: scale(1.05); }
+    .nav-btn svg { width: 18px; height: 18px; fill: currentColor; }
+
+    .control-right { display: flex; align-items: center; gap: 12px; }
+
+    .slide-indicator {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #475569;
+      background: #ffffff;
+      padding: 4px 10px;
+      border-radius: 4px;
+      border: 1px solid #cbd5e1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .fullscreen-btn {
+      background: transparent;
+      border: none;
+      color: #475569;
+      width: 32px;
+      height: 32px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .fullscreen-btn:hover { background-color: #cbd5e1; color: #0f172a; }
+    .fullscreen-btn svg { width: 20px; height: 20px; fill: currentColor; }
+  </style>
+</head>
+<body>
+
+  <div id="player-wrapper">
+
+    <!-- Middle row: notes panel + slide side by side -->
+    <div class="content-row">
+
+      <!-- Notes panel (hidden by default, opens beside slide) -->
+      <div class="notes-panel" id="notes-panel">
+        <div class="notes-panel-header">Slide Note</div>
+        <div class="notes-panel-body" id="notes-body">
+          <span class="notes-empty">No notes for this slide.</span>
+        </div>
+      </div>
+
+      <!-- Slide area -->
+      <div class="slide-viewport">
+        <div id="interactive-slide-container">
+          <div id="interactive-slide-bg">
+            <div id="slide-bg-0" class="slide-bg-layer active"></div>
+            <div id="slide-bg-1" class="slide-bg-layer"></div>
+            <div id="slide-overlays-container"></div>
+            <div id="slide-hotspots-container"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Bottom control bar -->
+    <div class="control-bar">
+      <button class="menu-toggle-btn" id="menu-toggle-btn" onclick="toggleMenu()">Menu</button>
+
+      <div class="nav-pill">
+        <button class="nav-btn" onclick="manualPrev()" title="Previous Step / Slide">
+          <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+        </button>
+        <button class="nav-btn" id="play-pause-btn" onclick="togglePlayPause()" title="Play / Pause">
+          <svg id="play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          <svg id="pause-icon" viewBox="0 0 24 24" style="display:none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+        </button>
+        <button class="nav-btn" onclick="manualNext()" title="Next Step / Slide">
+          <svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+        </button>
+      </div>
+
+      <div class="control-right">
+        <span class="slide-indicator" id="slide-indicator">01 / 01</span>
+        <button class="fullscreen-btn" onclick="toggleFullscreen()" title="Toggle Fullscreen">
+          <svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentSlide = 0;
+    let currentStep = 0;
+    let isAutoPlaying = false;
+    let playInterval = null;
+    const totalSlides = __NUM_SLIDES__;
+    const slideMeta = __SLIDE_META_JSON__;
+    const videoData = __VIDEO_DATA_JSON__;
+    const videoUrls = {};
+
+    const slideIndicator = document.getElementById('slide-indicator');
+    const interBg = document.getElementById('interactive-slide-bg');
+
+    function toggleMenu() {
+      const panel = document.getElementById('notes-panel');
+      const btn   = document.getElementById('menu-toggle-btn');
+      if (panel) panel.classList.toggle('open');
+      if (btn)   btn.classList.toggle('active');
+    }
+
+    function updateNotesPanel() {
+      const body = document.getElementById('notes-body');
+      if (!body) return;
+      const meta = slideMeta[currentSlide];
+      const notes = (meta && meta.notes) ? meta.notes.trim() : '';
+      if (notes) {
+        body.innerHTML = '';
+        notes.split(/\n+/).forEach(para => {
+          if (!para.trim()) return;
+          const p = document.createElement('p');
+          p.style.marginBottom = '0.7em';
+          p.textContent = para.trim();
+          body.appendChild(p);
+        });
+      } else {
+        body.innerHTML = '<span class="notes-empty">No notes for this slide.</span>';
+      }
+    }
+
+    function toggleFullscreen() {
+      const playerWrapper = document.getElementById('player-wrapper');
+      if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
+        if (playerWrapper.requestFullscreen) { playerWrapper.requestFullscreen(); }
+        else if (playerWrapper.webkitRequestFullscreen) { playerWrapper.webkitRequestFullscreen(); }
+        else if (playerWrapper.msRequestFullscreen) { playerWrapper.msRequestFullscreen(); }
+      } else {
+        if (document.exitFullscreen) { document.exitFullscreen(); }
+        else if (document.webkitExitFullscreen) { document.webkitExitFullscreen(); }
+        else if (document.msExitFullscreen) { document.msExitFullscreen(); }
+      }
+    }
+
+    let autoStepTimer = null;
+
+    let autoStepToken = 0;
+
+    function clearAutoStepTimer() {
+      autoStepToken++;
+      if (autoStepTimer) {
+        clearTimeout(autoStepTimer);
+        autoStepTimer = null;
+      }
+    }
+
+    /* ---- Step image preloading -------------------------------------------------
+       Every animation step is a full-slide image. They are loaded and decoded ahead
+       of time (current slide and its neighbours) so a step never shows a blank or
+       half-loaded slide, and the build timing is not eaten by image loading. */
+    const imageCache = {};
+
+    function stepImageUrl(slideIdx, stepIdx) {
+      const m = slideMeta[slideIdx];
+      if (!m) return '';
+      const val = (m.stepBgs && m.stepBgs[stepIdx]) || m.bg || '';
+      return val ? getAssetUrl(val) : '';
+    }
+
+    function preloadImage(url) {
+      if (!url) return Promise.resolve();
+      if (imageCache[url]) return imageCache[url].promise;
+      const entry = { ready: false, img: new Image() };
+      entry.promise = new Promise(resolve => {
+        const done = () => { entry.ready = true; resolve(); };
+        entry.img.onload = () => {
+          if (entry.img.decode) { entry.img.decode().then(done, done); } else { done(); }
+        };
+        entry.img.onerror = done;
+        entry.img.src = url;
+      });
+      imageCache[url] = entry;
+      return entry.promise;
+    }
+
+    function isImageReady(url) {
+      return !url || !!(imageCache[url] && imageCache[url].ready);
+    }
+
+    function preloadAroundSlide(index) {
+      const keep = {};
+      [index, index + 1, index - 1].forEach(i => {
+        const m = slideMeta[i];
+        if (!m) return;
+        const count = (m.stepBgs && m.stepBgs.length) || 1;
+        for (let k = 0; k < count; k++) {
+          const url = stepImageUrl(i, k);
+          if (url) { keep[url] = true; preloadImage(url); }
+        }
+      });
+      Object.keys(imageCache).forEach(url => { if (!keep[url]) delete imageCache[url]; });
+    }
+
+    function stepFadeMs(meta, stepIdx) {
+      const d = meta && meta.stepDurations ? meta.stepDurations[stepIdx] : 0;
+      return Math.min(Math.max(d > 0 ? d : 300, 120), 2000);
+    }
+
+    let activeLayerIndex = 0;
+    let renderToken = 0;
+
+    function showSlideImage(url, fadeMs) {
+      const layers = [document.getElementById('slide-bg-0'), document.getElementById('slide-bg-1')];
+      if (!layers[0] || !layers[1]) return;
+      const currLayer = layers[activeLayerIndex];
+      const nextLayer = layers[activeLayerIndex === 0 ? 1 : 0];
+      const bg = url ? `url("${url}")` : 'none';
+
+      if (!fadeMs) {
+        currLayer.style.transition = 'none';
+        nextLayer.style.transition = 'none';
+        currLayer.style.backgroundImage = bg;
+        currLayer.classList.remove('under');
+        currLayer.classList.add('active');
+        nextLayer.classList.remove('active', 'under');
+        return;
+      }
+
+      // Reset the hidden layer instantly, load the new image into it, then fade it
+      // in above the current image (which stays fully opaque underneath).
+      nextLayer.style.transition = 'none';
+      nextLayer.classList.remove('active', 'under');
+      nextLayer.style.backgroundImage = bg;
+      void nextLayer.offsetWidth;
+      nextLayer.style.transition = `opacity ${fadeMs}ms ease-in-out`;
+      currLayer.style.transition = 'none';
+      currLayer.classList.remove('active');
+      currLayer.classList.add('under');
+      nextLayer.classList.add('active');
+      activeLayerIndex = activeLayerIndex === 0 ? 1 : 0;
+    }
+
+    /* Build steps follow the original deck, exactly as PowerPoint plays it:
+       "After Previous" / "With Previous" steps arrive by themselves, one after another,
+       timed from the deck's own delays and durations; "On Click" steps wait for the
+       viewer (Next button, click on the slide, Right arrow / Space / Enter).
+       Flip AUTO_ADVANCE_BUILD_STEPS to false to make every step wait for a click. */
+    const AUTO_ADVANCE_BUILD_STEPS = true;
+    /* Honour "advance slide after N seconds" when the deck defines it. */
+    const HONOR_SLIDE_AUTO_ADVANCE = true;
+
+    function linearLimitOf(meta) {
+      return (meta && (meta.linearStepsCount || meta.stepsCount)) || 1;
+    }
+
+    function isAutoStepAt(meta, idx) {
+      return ((meta.stepTriggers || [])[idx] || 'auto') === 'auto';
+    }
+
+    function scheduleNextAutoStep() {
+      clearAutoStepTimer();
+      if (!AUTO_ADVANCE_BUILD_STEPS) return;
+      if (isAutoPlaying) return;
+      const meta = slideMeta[currentSlide];
+      if (!meta) return;
+
+      const nextStepIdx = currentStep + 1;
+      if (nextStepIdx >= linearLimitOf(meta)) return;
+      // The cascade stops at the first click step and resumes after it if automatic steps follow.
+      if (!isAutoStepAt(meta, nextStepIdx)) return;
+
+      const intervals = meta.stepIntervals || [];
+      const delay = (intervals[nextStepIdx] && intervals[nextStepIdx] > 0) ? intervals[nextStepIdx] : 250;
+      const token = autoStepToken;
+      const slideAtSchedule = currentSlide;
+      autoStepTimer = setTimeout(() => {
+        autoStepTimer = null;
+        preloadImage(stepImageUrl(slideAtSchedule, nextStepIdx)).then(() => {
+          if (token !== autoStepToken || currentSlide !== slideAtSchedule || isAutoPlaying) return;
+          if (currentStep < nextStepIdx) {
+            currentStep = nextStepIdx;
+            renderCurrentStep(true);
+            scheduleNextAutoStep();
+          }
+        });
+      }, delay);
+    }
+
+    let slideAdvanceTimer = null;
+
+    function cancelSlideAdvance() {
+      if (slideAdvanceTimer) {
+        clearTimeout(slideAdvanceTimer);
+        slideAdvanceTimer = null;
+      }
+    }
+
+    function scheduleSlideAdvance() {
+      cancelSlideAdvance();
+      if (!HONOR_SLIDE_AUTO_ADVANCE) return;
+      const meta = slideMeta[currentSlide];
+      if (!meta || !(meta.advanceAfterMs > 0)) return;
+      const slideAtSchedule = currentSlide;
+      slideAdvanceTimer = setTimeout(() => {
+        slideAdvanceTimer = null;
+        if (currentSlide !== slideAtSchedule || isAutoPlaying) return;
+        if (currentSlide + 1 < totalSlides) goToSlide(currentSlide + 1, false);
+      }, Math.max(meta.advanceAfterMs, 500));
+    }
+
+    /* Stop continuous autoplay and reset play/pause button to â¶ */
+    function stopAutoPlay() {
+      if (!isAutoPlaying) return;
+      isAutoPlaying = false;
+      const playIcon  = document.getElementById('play-icon');
+      const pauseIcon = document.getElementById('pause-icon');
+      if (playIcon)  playIcon.style.display  = 'block';
+      if (pauseIcon) pauseIcon.style.display = 'none';
+      if (playInterval) { clearTimeout(playInterval); playInterval = null; }
+      scheduleNextAutoStep();
+    }
+
+    function togglePlayPause() {
+      const meta = slideMeta[currentSlide];
+      if (meta && meta.hasVideo) {
+        const v = document.getElementById('slide-interactive-video');
+        if (v) { if (v.paused) v.play(); else v.pause(); }
+        return;
+      }
+
+      if (isAutoPlaying) {
+        stopAutoPlay();
+      } else {
+        startContinuousAutoplay();
+      }
+    }
+
+    function startContinuousAutoplay() {
+      clearAutoStepTimer();
+      isAutoPlaying = true;
+      const playIcon  = document.getElementById('play-icon');
+      const pauseIcon = document.getElementById('pause-icon');
+      if (playIcon)  playIcon.style.display  = 'none';
+      if (pauseIcon) pauseIcon.style.display = 'block';
+      playNextContinuousStep();
+    }
+
+    function playNextContinuousStep() {
+      if (!isAutoPlaying) return;
+      const meta = slideMeta[currentSlide];
+      if (currentStep < linearLimitOf(meta) - 1) {
+        const nextStepIdx = currentStep + 1;
+        const trigger = (meta.stepTriggers && meta.stepTriggers[nextStepIdx]) || 'auto';
+        const interval = trigger === 'auto' ? ((meta.stepIntervals && meta.stepIntervals[nextStepIdx]) || 650) : 2200;
+        playInterval = setTimeout(() => {
+          if (!isAutoPlaying) return;
+          currentStep = nextStepIdx;
+          renderCurrentStep();
+          playNextContinuousStep();
+        }, interval);
+      } else {
+        playInterval = setTimeout(() => {
+          if (!isAutoPlaying) return;
+          if (currentSlide + 1 < totalSlides) {
+            goToSlide(currentSlide + 1, false);
+            playNextContinuousStep();
+          } else {
+            stopAutoPlay();
+          }
+        }, 3000);
+      }
+    }
+
+    function manualNext() { stopAutoPlay(); nextStep(); }
+    function manualPrev() { stopAutoPlay(); prevStep(); }
+
+    function getAssetUrl(val) {
+      if (!val) return '';
+      if (val.startsWith('data:') || val.startsWith('http://') || val.startsWith('https://') || val.startsWith('blob:') || val.startsWith('slides/') || val.startsWith('media/')) {
+        return val;
+      }
+      return 'data:image/png;base64,' + val;
+    }
+
+    function base64ToBlob(base64, mimeType = 'video/mp4') {
+      if (!base64) return null;
+      let clean = base64;
+      const commaIdx = clean.indexOf(',');
+      if (commaIdx !== -1) clean = clean.substring(commaIdx + 1);
+      clean = clean.replace(/\s/g, '');
+
+      try {
+        const byteCharacters = atob(clean);
+        const sliceSize = 1024 * 512;
+        const byteArrays = [];
+        for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+          const slice = byteCharacters.slice(offset, offset + sliceSize);
+          const byteNumbers = new Uint8Array(slice.length);
+          for (let i = 0; i < slice.length; i++) {
+            byteNumbers[i] = slice.charCodeAt(i);
+          }
+          byteArrays.push(byteNumbers);
+        }
+        return new Blob(byteArrays, { type: mimeType });
+      } catch (err) {
+        console.error("base64ToBlob failed:", err);
+        return null;
+      }
+    }
+
+    function initVideoBlobUrls() {
+      for (const key in videoData) {
+        if (videoData[key]) {
+          const val = videoData[key];
+          const isUrl = val.startsWith('http://') || val.startsWith('https://') || 
+                        val.startsWith('blob:') || val.startsWith('data:') ||
+                        val.startsWith('media/') || val.startsWith('./media/') || 
+                        val.endsWith('.mp4') || val.endsWith('.webm') || val.endsWith('.mov');
+          if (isUrl) {
+            videoUrls[key] = val;
+          } else {
+            try {
+              const blob = base64ToBlob(val, 'video/mp4');
+              if (blob) {
+                videoUrls[key] = URL.createObjectURL(blob);
+              } else {
+                videoUrls[key] = 'data:video/mp4;base64,' + val.replace(/\s/g, '');
+              }
+            } catch (e) {
+              console.error("Failed to create blob for video:", key, e);
+              videoUrls[key] = 'data:video/mp4;base64,' + val.replace(/\s/g, '');
+            }
+          }
+        }
+      }
+    }
+
+    function getVideoUrl(key) {
+      if (!key) return '';
+      if (videoUrls[key]) return videoUrls[key];
+      const val = videoData[key];
+      if (!val) return getAssetUrl(`media/${key}.mp4`);
+      const isUrl = val.startsWith('http://') || val.startsWith('https://') || 
+                    val.startsWith('blob:') || val.startsWith('data:') ||
+                    val.startsWith('media/') || val.startsWith('./media/') || 
+                    val.endsWith('.mp4') || val.endsWith('.webm') || val.endsWith('.mov');
+      if (isUrl) return val;
+      try {
+        const blob = base64ToBlob(val, 'video/mp4');
+        if (blob) {
+          videoUrls[key] = URL.createObjectURL(blob);
+          return videoUrls[key];
+        }
+      } catch (e) {}
+      return 'data:video/mp4;base64,' + val.replace(/\s/g, '');
+    }
+
+    function padNum(n) {
+      return n < 10 ? '0' + n : n;
+    }
+
+    function goToSlide(index, startAtLastStep = false) {
+      if (index < 0 || index >= totalSlides) return;
+      clearAutoStepTimer();
+      
+      const activeSlideVideo = document.getElementById('slide-interactive-video');
+      if (activeSlideVideo) activeSlideVideo.pause();
+
+      currentSlide = index;
+      const meta = slideMeta[currentSlide];
+      const linearLimit = meta.linearStepsCount || meta.stepsCount;
+      currentStep = startAtLastStep ? (linearLimit - 1) : 0;
+
+      slideIndicator.textContent = `${padNum(currentSlide + 1)} / ${padNum(totalSlides)}`;
+
+      if (typeof reportScormProgress === 'function') {
+        reportScormProgress(currentSlide, totalSlides);
+      }
+
+      preloadAroundSlide(currentSlide);
+      cancelSlideAdvance();
+      revealed = [];
+      renderOverlays(false);
+      renderCurrentStep(false);
+      updateNotesPanel();
+
+      if (!startAtLastStep && !isAutoPlaying) {
+        scheduleNextAutoStep();
+        scheduleSlideAdvance();
+      }
+    }
+
+    /* Builds the <video> for a slide. No poster is used: the exported slide image
+       only contains PowerPoint's (often black) placeholder, so a real frame from the
+       video is shown as the preview instead, and playback still starts from 0. */
+    function createSlideVideo(meta, slideIndex) {
+      const vLeft = (meta.left !== undefined) ? meta.left : 0;
+      const vTop = (meta.top !== undefined) ? meta.top : 0;
+      const vWidth = (meta.width !== undefined && meta.width > 0) ? meta.width : 100;
+      const vHeight = (meta.height !== undefined && meta.height > 0) ? meta.height : 100;
+
+      const v = document.createElement('video');
+      v.id = 'slide-interactive-video';
+      v.dataset.slide = String(slideIndex);
+      v.controls = true;
+      v.playsInline = true;
+      v.setAttribute('playsinline', '');
+      v.preload = 'auto';
+      v.style.cssText = `position: absolute; left: ${vLeft}%; top: ${vTop}%; width: ${vWidth}%; height: ${vHeight}%; object-fit: contain; background: #000; z-index: 20; pointer-events: auto;`;
+
+      let previewState = 0; // 0 = none, 1 = seeking to preview frame, 2 = preview frame shown
+      let hasStarted = false;
+      const showPreviewFrame = () => {
+        if (hasStarted || previewState !== 0 || !v.paused || v.currentTime !== 0) return;
+        if (!isFinite(v.duration) || v.duration <= 1) return;
+        previewState = 1;
+        v.currentTime = Math.min(2, v.duration * 0.1);
+      };
+      // Retried on canplay/canplaythrough: servers without HTTP range support (some
+      // LMSs) cannot seek until that part of the file has been downloaded.
+      ['loadedmetadata', 'canplay', 'canplaythrough'].forEach(evt => v.addEventListener(evt, showPreviewFrame));
+      v.addEventListener('seeked', () => { if (previewState === 1) previewState = (v.currentTime > 0) ? 2 : 0; });
+      v.addEventListener('seeking', () => { if (previewState === 2) previewState = 0; });
+      v.addEventListener('play', () => {
+        hasStarted = true;
+        if (previewState !== 0) { previewState = 0; v.currentTime = 0; }
+      });
+      v.addEventListener('error', () => {
+        console.error('Slide video failed to load:', meta.videoKey, v.error);
+      });
+
+      v.src = getVideoUrl(meta.videoKey);
+      return v;
+    }
+
+    function renderCurrentStep(smoothTransition = true) {
+      const meta = slideMeta[currentSlide];
+      const bgVal = (meta.stepBgs && meta.stepBgs[currentStep]) || meta.bg || '';
+      const assetUrl = bgVal ? getAssetUrl(bgVal) : '';
+
+      const layer0 = document.getElementById('slide-bg-0');
+      const layer1 = document.getElementById('slide-bg-1');
+      const hotspotsContainer = document.getElementById('slide-hotspots-container');
+
+      // Swap the slide image only once it is loaded and decoded; a newer render
+      // (fast clicking, slide change) cancels an older one that is still waiting.
+      const token = ++renderToken;
+      const fadeMs = smoothTransition ? stepFadeMs(meta, currentStep) : 0;
+      const applyImage = () => { if (token === renderToken) showSlideImage(assetUrl, fadeMs); };
+      if (isImageReady(assetUrl)) {
+        applyImage();
+      } else {
+        preloadImage(assetUrl).then(applyImage);
+      }
+
+      // Keep this slide's video element alive across animation steps so a step
+      // change never restarts or blanks a video that is loaded or playing.
+      const existingVideo = document.getElementById('slide-interactive-video');
+      const keepVideo = (meta.hasVideo && existingVideo && existingVideo.dataset.slide === String(currentSlide)) ? existingVideo : null;
+      if (hotspotsContainer) {
+        Array.from(hotspotsContainer.childNodes).forEach(node => { if (node !== keepVideo) node.remove(); });
+      }
+
+      if (meta.hasVideo && !keepVideo && hotspotsContainer) {
+        const v = createSlideVideo(meta, currentSlide);
+        hotspotsContainer.appendChild(v);
+        // Media the deck starts by itself (After / With Previous) starts on slide entry;
+        // browsers may refuse sound without a gesture, then the viewer just presses play.
+        if (meta.videoAutoplay) {
+          try { const pr = v.play(); if (pr && pr.catch) pr.catch(() => {}); } catch (e) {}
+        }
+        if (v) {
+          v.onplay = () => {
+            isAutoPlaying = true;
+            const playIcon  = document.getElementById('play-icon');
+            const pauseIcon = document.getElementById('pause-icon');
+            if (playIcon)  playIcon.style.display  = 'none';
+            if (pauseIcon) pauseIcon.style.display = 'block';
+          };
+          v.onpause = () => {
+            isAutoPlaying = false;
+            const playIcon  = document.getElementById('play-icon');
+            const pauseIcon = document.getElementById('pause-icon');
+            if (playIcon)  playIcon.style.display  = 'block';
+            if (pauseIcon) pauseIcon.style.display = 'none';
+          };
+          v.onended = () => {
+            isAutoPlaying = false;
+            const playIcon  = document.getElementById('play-icon');
+            const pauseIcon = document.getElementById('pause-icon');
+            if (playIcon)  playIcon.style.display  = 'block';
+            if (pauseIcon) pauseIcon.style.display = 'none';
+          };
+        }
+      }
+
+      buildHotspots();
+    }
+
+    /* (Re)builds the clickable link areas for the current slide state. Called after every
+       step and after every click-to-reveal, so links only exist while their shape is visible. */
+    function buildHotspots() {
+      const meta = slideMeta[currentSlide];
+      const hotspotsContainer = document.getElementById('slide-hotspots-container');
+      if (!meta || !hotspotsContainer) return;
+      Array.from(hotspotsContainer.querySelectorAll('.hyperlink-hotspot')).forEach(n => n.remove());
+      if (meta.hyperlinks && meta.hyperlinks.length > 0) {
+        meta.hyperlinks.forEach(hl => {
+          if (!hl.url && !hl.subAddress && (hl.jumpStepIndex === undefined || hl.jumpStepIndex === -1)) return;
+          // Like PowerPoint: a link can only be clicked while its shape is on screen.
+          if (!isLinkVisibleAtStep(hl, meta, currentStep)) return;
+
+          const a = document.createElement('a');
+          a.className = 'hyperlink-hotspot';
+          a.style.position = 'absolute';
+          // Small text links get a slightly larger, centred hit area so they are easy to click.
+          const w = Math.max(hl.width, 3);
+          const h = Math.max(hl.height, 4);
+          a.style.left = (hl.left - (w - hl.width) / 2) + '%';
+          a.style.top = (hl.top - (h - hl.height) / 2) + '%';
+          a.style.width = w + '%';
+          a.style.height = h + '%';
+          a.style.zIndex = '100';
+          a.style.cursor = 'pointer';
+          a.style.display = 'block';
+
+          if (hl.jumpStepIndex !== undefined && hl.jumpStepIndex !== null && hl.jumpStepIndex !== -1) {
+            a.href = '#';
+            a.title = 'Click to reveal';
+            a.onclick = (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              goToStep(hl.jumpStepIndex);
+            };
+          } else if (hl.url) {
+            let targetUrl = hl.url;
+            if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://') && !targetUrl.startsWith('mailto:')) {
+              targetUrl = 'https://' + targetUrl;
+            }
+            a.href = targetUrl;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            a.title = hl.tooltip || ('Open link: ' + targetUrl);
+          } else if (hl.subAddress) {
+            const targetIdx = (typeof hl.jumpSlideIndex === 'number' && hl.jumpSlideIndex >= 0)
+              ? hl.jumpSlideIndex : (parseInt(hl.subAddress, 10) - 1);
+            a.href = '#';
+            a.title = hl.tooltip || ('Go to slide ' + (targetIdx + 1));
+            a.onclick = (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (!isNaN(targetIdx)) { stopAutoPlay(); goToSlide(targetIdx); }
+            };
+          }
+
+          a.addEventListener('click', (e) => {
+            e.stopPropagation();
+          });
+
+          hotspotsContainer.appendChild(a);
+        });
+      }
+    }
+
+    /* Mirrors the step-image exporter: a link can be clicked only while its shape is on
+       screen at the current build step, or (for content shown by a click-to-reveal) once
+       that reveal has been made. */
+    function isLinkVisibleAtStep(hl, meta, step) {
+      const linearLimit = linearLimitOf(meta);
+      if (hl.interactiveSteps && hl.interactiveSteps.length) {
+        if (meta.interactiveOverlay) return hl.interactiveSteps.some(i => revealed.indexOf(i) !== -1);
+        return hl.interactiveSteps.indexOf(step) !== -1;
+      }
+      const linearStep = step >= linearLimit ? linearLimit - 1 : step;
+      if (hl.visibleAt && hl.visibleAt.length) {
+        return !!hl.visibleAt[Math.min(linearStep, hl.visibleAt.length - 1)];
+      }
+      if (typeof hl.visibleFrom === 'number' && linearStep < hl.visibleFrom) return false;
+      if (typeof hl.hiddenFrom === 'number' && hl.hiddenFrom >= 0 && linearStep >= hl.hiddenFrom) return false;
+      return true;
+    }
+
+    /* ---- Click-to-reveal ------------------------------------------------------
+       Each trigger's content is a transparent picture. Revealing a second trigger
+       adds its picture on top; the first stays visible. Previous undoes the last one. */
+    let revealed = [];   // interactive step indexes, in the order the viewer revealed them
+
+    function renderOverlays(animate) {
+      const box = document.getElementById('slide-overlays-container');
+      if (!box) return;
+      const meta = slideMeta[currentSlide];
+      const wanted = (meta && meta.interactiveOverlay) ? revealed.slice() : [];
+      Array.from(box.children).forEach(el => {
+        if (wanted.indexOf(parseInt(el.dataset.step, 10)) === -1) el.remove();
+      });
+      wanted.forEach(idx => {
+        if (box.querySelector('[data-step="' + idx + '"]')) return;
+        const el = document.createElement('div');
+        el.className = 'reveal-overlay';
+        el.dataset.step = String(idx);
+        const url = stepImageUrl(currentSlide, idx);
+        el.style.backgroundImage = url ? 'url("' + url + '")' : 'none';
+        box.appendChild(el);
+        const slideAtStart = currentSlide;
+        const show = () => {
+          if (currentSlide !== slideAtStart || !el.parentNode) return;
+          el.style.transition = animate ? ('opacity ' + stepFadeMs(meta, idx) + 'ms ease-in-out') : 'none';
+          void el.offsetWidth;
+          el.classList.add('shown');
+        };
+        if (isImageReady(url)) { show(); } else { preloadImage(url).then(show); }
+      });
+    }
+
+    function revealTrigger(stepIdx) {
+      const meta = slideMeta[currentSlide];
+      if (!meta || !meta.interactiveOverlay) return false;
+      if (!(stepIdx >= linearLimitOf(meta) && stepIdx < meta.stepsCount)) return false;
+      clearAutoStepTimer();
+      cancelSlideAdvance();
+      if (revealed.indexOf(stepIdx) === -1) revealed.push(stepIdx);
+      renderOverlays(true);
+      buildHotspots();
+      if (!isAutoPlaying) scheduleNextAutoStep();
+      return true;
+    }
+
+    function goToStep(stepIdx) {
+      if (revealTrigger(stepIdx)) return;
+      clearAutoStepTimer();
+      cancelSlideAdvance();
+      const meta = slideMeta[currentSlide];
+      if (meta && stepIdx >= 0 && stepIdx < meta.stepsCount) {
+        currentStep = stepIdx;
+        renderCurrentStep(true);
+      }
+    }
+
+    function nextStep() {
+      clearAutoStepTimer();
+      cancelSlideAdvance();
+      const meta = slideMeta[currentSlide];
+      const linearLimit = linearLimitOf(meta);
+      if (currentStep < linearLimit - 1) {
+        let target = currentStep + 1;
+        if (AUTO_ADVANCE_BUILD_STEPS && isAutoStepAt(meta, target)) {
+          // The viewer moved on while automatic builds were still arriving: finish that
+          // cascade now. It never skips a click step, and never skips the slide.
+          while (target + 1 < linearLimit && isAutoStepAt(meta, target + 1)) target++;
+        }
+        currentStep = target;
+        renderCurrentStep(true);
+        if (!isAutoPlaying) {
+          scheduleNextAutoStep();
+        }
+      } else {
+        goToSlide(currentSlide + 1, false);
+      }
+    }
+
+    function prevStep() {
+      clearAutoStepTimer();
+      cancelSlideAdvance();
+      if (revealed.length > 0) {
+        // Undo the last click-to-reveal first
+        revealed.pop();
+        renderOverlays(true);
+        buildHotspots();
+        return;
+      }
+      const meta = slideMeta[currentSlide];
+      const linearLimit = linearLimitOf(meta);
+      if (currentStep >= linearLimit) {
+        currentStep = linearLimit - 1;
+        renderCurrentStep(true);
+      } else if (currentStep > 0) {
+        currentStep--;
+        renderCurrentStep(true);
+      } else if (currentSlide > 0) {
+        goToSlide(currentSlide - 1, true);
+      }
+    }
+
+    function nextSlideDirect() {
+      clearAutoStepTimer();
+      goToSlide(currentSlide + 1, false);
+    }
+    
+    function prevSlideDirect() {
+      clearAutoStepTimer();
+      goToSlide(currentSlide - 1, false);
+    }
+
+    function triggerAdvance() {
+      const meta = slideMeta[currentSlide];
+      if (meta && meta.hasVideo) {
+        const slideVideo = document.getElementById('slide-interactive-video');
+        if (slideVideo) {
+          if (slideVideo.paused) slideVideo.play(); else slideVideo.pause();
+        }
+      } else {
+        manualNext();
+      }
+    }
+
+    window.onload = function() {
+      initVideoBlobUrls();
+      goToSlide(0);
+      
+      interBg.addEventListener('click', (e) => {
+        if (e.target.tagName.toLowerCase() === 'video' || e.target.tagName.toLowerCase() === 'button' || e.target.tagName.toLowerCase() === 'a' || e.target.closest('a')) return;
+        triggerAdvance();
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter') {
+          e.preventDefault();
+          manualNext();
+        } else if (e.key === 'ArrowLeft' || e.key === 'Backspace') {
+          e.preventDefault();
+          manualPrev();
+        } else if (e.key === 'PageDown') {
+          e.preventDefault();
+          nextSlideDirect();
+        } else if (e.key === 'PageUp') {
+          e.preventDefault();
+          prevSlideDirect();
+        }
+      });
+    };
+  </script>
+</body>
+</html>

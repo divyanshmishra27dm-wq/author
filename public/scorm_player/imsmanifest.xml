@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest identifier="HDFC_Academy_BSE_Day2_Mobile_SCORM2004_Rich" version="2.0"
+          xmlns="http://www.imsglobal.org/xsd/imscp_v1p1"
+          xmlns:adlcp="http://www.adlnet.org/xsd/adlcp_v1p3"
+          xmlns:adlseq="http://www.adlnet.org/xsd/adlseq_v1p3"
+          xmlns:adlnav="http://www.adlnav_v1p3"
+          xmlns:imsss="http://www.imsglobal.org/xsd/imsss"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://www.imsglobal.org/xsd/imscp_v1p1 imscp_v1p1.xsd
+                              http://www.adlnet.org/xsd/adlcp_v1p3 adlcp_v1p3.xsd
+                              http://www.adlnet.org/xsd/adlseq_v1p3 adlseq_v1p3.xsd
+                              http://www.adlnav_v1p3 adlnav_v1p3.xsd
+                              http://www.imsglobal.org/xsd/imsss imsss_v1p0.xsd">
+  <metadata>
+    <schema>ADL SCORM</schema>
+    <schemaversion>2004 4th Edition</schemaversion>
+  </metadata>
+  <organizations default="ORG_HDFC_BSE_DAY2">
+    <organization identifier="ORG_HDFC_BSE_DAY2" structure="hierarchical">
+      <title>HDFC Academy — Day 2: KYC, AML, Deposit Products &amp; Consultative Sales (Mobile-First)</title>
+      <item identifier="ITEM_DAY2_SCO" identifierref="RES_DAY2_SCO" isvisible="true">
+        <title>Day 2: KYC, Deposit Products &amp; Consultative Banking Sales</title>
+        <imsss:sequencing>
+          <imsss:deliveryControls completionSetByContent="true" objectiveSetByContent="true"/>
+        </imsss:sequencing>
+      </item>
+    </organization>
+  </organizations>
+  <resources>
+    <resource identifier="RES_DAY2_SCO" type="webcontent" adlcp:scormType="sco" href="index.html">
+      <file href="index.html"/>
+      <file href="css/style.css"/>
+      <file href="js/scorm2004.js"/>
+      <file href="js/courseData.js"/>
+      <file href="js/app.js"/>
+      <file href="assets/hero_roadmap.png"/>
+      <file href="assets/m1_kyc_pillars.png"/>
+      <file href="assets/m1_aml_redflags.png"/>
+      <file href="assets/m1_doc_verification.png"/>
+      <file href="assets/m2_savings_matrix.png"/>
+      <file href="assets/m3_ca_ecosystem.png"/>
+      <file href="assets/m4_fd_payouts.png"/>
+      <file href="assets/m4_fd_worked_example.png"/>
+      <file href="assets/m5_sales_mindset.png"/>
+      <file href="assets/m6_sales_process.png"/>
+      <file href="assets/m6_phone_script.png"/>
+      <file href="assets/m7_demand_funnel.png"/>
+      <file href="assets/m8_omnichannel_safe.png"/>
+      <file href="assets/m8_need_vs_product.png"/>
+    </resource>
+  </resources>
+</manifest>

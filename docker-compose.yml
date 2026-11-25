@@ -1,0 +1,16 @@
+services:
+  ppt-to-scorm:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ppt-to-scorm-converter
+    ports:
+      - "2927:2927"
+    environment:
+      - PORT=8000
+      - LITELLM_API_KEY=${LITELLM_API_KEY:-}
+      - LITELLM_MODEL=${LITELLM_MODEL:-azure-gpt-l1}
+      - LITELLM_URL=${LITELLM_URL:-https://litellm.niit.com/v1}
+    volumes:
+      - ./public/media:/app/public/media
+    restart: unless-stopped

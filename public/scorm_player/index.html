@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+  <title>HDFC Academy · Day 2: KYC, Products &amp; Sales Mastery</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Sticky Mobile Header -->
+    <header class="top-bar">
+      <div class="top-bar-row">
+        <button id="menuBtn" class="icon-btn" aria-label="Open Course Modules" title="All Modules">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+            <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+        <div class="brand-lockup">
+          <span class="brand-pill">HDFC ACADEMY</span>
+          <h1 id="headerTitle" class="header-title">Day 2 · Overview</h1>
+        </div>
+        <div class="score-pill" id="scorePill" title="Quiz Mastery Score">0%</div>
+      </div>
+      <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" id="progressBarWrap">
+        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+      </div>
+      <div class="sub-bar">
+        <span id="stepIndicator" class="step-label">Section 1 of 10</span>
+        <span id="lmsBadge" class="lms-status">SCORM Ready</span>
+      </div>
+    </header>
+
+    <!-- Slide-Over Module Drawer -->
+    <div id="drawerBackdrop" class="drawer-backdrop hidden"></div>
+    <aside id="navDrawer" class="nav-drawer" aria-hidden="true">
+      <div class="drawer-header">
+        <div>
+          <div class="drawer-kicker">DAY 2 CURRICULUM</div>
+          <div class="drawer-title">All 10 Chapters · 129 Slides</div>
+        </div>
+        <button id="closeDrawerBtn" class="icon-btn dark" aria-label="Close Menu">✕</button>
+      </div>
+      <div class="drawer-stats">
+        <div class="stat-box">
+          <span class="stat-val" id="drawerCompleted">0/10</span>
+          <span class="stat-lbl">Chapters</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-val" id="drawerScore">0%</span>
+          <span class="stat-lbl">Quiz Score</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-val">4</span>
+          <span class="stat-lbl">Video Slots</span>
+        </div>
+      </div>
+      <nav id="moduleList" class="module-list"></nav>
+      <div class="drawer-footer">
+        <button id="finishCourseBtn" class="btn-finish">Submit &amp; Complete Course</button>
+      </div>
+    </aside>
+
+    <!-- Main Scrollable Mobile Content Area -->
+    <main id="mainContent" class="main-content" tabindex="-1"></main>
+
+    <!-- Bottom Thumb-Zone Navigation Bar -->
+    <footer class="bottom-nav">
+      <button id="prevBtn" class="nav-btn secondary">
+        <span>← Prev</span>
+      </button>
+      <button id="quickIndexBtn" class="nav-btn center-pill">
+        <span id="bottomChapterTag">01 / 10</span>
+      </button>
+      <button id="nextBtn" class="nav-btn primary">
+        <span id="nextBtnLabel">Next →</span>
+      </button>
+    </footer>
+  </div>
+
+  <script src="js/scorm2004.js"></script>
+  <script src="js/courseData.js"></script>
+  <script src="js/courseData_day3.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

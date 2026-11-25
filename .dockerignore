@@ -1,0 +1,17 @@
+node_modules
+dist
+.git
+.gitignore
+.DS_Store
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.exe
+*.pptx
+!sample_presentation.pptx
+*.zip
+*.log
+.idea
+.vscode
+
