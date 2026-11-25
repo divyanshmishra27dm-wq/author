@@ -16,7 +16,7 @@ import {
   MatchPairItem,
   AccordionItem
 } from '../types/course';
-import { getApiUrl } from '../utils/apiConfig';
+import { getApiUrl, getAuthHeaders } from '../utils/apiConfig';
 
 interface CourseEditorProps {
   richCourse: RichCourseData;
@@ -154,15 +154,18 @@ export const CourseEditor: React.FC<CourseEditorProps> = ({
       setUploadingAudioBlockIdx(bIdx);
       const formData = new FormData();
       formData.append('file', file);
+      const headers = getAuthHeaders();
       let res: Response;
       try {
         res = await fetch(getApiUrl('/api/upload_audio'), {
           method: 'POST',
+          headers,
           body: formData
         });
         if (!res.ok && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
           res = await fetch('http://127.0.0.1:8000/api/upload_audio', {
             method: 'POST',
+            headers,
             body: formData
           });
         }
@@ -170,6 +173,7 @@ export const CourseEditor: React.FC<CourseEditorProps> = ({
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
           res = await fetch('http://127.0.0.1:8000/api/upload_audio', {
             method: 'POST',
+            headers,
             body: formData
           });
         } else {

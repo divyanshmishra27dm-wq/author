@@ -9,6 +9,15 @@ export const BACKEND_URL: string = (
   (import.meta as any).env?.VITE_API_URL || ''
 ).replace(/\/+$/, '');
 
+export const APP_PASSWORD = '($1advT%';
+
+export function getAuthHeaders(extraHeaders: Record<string, string> = {}): Record<string, string> {
+  return {
+    'X-Access-Key': APP_PASSWORD,
+    ...extraHeaders
+  };
+}
+
 export function getApiUrl(endpoint: string): string {
   const clean = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   if (!BACKEND_URL) {

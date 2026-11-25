@@ -22,6 +22,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+AUTH_PASSWORD = os.getenv("AUTH_PASSWORD", "($1advT%")
+
+@app.middleware("http")
+async def verify_auth_middleware(request, call_next):
+    # Allow health check, OPTIONS preflight, static files, and media
+    path = request.url.path
+    if path == "/api/health" or request.method == "OPTIONS":
+        return await call_next(request)
+
+    # Protect all /api/ endpoints
+    if path.startswith("/api/"):
+        provided_key = request.headers.get("X-Access-Key") or request.query_params.get("access_key")
+        if AUTH_PASSWORD and provided_key != AUTH_PASSWORD:
+            from fastapi.responses import JSONResponse
+            return JSONResponse(status_code=401, content={"error": "Unauthorized. Invalid access password."})
+
+    return await call_next(request)
+
 PUBLIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "public")
 os.makedirs(PUBLIC_DIR, exist_ok=True)
 MEDIA_DIR = os.path.join(PUBLIC_DIR, "media")

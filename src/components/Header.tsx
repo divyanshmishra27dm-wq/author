@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layers, Download, Sparkles, Smartphone, Monitor, Upload, ShieldCheck, BookOpen } from 'lucide-react';
+import { Layers, Download, Sparkles, Smartphone, Monitor, Upload, ShieldCheck, BookOpen, Lock } from 'lucide-react';
 import { CourseData, ViewportMode } from '../types/course';
 import { UploadedCourseInfo } from './FileUpload';
 
@@ -13,6 +13,7 @@ interface HeaderProps {
   onLoadSample: () => void;
   activeTab: 'preview' | 'editor';
   onTabChange: (tab: 'preview' | 'editor') => void;
+  onLock?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -23,7 +24,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenExport,
   onUploadClick,
   activeTab,
-  onTabChange
+  onTabChange,
+  onLock
 }) => {
   const displayTitle = uploadedCourse ? uploadedCourse.title : course.title;
 
@@ -123,6 +125,16 @@ export const Header: React.FC<HeaderProps> = ({
             <Download className="h-3.5 w-3.5" />
             <span>Export SCORM / HTML</span>
           </button>
+
+          {onLock && (
+            <button
+              onClick={onLock}
+              title="Lock Studio (Require Password)"
+              className="flex items-center gap-1 p-2 rounded-lg border border-slate-800 bg-slate-900 text-slate-400 hover:text-white hover:border-slate-700 transition-colors ml-1"
+            >
+              <Lock className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
       </div>
     </header>

@@ -4,9 +4,10 @@ import { PlayerPreview } from './components/PlayerPreview';
 import { CourseEditor } from './components/CourseEditor';
 import { FileUpload, UploadedCourseInfo } from './components/FileUpload';
 import { ExportModal } from './components/ExportModal';
+import { AuthGate } from './components/AuthGate';
 import { CourseData, ViewportMode, RichCourseData } from './types/course';
 import { sampleBankDay3Course } from './utils/sampleBankDay3';
-import { getApiUrl } from './utils/apiConfig';
+import { getApiUrl, getAuthHeaders } from './utils/apiConfig';
 
 function sanitizeUrl(url: string | null | undefined): string {
   if (!url) return '/Sample%20PPT%20for%20VO%201.html';
@@ -14,6 +15,14 @@ function sanitizeUrl(url: string | null | undefined): string {
 }
 
 export function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('app_authenticated') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
   const [course, setCourse] = useState<CourseData>(sampleBankDay3Course);
   const [viewportMode, setViewportMode] = useState<ViewportMode>('desktop');
   const [activeTab, setActiveTab] = useState<'preview' | 'editor'>('preview');
@@ -65,17 +74,23 @@ export function App() {
 
       let res: Response;
       try {
-        res = await fetch(getApiUrl(`/api/course?name=${encodeURIComponent(cleanReq)}`));
+        res = await fetch(getApiUrl(`/api/course?name=${encodeURIComponent(cleanReq)}`), {
+          headers: getAuthHeaders()
+        });
       } catch (e) {
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-          res = await fetch(`http://127.0.0.1:8000/api/course?name=${encodeURIComponent(cleanReq)}`);
+          res = await fetch(`http://127.0.0.1:8000/api/course?name=${encodeURIComponent(cleanReq)}`, {
+            headers: getAuthHeaders()
+          });
         } else {
           throw e;
         }
       }
       if (!res.ok && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
         try {
-          res = await fetch(`http://127.0.0.1:8000/api/course?name=${encodeURIComponent(cleanReq)}`);
+          res = await fetch(`http://127.0.0.1:8000/api/course?name=${encodeURIComponent(cleanReq)}`, {
+            headers: getAuthHeaders()
+          });
         } catch { }
       }
       if (res.ok) {
@@ -168,7 +183,7 @@ export function App() {
       try {
         res = await fetch(getApiUrl('/api/course/update'), {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify({
             course_name: cleanName,
             course_data: {
@@ -186,7 +201,7 @@ export function App() {
           try {
             res = await fetch('http://127.0.0.1:8000/api/course/update', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
               body: JSON.stringify({
                 course_name: cleanName,
                 course_data: {
@@ -235,6 +250,15 @@ export function App() {
     setActiveTab('preview');
   };
 
+  const handleLock = () => {
+    localStorage.removeItem('app_authenticated');
+    setIsAuthenticated(false);
+  };
+
+  if (!isAuthenticated) {
+    return <AuthGate onAuthenticated={() => setIsAuthenticated(true)} />;
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100">
       {/* Top Header */}
@@ -247,6 +271,7 @@ export function App() {
         onUploadClick={() => setShowUploadModal(true)}
         onLoadSample={handleLoadSample}
         activeTab={activeTab}
+        onLock={handleLock}
         onTabChange={async (tab) => {
           if (tab === 'preview' && activeTab === 'editor') {
             await handleSyncPreview();
