@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
-import { PlayerPreview } from './components/PlayerPreview';
+import { PlayerPreview, AvailableCourse } from './components/PlayerPreview';
 import { CourseEditor } from './components/CourseEditor';
 import { FileUpload, UploadedCourseInfo } from './components/FileUpload';
 import { ExportModal } from './components/ExportModal';
@@ -10,7 +10,7 @@ import { sampleBankDay3Course } from './utils/sampleBankDay3';
 import { getApiUrl, getAuthHeaders } from './utils/apiConfig';
 
 function sanitizeUrl(url: string | null | undefined): string {
-  if (!url) return '/HDFC_Academy_Day_3_Products_Account_Opening.html';
+  if (!url) return '';
   return url.replace(/[:]/g, '_');
 }
 
@@ -29,6 +29,7 @@ export function App() {
   const [showExportModal, setShowExportModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [availableCourses, setAvailableCourses] = useState<AvailableCourse[]>([]);
 
   // Uploaded presentation state
   const [uploadedCourse, setUploadedCourse] = useState<UploadedCourseInfo | null>(() => {
@@ -36,7 +37,7 @@ export function App() {
       const saved = localStorage.getItem('last_uploaded_course');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed && parsed.previewUrl && parsed.totalChapters >= 11) {
+        if (parsed && parsed.previewUrl) {
           return {
             ...parsed,
             previewUrl: sanitizeUrl(parsed.previewUrl)
@@ -44,40 +45,35 @@ export function App() {
         }
       }
     } catch (e) { }
-    return {
-      title: 'HDFC Academy · Day 3: Products & Account Opening',
-      filename: 'HDFC_Academy_Day_3_Products_Account_Opening',
-      totalChapters: 11,
-      previewUrl: '/HDFC_Academy_Day_3_Products_Account_Opening.html',
-      htmlUrl: '/HDFC_Academy_Day_3_Products_Account_Opening.html',
-      scormZipUrl: '/HDFC_Academy_Day_3_Products_Account_Opening_SCORM2004.zip'
-    };
+    return null;
   });
 
   const [currentPreviewUrl, setCurrentPreviewUrl] = useState<string>(() => {
     try {
       const saved = localStorage.getItem('last_preview_url');
-      if (saved && (saved.includes('HDFC_Academy_Day_3') || saved.includes('without%20voice%20over') || saved.includes('without+voice+over'))) {
+      if (saved) {
         return sanitizeUrl(saved);
       }
     } catch (e) { }
-    return '/HDFC_Academy_Day_3_Products_Account_Opening.html';
+    return '';
   });
 
   // Dynamic Rich Course Data (Direct 1:1 with SCORM 2004 Engine chapters & blocks)
   const [richCourse, setRichCourse] = useState<RichCourseData>({
-    title: 'HDFC Academy · Day 3: Products & Account Opening',
-    name: 'HDFC_Academy_Day_3_Products_Account_Opening',
+    title: '',
+    name: '',
     chapters: []
   });
 
   // Fetch course chapters on mount or course switch
-  const fetchCourseData = async (courseIdentifier: string) => {
+  const fetchCourseData = async (courseIdentifier?: string) => {
+    if (!courseIdentifier) return;
     try {
       let cleanReq = decodeURIComponent(courseIdentifier).split('?')[0];
       cleanReq = cleanReq.replace(/^.*\//, ''); // strip leading directory
       cleanReq = cleanReq.replace(/\.html$/i, ''); // strip .html extension
-      cleanReq = cleanReq.replace(/[^a-zA-Z0-9_\- ]/g, '_').trim() || 'HDFC_Academy_Day_3_Products_Account_Opening';
+      cleanReq = cleanReq.replace(/[^a-zA-Z0-9_\- ]/g, '_').trim();
+      if (!cleanReq) return;
 
       let res: Response;
       try {
@@ -131,12 +127,50 @@ export function App() {
     }
   };
 
+  const loadCourses = async () => {
+    try {
+      let res: Response;
+      try {
+        res = await fetch(getApiUrl('/api/courses'), { headers: getAuthHeaders() });
+      } catch {
+        res = await fetch('http://127.0.0.1:8000/api/courses', { headers: getAuthHeaders() });
+      }
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.courses) && data.courses.length > 0) {
+          setAvailableCourses(data.courses);
+          const existing = data.courses.find((c: AvailableCourse) =>
+            (currentPreviewUrl && (c.preview_url === currentPreviewUrl || currentPreviewUrl.includes(encodeURIComponent(c.name)))) ||
+            (uploadedCourse && c.name === uploadedCourse.filename)
+          );
+          const active = existing || data.courses[0];
+          if (!currentPreviewUrl || !existing) {
+            const safeUrl = sanitizeUrl(active.preview_url);
+            setCurrentPreviewUrl(safeUrl);
+            setUploadedCourse({
+              title: active.title,
+              filename: active.name,
+              totalChapters: active.total_chapters,
+              previewUrl: safeUrl,
+              htmlUrl: safeUrl,
+              scormZipUrl: active.scorm_zip_url
+            });
+            fetchCourseData(active.name);
+          } else {
+            fetchCourseData(existing.name);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Could not load courses:', e);
+    }
+  };
+
   useEffect(() => {
-    const activeIdentifier = uploadedCourse?.filename || uploadedCourse?.previewUrl || uploadedCourse?.title || currentPreviewUrl || 'HDFC_Academy_Day_3_Products_Account_Opening';
-    fetchCourseData(activeIdentifier);
+    loadCourses();
   }, []);
 
-  const handleCourseLoaded = (newCourse: CourseData, info?: UploadedCourseInfo) => {
+  const handleCourseLoaded = async (newCourse: CourseData, info?: UploadedCourseInfo) => {
     setCourse(newCourse);
     if (info) {
       const cleanUrl = sanitizeUrl(info.previewUrl);
@@ -160,6 +194,7 @@ export function App() {
         localStorage.setItem('last_preview_url', cleanUrl);
       } catch (e) { }
     }
+    await loadCourses();
     setShowUploadModal(false);
     setActiveTab('preview');
   };
@@ -170,6 +205,24 @@ export function App() {
     try {
       localStorage.setItem('last_preview_url', clean);
     } catch (e) { }
+    const match = availableCourses.find(c => c.preview_url === url || c.preview_url === clean || clean.includes(encodeURIComponent(c.name)));
+    if (match) {
+      const info: UploadedCourseInfo = {
+        title: match.title,
+        filename: match.name,
+        totalChapters: match.total_chapters,
+        previewUrl: match.preview_url,
+        htmlUrl: match.preview_url,
+        scormZipUrl: match.scorm_zip_url
+      };
+      setUploadedCourse(info);
+      try {
+        localStorage.setItem('last_uploaded_course', JSON.stringify(info));
+      } catch (e) { }
+      fetchCourseData(match.name);
+    } else {
+      fetchCourseData(clean);
+    }
   };
 
   const handleLoadSample = () => {
@@ -183,7 +236,7 @@ export function App() {
   const handleSyncPreview = async (targetChapterIndex?: number) => {
     try {
       setIsSyncing(true);
-      const courseName = richCourse.name || uploadedCourse?.title || 'Day_3__Products___Account_Opening';
+      const courseName = richCourse.name || uploadedCourse?.filename || uploadedCourse?.title || 'Course';
       const cleanName = courseName.replace(/[^a-zA-Z0-9_\- ]/g, '_').trim() || 'Sample_Course';
 
       let res: Response | null = null;
@@ -285,7 +338,7 @@ export function App() {
           }
           setActiveTab(tab);
           if (tab === 'editor' && richCourse.chapters.length === 0) {
-            fetchCourseData(uploadedCourse?.title || 'Day 3: Products & Account Opening');
+            fetchCourseData(uploadedCourse?.filename || uploadedCourse?.title);
           }
         }}
       />
@@ -298,12 +351,13 @@ export function App() {
             uploadedCourse={uploadedCourse}
             currentPreviewUrl={currentPreviewUrl}
             onSelectPreviewUrl={handleSelectPreviewUrl}
+            availableCourses={availableCourses}
             viewportMode={viewportMode}
             onViewportChange={setViewportMode}
             onOpenEditor={() => {
               setActiveTab('editor');
               if (richCourse.chapters.length === 0) {
-                fetchCourseData(uploadedCourse?.title || 'Sample PPT for VO 1');
+                fetchCourseData(uploadedCourse?.filename || uploadedCourse?.title);
               }
             }}
           />

@@ -3,6 +3,8 @@ import sys
 import json
 import base64
 import zipfile
+import shutil
+import urllib.parse
 import re
 import html
 import pptx
@@ -859,38 +861,6 @@ def parse_pptx_into_course(pptx_path, output_dir=None):
     prs = Presentation(pptx_path)
     first_shapes = [s.text.strip() for s in prs.slides[0].shapes if s.has_text_frame and s.text.strip()]
     first_text = " ".join(first_shapes).lower()
-
-    # Check for Day 3 VO / Products & Account Opening presentation (Sample PPT for VO 1, VO2, etc.)
-    clean_norm_base = re.sub(r'[\s_]+', ' ', clean_base).strip().lower()
-    if (
-        "vo" in clean_norm_base
-        or "day 3" in clean_norm_base
-        or "day_3" in clean_norm_base
-        or "products & account opening" in clean_norm_base
-        or "products and account opening" in clean_norm_base
-        or "banking sales excellence" in clean_norm_base
-        or "day 3: products" in first_text
-        or "products & account opening" in first_text
-    ):
-        return parse_day3_vo_course(pptx_path, media_info)
-
-    # Explicit check: pre-curated Day 3 49-slide dataset
-    if "sample_day3_bank_sales_excellence" in base_name.lower():
-        course_data_day3_path = os.path.join(TEMPLATE_DIR, "js", "courseData_day3.js")
-        if os.path.exists(course_data_day3_path):
-            with open(course_data_day3_path, "r", encoding="utf-8") as f:
-                js_content = f.read()
-            import subprocess
-            res = subprocess.run(["node", "-e", f"global.window = global; {js_content}; console.log(JSON.stringify(global.COURSE_CHAPTERS_DAY3));"],
-                                 capture_output=True, text=True)
-            if res.returncode == 0 and res.stdout.strip():
-                chapters = json.loads(res.stdout)
-                return {
-                    "title": "HDFC Academy · Day 3: Know Your Product — CASA & Savings Mastery",
-                    "subtitle": "CASA • Savings Accounts • Current Accounts • CA Allied Products • Cards & Account Opening",
-                    "chapters": chapters,
-                    "assets": media_info["all_media"]
-                }
 
     # General PPTX Intelligent Semantic & Visual Parsing
     total_slides = len(prs.slides)
@@ -1858,6 +1828,144 @@ window.COURSE_STORAGE_KEY = "{storage_key}";
 
         for arcname, b_data in extracted_media.items():
             zf.writestr(arcname, b_data)
+
+def ingest_scorm_zip(zip_path, output_dir=None):
+    """
+    Ingests an existing SCORM 2004 or 1.2 zip archive dynamically.
+    Extracts courseData.js, media files (voiceovers, slide images, videos),
+    and reconstructs the standalone HTML preview and SCORM 2004 package.
+    """
+    if not output_dir:
+        output_dir = os.path.dirname(os.path.abspath(zip_path))
+    os.makedirs(output_dir, exist_ok=True)
+    media_dir = os.path.join(output_dir, "media")
+    os.makedirs(media_dir, exist_ok=True)
+    public_media_dir = os.path.join("public", "media")
+    os.makedirs(public_media_dir, exist_ok=True)
+
+    base_name = os.path.splitext(os.path.basename(zip_path))[0]
+    clean_base = re.sub(r'[\(\)\d\s_]+$', '', base_name).strip()
+    clean_base = re.sub(r'_SCORM.*$', '', clean_base, flags=re.I).strip()
+    clean_base = re.sub(r'[^a-zA-Z0-9_\-]', '_', clean_base)
+    clean_base = re.sub(r'_+', '_', clean_base).strip('_')
+    if not clean_base:
+        clean_base = "Imported_SCORM_Course"
+
+    extracted_temp = os.path.join(output_dir, f"_temp_scorm_{clean_base}")
+    os.makedirs(extracted_temp, exist_ok=True)
+
+    try:
+        with zipfile.ZipFile(zip_path, 'r') as zf:
+            zf.extractall(extracted_temp)
+
+        course_data_js = None
+        for root, dirs, files in os.walk(extracted_temp):
+            for file in files:
+                if file.lower() == "coursedata.js":
+                    course_data_js = os.path.join(root, file)
+                    break
+            if course_data_js:
+                break
+
+        title = clean_base.replace('_', ' ')
+        chapters = []
+        if course_data_js and os.path.exists(course_data_js):
+            with open(course_data_js, 'r', encoding='utf-8', errors='ignore') as f:
+                content = f.read()
+                m_chap = re.search(r'var COURSE_CHAPTERS = (\[.*?\]);\s*(?:window|var|$)', content, re.DOTALL)
+                if m_chap:
+                    try:
+                        chapters = json.loads(m_chap.group(1))
+                    except Exception as err:
+                        print(f"Error parsing COURSE_CHAPTERS: {err}")
+                m_cfg = re.search(r'var COURSE_CONFIG = ({.*?});\s*(?:window|var|$)', content, re.DOTALL)
+                if m_cfg:
+                    try:
+                        cfg = json.loads(m_cfg.group(1))
+                        if cfg.get("title"):
+                            title = cfg["title"]
+                    except Exception:
+                        pass
+                if (not title or title == clean_base.replace('_', ' ')) and chapters:
+                    if chapters[0].get("title"):
+                        title = chapters[0]["title"]
+
+        # Extract and preserve all media
+        extracted_media = []
+        for root, dirs, files in os.walk(extracted_temp):
+            for file in files:
+                low = file.lower()
+                if any(low.endswith(ext) for ext in [".png", ".jpg", ".jpeg", ".svg", ".gif", ".webp", ".mp3", ".wav", ".m4a", ".aac", ".mp4", ".webm", ".ogg", ".mov", ".m4v"]):
+                    src_f = os.path.join(root, file)
+                    dest_f = os.path.join(media_dir, file)
+                    try:
+                        if not os.path.exists(dest_f) or os.path.getsize(dest_f) != os.path.getsize(src_f):
+                            shutil.copy2(src_f, dest_f)
+                        dest_pub = os.path.join(public_media_dir, file)
+                        if not os.path.exists(dest_pub) or os.path.getsize(dest_pub) != os.path.getsize(src_f):
+                            shutil.copy2(src_f, dest_pub)
+                    except Exception:
+                        pass
+                    extracted_media.append(file)
+
+        # Include any existing public media (e.g. uploaded or converted videos)
+        if os.path.exists(public_media_dir):
+            for f in os.listdir(public_media_dir):
+                dest = os.path.join(media_dir, f)
+                try:
+                    if not os.path.exists(dest):
+                        shutil.copy2(os.path.join(public_media_dir, f), dest)
+                except Exception:
+                    pass
+                if f not in extracted_media:
+                    extracted_media.append(f)
+
+        course_data = {
+            "title": title,
+            "subtitle": "Interactive SCORM 2004 Course",
+            "chapters": chapters,
+            "assets": extracted_media
+        }
+
+        # Generate Standalone HTML
+        html_path = os.path.join(output_dir, f"{clean_base}.html")
+        html_content = generate_standalone_html(course_data)
+        with open(html_path, "w", encoding="utf-8") as f:
+            f.write(html_content)
+
+        # Copy to public/ and dist/ if different
+        for target_dir in ["public", "dist"]:
+            if os.path.exists(target_dir):
+                t_html = os.path.join(target_dir, f"{clean_base}.html")
+                try:
+                    if os.path.abspath(t_html) != os.path.abspath(html_path):
+                        shutil.copy2(html_path, t_html)
+                except Exception:
+                    pass
+
+        # Build SCORM 2004 ZIP
+        scorm_zip_path = os.path.join(output_dir, f"{clean_base}_SCORM2004.zip")
+        build_scorm2004_zip(course_data, scorm_zip_path, media_dir=media_dir)
+        for target_dir in ["public", "dist"]:
+            if os.path.exists(target_dir):
+                t_zip = os.path.join(target_dir, f"{clean_base}_SCORM2004.zip")
+                try:
+                    if os.path.abspath(t_zip) != os.path.abspath(scorm_zip_path):
+                        shutil.copy2(scorm_zip_path, t_zip)
+                except Exception:
+                    pass
+
+        return {
+            "title": course_data["title"],
+            "total_chapters": len(course_data["chapters"]),
+            "html_path": html_path,
+            "scorm_zip_path": scorm_zip_path,
+            "course_data": course_data,
+            "filename": clean_base
+        }
+    finally:
+        if os.path.exists(extracted_temp):
+            shutil.rmtree(extracted_temp, ignore_errors=True)
 
 def convert_pptx_to_b2b(pptx_path, output_dir=None):
     if not output_dir:

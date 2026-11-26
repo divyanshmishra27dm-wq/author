@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Plus, Trash2, ArrowUp, ArrowDown, HelpCircle, CheckCircle2,
   Sparkles, Layers, FileText, Sliders, AlertCircle, Video,
@@ -423,8 +423,31 @@ export const CourseEditor: React.FC<CourseEditorProps> = ({
   const [uploadingAudioBlockIdx, setUploadingAudioBlockIdx] = useState<number | null>(null);
   const [uploadingImageBlockIdx, setUploadingImageBlockIdx] = useState<number | null>(null);
   const [uploadingVideoBlockIdx, setUploadingVideoBlockIdx] = useState<number | null>(null);
+  const [availableVideos, setAvailableVideos] = useState<string[]>([]);
   const [flippedPreviewCards, setFlippedPreviewCards] = useState<Record<string, boolean>>({});
   const [openPreviewCollapsibles, setOpenPreviewCollapsibles] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const fetchMedia = async () => {
+      try {
+        let res: Response;
+        try {
+          res = await fetch(getApiUrl('/api/media'), { headers: getAuthHeaders() });
+        } catch {
+          res = await fetch('http://127.0.0.1:8000/api/media', { headers: getAuthHeaders() });
+        }
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && Array.isArray(data.videos)) {
+            setAvailableVideos(data.videos);
+          }
+        }
+      } catch (e) {
+        console.warn('Could not load media list:', e);
+      }
+    };
+    fetchMedia();
+  }, []);
 
   const handleUploadVideoForBlock = async (bIdx: number, file: File) => {
     try {
@@ -459,6 +482,8 @@ export const CourseEditor: React.FC<CourseEditorProps> = ({
       }
       const data = await res.json();
       if (data.success && data.video_url) {
+        const uploadedFilename = data.video_url.replace(/^media\//, '');
+        setAvailableVideos(prev => prev.includes(uploadedFilename) ? prev : [...prev, uploadedFilename]);
         updateBlock(bIdx, b => ({
           ...b,
           embedUrl: data.video_url,
@@ -721,13 +746,14 @@ export const CourseEditor: React.FC<CourseEditorProps> = ({
   };
 
   const addBlockVideo = () => {
+    const defaultVid = availableVideos.length > 0 ? `media/${availableVideos[0]}` : '';
     const newBlock: ChapterBlock = {
       type: 'video_placeholder',
       id: `video_${Date.now()}`,
       badge: 'ROLEPLAY DEMONSTRATION',
       duration: '3m 45s',
       title: 'Consultative Customer Account Opening Journey',
-      embedUrl: 'media/media1.mp4',
+      embedUrl: defaultVid,
       watchFor: [
         'How the banker opens with a professional warm greeting and establishes rapport.',
         'Explaining the product value proposition instead of reciting account fees.',
@@ -2078,21 +2104,25 @@ export const CourseEditor: React.FC<CourseEditorProps> = ({
                             Attach or Upload Video (.mp4, .webm, .mov)
                           </label>
                           <div className="flex items-center gap-1 flex-wrap">
-                            <span className="text-[10px] text-slate-400">PPT Videos:</span>
-                            {['media1.mp4', 'media2.mp4', 'media3.mp4', 'media4.mp4', 'media5.mp4'].map((vidName) => (
-                              <button
-                                key={vidName}
-                                type="button"
-                                onClick={() => updateBlock(bIdx, b => ({ ...b, embedUrl: `media/${vidName}` }))}
-                                className={`text-[10px] px-2 py-0.5 rounded font-mono transition-colors ${
-                                  block.embedUrl === `media/${vidName}`
-                                    ? 'bg-rose-600 text-white font-bold'
-                                    : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
-                                }`}
-                              >
-                                {vidName}
-                              </button>
-                            ))}
+                            {availableVideos.length > 0 && (
+                              <>
+                                <span className="text-[10px] text-slate-400">Available Videos:</span>
+                                {availableVideos.map((vidName) => (
+                                  <button
+                                    key={vidName}
+                                    type="button"
+                                    onClick={() => updateBlock(bIdx, b => ({ ...b, embedUrl: `media/${vidName}` }))}
+                                    className={`text-[10px] px-2 py-0.5 rounded font-mono transition-colors ${
+                                      block.embedUrl === `media/${vidName}` || block.embedUrl === vidName
+                                        ? 'bg-rose-600 text-white font-bold'
+                                        : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+                                    }`}
+                                  >
+                                    {vidName}
+                                  </button>
+                                ))}
+                              </>
+                            )}
                           </div>
                         </div>
 

@@ -4,6 +4,15 @@ import { CourseData, ViewportMode } from '../types/course';
 import { UploadedCourseInfo } from './FileUpload';
 import { BACKEND_URL } from '../utils/apiConfig';
 
+export interface AvailableCourse {
+  name: string;
+  title: string;
+  total_chapters: number;
+  preview_url: string;
+  scorm_zip_url: string;
+  mtime?: number;
+}
+
 interface PlayerPreviewProps {
   course: CourseData;
   uploadedCourse?: UploadedCourseInfo | null;
@@ -12,6 +21,7 @@ interface PlayerPreviewProps {
   viewportMode: ViewportMode;
   onViewportChange: (mode: ViewportMode) => void;
   onOpenEditor: () => void;
+  availableCourses?: AvailableCourse[];
 }
 
 interface ScormLogEntry {
@@ -27,7 +37,8 @@ export const PlayerPreview: React.FC<PlayerPreviewProps> = ({
   currentPreviewUrl,
   onSelectPreviewUrl,
   viewportMode,
-  onViewportChange
+  onViewportChange,
+  availableCourses = []
 }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -43,7 +54,7 @@ export const PlayerPreview: React.FC<PlayerPreviewProps> = ({
 
   const safePreviewUrl = currentPreviewUrl
     ? currentPreviewUrl.replace(/[:]/g, '_')
-    : (uploadedCourse?.previewUrl || '/Sample%20PPT%20for%20VO%201.html');
+    : (uploadedCourse?.previewUrl || '');
   const cleanPath = safePreviewUrl.split('?')[0].replace(/^\//, '');
   const existingQuery = safePreviewUrl.includes('?') ? safePreviewUrl.split('?')[1] : '';
   const safeFilename = cleanPath.split('/').map(seg => encodeURIComponent(decodeURIComponent(seg))).join('/');
@@ -130,32 +141,33 @@ export const PlayerPreview: React.FC<PlayerPreviewProps> = ({
     <div className="flex flex-col items-center w-full min-h-[calc(100vh-4rem)] p-3 sm:p-5 bg-slate-950">
       {/* Top Toolbar: Viewport & Course Switcher */}
       <div className="w-full max-w-6xl flex flex-wrap items-center justify-between gap-3 mb-4 bg-slate-900/90 border border-slate-800 rounded-xl px-4 py-2.5">
-        {/* Module Switcher - Only the preview of the uploaded PPT is visible */}
+        {/* Module Switcher - Dynamically populated from available converted courses */}
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs font-bold text-slate-400">Course Preview:</span>
           <div className="flex items-center bg-slate-950 rounded-lg p-0.5 border border-slate-800 flex-wrap gap-1">
-            <button
-              onClick={() => onSelectPreviewUrl('/HDFC_Academy_Day_3_Products_Account_Opening.html')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
-                safePreviewUrl.includes('HDFC_Academy_Day_3_Products_Account_Opening')
-                  ? 'bg-emerald-600 text-white shadow'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <FileCheck className="h-3.5 w-3.5" />
-              <span>HDFC Academy · Day 3 (11 Chapters · Voiceovers &amp; Videos)</span>
-            </button>
-            <button
-              onClick={() => onSelectPreviewUrl('/Day%203%20-%20HDFC%20-SB%20-without%20voice%20over.html')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
-                safePreviewUrl.includes('without%20voice%20over') || safePreviewUrl.includes('without+voice+over')
-                  ? 'bg-blue-600 text-white shadow'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <FileCheck className="h-3.5 w-3.5" />
-              <span>Day 3 - HDFC -SB (Without VO Deck)</span>
-            </button>
+            {availableCourses && availableCourses.length > 0 ? (
+              availableCourses.map((c) => {
+                const isSelected = safePreviewUrl.includes(encodeURIComponent(c.name)) || safePreviewUrl === c.preview_url || safePreviewUrl.includes(c.name);
+                return (
+                  <button
+                    key={c.name}
+                    onClick={() => onSelectPreviewUrl(c.preview_url)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
+                      isSelected
+                        ? 'bg-emerald-600 text-white shadow'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    <FileCheck className="h-3.5 w-3.5" />
+                    <span>{c.title} ({c.total_chapters} Chapters)</span>
+                  </button>
+                );
+              })
+            ) : (
+              <span className="text-xs text-slate-400 px-3 py-1">
+                {uploadedCourse?.title ? `${uploadedCourse.title} (${uploadedCourse.totalChapters} Chapters)` : 'No course loaded'}
+              </span>
+            )}
           </div>
         </div>
 

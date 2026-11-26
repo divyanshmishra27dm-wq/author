@@ -182,6 +182,67 @@ def get_course(name: str = "Sample PPT for VO 1"):
     except Exception as e:
         return {"error": str(e), "chapters": []}
 
+@app.get("/api/courses")
+def list_courses():
+    """
+    Dynamically lists all available converted courses from PUBLIC_DIR.
+    Extracts real title, chapter count, preview URL, and SCORM zip URL without hardcoding.
+    """
+    courses = []
+    if not os.path.exists(PUBLIC_DIR):
+        return {"success": True, "courses": []}
+
+    for f in os.listdir(PUBLIC_DIR):
+        if f.endswith('.html') and not f.startswith('index'):
+            f_path = os.path.join(PUBLIC_DIR, f)
+            try:
+                base = os.path.splitext(f)[0]
+                mtime = os.path.getmtime(f_path)
+                with open(f_path, 'r', encoding='utf-8', errors='ignore') as hf:
+                    full_content = hf.read()
+                    m_t = re.search(r'<title>(.*?)</title>', full_content, re.IGNORECASE)
+                    title = m_t.group(1).strip() if m_t else base
+                    m_chap = re.search(r'var COURSE_CHAPTERS = (\[.*?\]);\s*window\.COURSE_CHAPTERS', full_content, re.DOTALL)
+                    total_chapters = len(json.loads(m_chap.group(1))) if m_chap else 0
+
+                encoded_name = urllib.parse.quote(base)
+                courses.append({
+                    "name": base,
+                    "title": title,
+                    "total_chapters": total_chapters,
+                    "preview_url": f"/{encoded_name}.html",
+                    "scorm_zip_url": f"/{encoded_name}_SCORM2004.zip",
+                    "mtime": mtime
+                })
+            except Exception:
+                pass
+
+    courses.sort(key=lambda x: x["mtime"], reverse=True)
+    return {"success": True, "courses": courses}
+
+@app.get("/api/media")
+def list_media():
+    """
+    Returns available media assets (videos, audios, images) from public/media directory dynamically.
+    """
+    media_dir = os.path.join(PUBLIC_DIR, "media")
+    videos = []
+    audios = []
+    images = []
+    if os.path.exists(media_dir):
+        for f in os.listdir(media_dir):
+            low = f.lower()
+            if any(low.endswith(ext) for ext in [".mp4", ".webm", ".ogg", ".mov", ".m4v"]):
+                videos.append(f)
+            elif any(low.endswith(ext) for ext in [".mp3", ".wav", ".m4a", ".aac"]):
+                audios.append(f)
+            elif any(low.endswith(ext) for ext in [".png", ".jpg", ".jpeg", ".svg", ".gif", ".webp"]):
+                images.append(f)
+    videos.sort()
+    audios.sort()
+    images.sort()
+    return {"success": True, "videos": videos, "audios": audios, "images": images}
+
 @app.post("/api/course/update")
 async def update_course_endpoint(payload: dict):
     """
