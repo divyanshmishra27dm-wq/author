@@ -49,35 +49,56 @@ DIST_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dist")
 # Robust media serving endpoint that cleanly decodes percent-encoded URLs (%20, etc.),
 # handles case-insensitivity, matches spaces and underscores, and searches public/media,
 # dist/media, public/slides, and dist/slides.
+MEDIA_EXTS = ('.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.mp3', '.mp4', '.wav', '.ogg', '.m4a')
+MEDIA_HEADERS = {
+    "Access-Control-Allow-Origin": "*",
+    "Cache-Control": "public, max-age=86400",
+}
+
 @app.get("/media/{media_path:path}")
 async def serve_media_file(media_path: str):
-    unquoted = urllib.parse.unquote(media_path).lstrip("/")
+    raw = urllib.parse.unquote_plus(media_path).lstrip("/")
+    clean_target = re.sub(r'^(media|slides)/+', '', raw)
     
     search_dirs = [
         MEDIA_DIR,
         os.path.join(PUBLIC_DIR, "slides"),
         os.path.join(DIST_DIR, "media") if os.path.exists(DIST_DIR) else None,
-        os.path.join(DIST_DIR, "slides") if os.path.exists(DIST_DIR) else None
+        os.path.join(DIST_DIR, "slides") if os.path.exists(DIST_DIR) else None,
+        PUBLIC_DIR,
+        DIST_DIR if os.path.exists(DIST_DIR) else None,
     ]
     search_dirs = [d for d in search_dirs if d and os.path.exists(d)]
 
     # 1. Exact unquoted match across media and slides
-    for d in search_dirs:
-        p = os.path.join(d, unquoted)
-        if os.path.isfile(p):
-            return FileResponse(p)
+    for target in [clean_target, raw]:
+        for d in search_dirs:
+            p = os.path.join(d, target)
+            if os.path.isfile(p):
+                return FileResponse(p, headers=MEDIA_HEADERS)
 
     # 2. Normalized matching (matches space vs underscore differences and case-insensitivity)
-    norm = re.sub(r'[\s_]+', '_', unquoted).lower()
+    norm = re.sub(r'[\s_\-]+', '_', clean_target).lower()
     for d in search_dirs:
-        for f in os.listdir(d):
-            if re.sub(r'[\s_]+', '_', f).lower() == norm:
-                return FileResponse(os.path.join(d, f))
+        try:
+            for f in os.listdir(d):
+                if re.sub(r'[\s_\-]+', '_', f).lower() == norm:
+                    return FileResponse(os.path.join(d, f), headers=MEDIA_HEADERS)
+        except Exception:
+            pass
 
     return PlainTextResponse("Media Not Found", status_code=404)
 
 @app.get("/slides/{slide_path:path}")
 async def serve_slide_file(slide_path: str):
+    return await serve_media_file(slide_path)
+
+@app.get("/scorm_player/media/{media_path:path}")
+async def serve_scorm_player_media(media_path: str):
+    return await serve_media_file(media_path)
+
+@app.get("/scorm_player/slides/{slide_path:path}")
+async def serve_scorm_player_slides(slide_path: str):
     return await serve_media_file(slide_path)
 
 @app.get("/api/health")
@@ -493,7 +514,7 @@ if os.path.exists(DIST_DIR) and os.path.exists(os.path.join(DIST_DIR, "assets"))
 
 @app.get("/{full_path:path}")
 async def serve_static_or_spa(full_path: str):
-    unquoted = urllib.parse.unquote(full_path).lstrip("/")
+    unquoted = urllib.parse.unquote_plus(full_path).lstrip("/")
     html_headers = {
         "Cache-Control": "no-cache, no-store, must-revalidate",
         "Pragma": "no-cache",
@@ -501,6 +522,12 @@ async def serve_static_or_spa(full_path: str):
     }
 
     if unquoted:
+        # Check if this is an image, audio, or video requested at root or subpath
+        if unquoted.lower().endswith(MEDIA_EXTS) or unquoted.startswith(("media/", "slides/")):
+            media_res = await serve_media_file(unquoted)
+            if media_res.status_code == 200:
+                return media_res
+
         pub_file = os.path.join(PUBLIC_DIR, unquoted)
         if os.path.isfile(pub_file):
             headers = html_headers if unquoted.lower().endswith(".html") else {}

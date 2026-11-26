@@ -55,10 +55,14 @@ COPY --from=frontend-builder /app/dist ./dist
 COPY nginx.conf /etc/nginx/nginx.conf
 
 # Ensure media & slides directories exist and are mirrored to dist for Nginx
-RUN mkdir -p /app/public/media /app/dist/media /app/public/slides /app/dist/slides && \
-    (cp -rn /app/public/slides/* /app/public/media/ 2>/dev/null || true) && \
-    (cp -rn /app/public/media/* /app/dist/media/ 2>/dev/null || true) && \
-    (cp -rn /app/public/slides/* /app/dist/slides/ 2>/dev/null || true)
+RUN mkdir -p /app/public/media /app/dist/media /app/public/slides /app/dist/slides /app/public/scorm_player /app/dist/scorm_player && \
+    (cp -rf /app/public/slides/* /app/public/media/ 2>/dev/null || true) && \
+    (cp -rf /app/public/media/* /app/dist/media/ 2>/dev/null || true) && \
+    (cp -rf /app/public/slides/* /app/dist/slides/ 2>/dev/null || true) && \
+    ln -sf /app/dist/media /app/dist/scorm_player/media && \
+    ln -sf /app/dist/slides /app/dist/scorm_player/slides && \
+    ln -sf /app/public/media /app/public/scorm_player/media && \
+    ln -sf /app/public/slides /app/public/scorm_player/slides
 
 # Copy startup script
 COPY start.sh ./

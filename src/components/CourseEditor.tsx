@@ -106,8 +106,26 @@ const SectionImageControl: React.FC<SectionImageControlProps> = ({
               className="max-h-52 w-auto max-w-full rounded-lg object-contain shadow-lg border border-slate-800/80 bg-slate-900/50"
               onError={(e) => {
                 const target = e.currentTarget;
-                if (target.src.includes('%20') || target.src.includes(' ')) {
-                  target.src = target.src.replace(/%20| /g, '_');
+                const state = Number(target.dataset.fallbackStep || 0);
+                if (state === 0) {
+                  target.dataset.fallbackStep = '1';
+                  if (target.src.includes('%20') || target.src.includes(' ')) {
+                    target.src = target.src.replace(/%20| /g, '_');
+                    return;
+                  } else if (target.src.includes('_')) {
+                    target.src = target.src.replace(/_/g, '%20');
+                    return;
+                  }
+                }
+                if (state <= 1 && !target.src.includes('/media/')) {
+                  target.dataset.fallbackStep = '2';
+                  try {
+                    const u = new URL(target.src);
+                    target.src = `${u.origin}/media${u.pathname}`;
+                  } catch {
+                    target.src = `/media/${target.src.replace(/^\//, '')}`;
+                  }
+                  return;
                 }
               }}
             />

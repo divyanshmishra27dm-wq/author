@@ -267,7 +267,7 @@
   function renderSectionHeroImage(rawSrc) {
     if (!rawSrc) return '';
     var src = sanitizeMediaSrc(rawSrc);
-    return '<div class="card-hero-image-wrap"><img src="' + escapeHtml(src) + '" alt="" class="card-hero-image" loading="lazy" onerror="if(this.src.includes(\'%20\')){this.src=this.src.replace(/%20/g,\'_\');}" /></div>';
+    return '<div class="card-hero-image-wrap"><img src="' + escapeHtml(src) + '" alt="" class="card-hero-image" loading="lazy" onerror="if(!this.dataset.fb){this.dataset.fb=\'1\';if(this.src.includes(\'%20\')){this.src=this.src.replace(/%20/g,\'_\');}else if(this.src.includes(\'_\')){this.src=this.src.replace(/_/g,\'%20\');}}else if(this.dataset.fb===\'1\'&&!this.src.includes(\'/media/\')){this.dataset.fb=\'2\';this.src=this.src.replace(/(\\/[^\\/]+)$/,\'/media$1\');}" /></div>';
   }
 
   function renderAudioBar(audioUrl, audioTitle) {
@@ -454,7 +454,7 @@
       return `
         <figure class="visual-card">
           ${audioHtml}
-          <img src="${escapeHtml(src)}" alt="${escapeHtml(block.alt || block.caption || '')}" loading="lazy" onerror="if(this.src.includes('%20')){this.src=this.src.replace(/%20/g,'_');}" />
+          <img src="${escapeHtml(src)}" alt="${escapeHtml(block.alt || block.caption || '')}" loading="lazy" onerror="if(!this.dataset.fb){this.dataset.fb='1';if(this.src.includes('%20')){this.src=this.src.replace(/%20/g,'_');}else if(this.src.includes('_')){this.src=this.src.replace(/_/g,'%20');}}else if(this.dataset.fb==='1'&&!this.src.includes('/media/')){this.dataset.fb='2';this.src=this.src.replace(/(\\/[^\\/]+)$/,'/media$1');}" />
           ${block.caption ? `<figcaption class="visual-caption">📊 ${escapeHtml(block.caption)}</figcaption>` : ''}
         </figure>
       `;
