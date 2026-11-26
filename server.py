@@ -407,7 +407,7 @@ async def convert_pptx_endpoint(file: UploadFile = File(...)):
         is_zip = file.filename.lower().endswith(".zip")
         if is_zip:
             result = ingest_scorm_zip(temp_file_path, output_dir=temp_dir)
-            base_name = result["course_name"]
+            base_name = result.get("course_name") or result.get("filename") or os.path.splitext(file.filename)[0]
         else:
             result = convert_pptx_to_b2b(temp_file_path, output_dir=temp_dir)
             base_name = os.path.splitext(file.filename)[0]
