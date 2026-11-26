@@ -55,7 +55,7 @@ MEDIA_HEADERS = {
     "Cache-Control": "public, max-age=86400",
 }
 
-@app.get("/media/{media_path:path}")
+@app.api_route("/media/{media_path:path}", methods=["GET", "HEAD"])
 async def serve_media_file(media_path: str):
     raw = urllib.parse.unquote_plus(media_path).lstrip("/")
     clean_target = re.sub(r'^(media|slides)/+', '', raw)
@@ -527,7 +527,7 @@ DIST_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dist")
 if os.path.exists(DIST_DIR) and os.path.exists(os.path.join(DIST_DIR, "assets")):
     app.mount("/assets", StaticFiles(directory=os.path.join(DIST_DIR, "assets")), name="assets")
 
-@app.get("/{full_path:path}")
+@app.api_route("/{full_path:path}", methods=["GET", "HEAD"])
 async def serve_static_or_spa(full_path: str):
     unquoted = urllib.parse.unquote_plus(full_path).lstrip("/")
     html_headers = {

@@ -9,7 +9,7 @@ export default defineConfig({
     port: 5173,
     host: true,
     watch: {
-      ignored: ['**/dist/**', '**/public/**', '**/*.zip', '**/*.html', '**/media/**']
+      ignored: ['**/dist/**', '**/public/**', '**/*.zip', '**/media/**']
     },
     proxy: {
       '/api': {
@@ -20,9 +20,36 @@ export default defineConfig({
         target: 'http://127.0.0.1:8000',
         changeOrigin: true
       },
+      '/slides': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true
+      },
+      '^/.*\\.(png|jpg|jpeg|gif|webp|svg|mp3|mp4|wav|ogg|m4a)$': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+        bypass: (req) => {
+          const url = req.url || '';
+          if (url.startsWith('/src/') || url.startsWith('/node_modules/') || url.startsWith('/@')) {
+            return req.url;
+          }
+          return undefined;
+        }
+      },
       '^/.*\\.zip$': {
         target: 'http://127.0.0.1:8000',
         changeOrigin: true
+      },
+      '^/.*\\.html$': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+        bypass: (req) => {
+          const url = req.url || '';
+          const pathname = url.split('?')[0];
+          if (pathname === '/' || pathname === '/index.html' || pathname.startsWith('/src/')) {
+            return req.url;
+          }
+          return undefined;
+        }
       }
     }
   }
