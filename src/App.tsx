@@ -10,7 +10,7 @@ import { sampleBankDay3Course } from './utils/sampleBankDay3';
 import { getApiUrl, getAuthHeaders } from './utils/apiConfig';
 
 function sanitizeUrl(url: string | null | undefined): string {
-  if (!url) return '/Sample%20PPT%20for%20VO%201.html';
+  if (!url) return '/HDFC_Academy_Day_3_Products_Account_Opening.html';
   return url.replace(/[:]/g, '_');
 }
 
@@ -36,7 +36,7 @@ export function App() {
       const saved = localStorage.getItem('last_uploaded_course');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed && parsed.previewUrl) {
+        if (parsed && parsed.previewUrl && parsed.totalChapters >= 11) {
           return {
             ...parsed,
             previewUrl: sanitizeUrl(parsed.previewUrl)
@@ -44,23 +44,30 @@ export function App() {
         }
       }
     } catch (e) { }
-    return null;
+    return {
+      title: 'HDFC Academy · Day 3: Products & Account Opening',
+      filename: 'HDFC_Academy_Day_3_Products_Account_Opening',
+      totalChapters: 11,
+      previewUrl: '/HDFC_Academy_Day_3_Products_Account_Opening.html',
+      htmlUrl: '/HDFC_Academy_Day_3_Products_Account_Opening.html',
+      scormZipUrl: '/HDFC_Academy_Day_3_Products_Account_Opening_SCORM2004.zip'
+    };
   });
 
   const [currentPreviewUrl, setCurrentPreviewUrl] = useState<string>(() => {
     try {
       const saved = localStorage.getItem('last_preview_url');
-      if (saved) {
+      if (saved && (saved.includes('HDFC_Academy_Day_3') || saved.includes('without%20voice%20over') || saved.includes('without+voice+over'))) {
         return sanitizeUrl(saved);
       }
     } catch (e) { }
-    return '/Sample%20PPT%20for%20VO%201.html';
+    return '/HDFC_Academy_Day_3_Products_Account_Opening.html';
   });
 
   // Dynamic Rich Course Data (Direct 1:1 with SCORM 2004 Engine chapters & blocks)
   const [richCourse, setRichCourse] = useState<RichCourseData>({
-    title: 'Day 3: Products & Account Opening',
-    name: 'Sample PPT for VO 1',
+    title: 'HDFC Academy · Day 3: Products & Account Opening',
+    name: 'HDFC_Academy_Day_3_Products_Account_Opening',
     chapters: []
   });
 
@@ -70,7 +77,7 @@ export function App() {
       let cleanReq = decodeURIComponent(courseIdentifier).split('?')[0];
       cleanReq = cleanReq.replace(/^.*\//, ''); // strip leading directory
       cleanReq = cleanReq.replace(/\.html$/i, ''); // strip .html extension
-      cleanReq = cleanReq.replace(/[^a-zA-Z0-9_\- ]/g, '_').trim() || 'Sample PPT for VO 1';
+      cleanReq = cleanReq.replace(/[^a-zA-Z0-9_\- ]/g, '_').trim() || 'HDFC_Academy_Day_3_Products_Account_Opening';
 
       let res: Response;
       try {
@@ -125,19 +132,13 @@ export function App() {
   };
 
   useEffect(() => {
-    const activeIdentifier = uploadedCourse?.filename || uploadedCourse?.previewUrl || uploadedCourse?.title || currentPreviewUrl || 'Sample PPT for VO 1';
+    const activeIdentifier = uploadedCourse?.filename || uploadedCourse?.previewUrl || uploadedCourse?.title || currentPreviewUrl || 'HDFC_Academy_Day_3_Products_Account_Opening';
     fetchCourseData(activeIdentifier);
   }, []);
 
   const handleCourseLoaded = (newCourse: CourseData, info?: UploadedCourseInfo) => {
     setCourse(newCourse);
     if (info) {
-      // Clear out any old course data from previous uploads
-      try {
-        localStorage.removeItem('last_uploaded_course');
-        localStorage.removeItem('last_preview_url');
-      } catch (e) { }
-
       const cleanUrl = sanitizeUrl(info.previewUrl);
       const safeInfo = {
         ...info,

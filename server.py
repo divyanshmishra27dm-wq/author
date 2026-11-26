@@ -9,8 +9,8 @@ import urllib.parse
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, PlainTextResponse, Response, JSONResponse, HTMLResponse
-from converter import convert_pptx_to_b2b, generate_standalone_html, build_scorm2004_zip
+from fastapi.responses import FileResponse, PlainTextResponse
+from converter import convert_pptx_to_b2b, generate_standalone_html, build_scorm2004_zip, ingest_scorm_zip
 
 app = FastAPI(title="B2B PPTX to Rich Mobile SCORM Converter")
 
@@ -40,18 +40,21 @@ async def verify_auth_middleware(request, call_next):
 
     return await call_next(request)
 
-PUBLIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "public")
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+PUBLIC_DIR = os.path.join(ROOT_DIR, "public")
 os.makedirs(PUBLIC_DIR, exist_ok=True)
 MEDIA_DIR = os.path.join(PUBLIC_DIR, "media")
 os.makedirs(MEDIA_DIR, exist_ok=True)
-DIST_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dist")
+ROOT_MEDIA = os.path.join(ROOT_DIR, "media")
+DIST_DIR = os.path.join(ROOT_DIR, "dist")
 
 # Robust media serving endpoint that cleanly decodes percent-encoded URLs (%20, etc.),
 # handles case-insensitivity, matches spaces and underscores, and searches public/media,
-# dist/media, public/slides, and dist/slides.
-MEDIA_EXTS = ('.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.mp3', '.mp4', '.wav', '.ogg', '.m4a')
+# root media, dist/media, public/slides, and dist/slides.
+MEDIA_EXTS = ('.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.mp3', '.mp4', '.wav', '.ogg', '.m4a', '.webm', '.mov', '.m4v')
 MEDIA_HEADERS = {
     "Access-Control-Allow-Origin": "*",
+    "Accept-Ranges": "bytes",
     "Cache-Control": "public, max-age=86400",
 }
 
@@ -62,6 +65,7 @@ async def serve_media_file(media_path: str):
     
     search_dirs = [
         MEDIA_DIR,
+        ROOT_MEDIA,
         os.path.join(PUBLIC_DIR, "slides"),
         os.path.join(DIST_DIR, "media") if os.path.exists(DIST_DIR) else None,
         os.path.join(DIST_DIR, "slides") if os.path.exists(DIST_DIR) else None,
@@ -89,15 +93,15 @@ async def serve_media_file(media_path: str):
 
     return PlainTextResponse("Media Not Found", status_code=404)
 
-@app.get("/slides/{slide_path:path}")
+@app.api_route("/slides/{slide_path:path}", methods=["GET", "HEAD"])
 async def serve_slide_file(slide_path: str):
     return await serve_media_file(slide_path)
 
-@app.get("/scorm_player/media/{media_path:path}")
+@app.api_route("/scorm_player/media/{media_path:path}", methods=["GET", "HEAD"])
 async def serve_scorm_player_media(media_path: str):
     return await serve_media_file(media_path)
 
-@app.get("/scorm_player/slides/{slide_path:path}")
+@app.api_route("/scorm_player/slides/{slide_path:path}", methods=["GET", "HEAD"])
 async def serve_scorm_player_slides(slide_path: str):
     return await serve_media_file(slide_path)
 
@@ -227,13 +231,6 @@ async def update_course_endpoint(payload: dict):
     media_dir = os.path.join(PUBLIC_DIR, "media")
     build_scorm2004_zip(course_data, pub_zip_path, media_dir=media_dir)
 
-    if os.path.exists(DIST_DIR):
-        dist_zip_path = os.path.join(DIST_DIR, f"{clean_name}_SCORM2004.zip")
-        try:
-            shutil.copy2(pub_zip_path, dist_zip_path)
-        except Exception:
-            pass
-
     ts = int(time.time() * 1000)
     encoded_name = urllib.parse.quote(clean_name)
     preview_url = f"/{encoded_name}.html?t={ts}"
@@ -247,105 +244,6 @@ async def update_course_endpoint(payload: dict):
         "title": course_data["title"]
     }
 
-@app.post("/api/course/export_scorm")
-async def export_scorm_endpoint(payload: dict):
-    """
-    Dynamically builds and returns a certified SCORM 2004 4th Edition Zip archive
-    for the supplied course data. Directly streamed as attachment.
-    """
-    course_name = payload.get("course_name") or payload.get("title") or "Course"
-    raw_name = os.path.basename(str(course_name)).split('?')[0]
-    raw_name = re.sub(r'\.html$', '', raw_name, flags=re.IGNORECASE)
-    clean_name = re.sub(r'[^a-zA-Z0-9_\- ]', '_', raw_name).strip() or "Course"
-
-    course_data = payload.get("course_data", {})
-    if not course_data or "chapters" not in course_data:
-        # Fallback to reading from existing HTML file in PUBLIC_DIR if course_data is omitted
-        for f in [f"{clean_name}.html", "Sample PPT for VO 1.html"]:
-            p = os.path.join(PUBLIC_DIR, f)
-            if os.path.exists(p):
-                with open(p, "r", encoding="utf-8") as hf:
-                    m = re.search(r'var COURSE_CHAPTERS = (\[.*?\]);\s*window\.COURSE_CHAPTERS', hf.read(), re.DOTALL)
-                    if m:
-                        course_data = {"title": clean_name, "chapters": json.loads(m.group(1))}
-                        break
-
-    if not course_data or "chapters" not in course_data:
-        return JSONResponse(status_code=400, content={"error": "Course data with chapters is required."})
-
-    if "title" not in course_data:
-        course_data["title"] = clean_name
-
-    zip_filename = f"{clean_name}_SCORM2004.zip"
-    pub_zip_path = os.path.join(PUBLIC_DIR, zip_filename)
-    media_dir = os.path.join(PUBLIC_DIR, "media")
-    build_scorm2004_zip(course_data, pub_zip_path, media_dir=media_dir)
-
-    if os.path.exists(DIST_DIR):
-        try:
-            shutil.copy2(pub_zip_path, os.path.join(DIST_DIR, zip_filename))
-        except Exception:
-            pass
-
-    return FileResponse(
-        pub_zip_path,
-        media_type="application/zip",
-        filename=zip_filename,
-        headers={
-            "Content-Disposition": f'attachment; filename="{zip_filename}"',
-            "Cache-Control": "no-cache"
-        }
-    )
-
-@app.post("/api/course/export_html")
-async def export_html_endpoint(payload: dict):
-    """
-    Dynamically generates and returns a standalone single-file offline HTML
-    for the supplied course data. Directly streamed as attachment.
-    """
-    course_name = payload.get("course_name") or payload.get("title") or "Course"
-    raw_name = os.path.basename(str(course_name)).split('?')[0]
-    raw_name = re.sub(r'\.html$', '', raw_name, flags=re.IGNORECASE)
-    clean_name = re.sub(r'[^a-zA-Z0-9_\- ]', '_', raw_name).strip() or "Course"
-
-    course_data = payload.get("course_data", {})
-    if not course_data or "chapters" not in course_data:
-        for f in [f"{clean_name}.html", "Sample PPT for VO 1.html"]:
-            p = os.path.join(PUBLIC_DIR, f)
-            if os.path.exists(p):
-                with open(p, "r", encoding="utf-8") as hf:
-                    m = re.search(r'var COURSE_CHAPTERS = (\[.*?\]);\s*window\.COURSE_CHAPTERS', hf.read(), re.DOTALL)
-                    if m:
-                        course_data = {"title": clean_name, "chapters": json.loads(m.group(1))}
-                        break
-
-    if not course_data or "chapters" not in course_data:
-        return JSONResponse(status_code=400, content={"error": "Course data with chapters is required."})
-
-    if "title" not in course_data:
-        course_data["title"] = clean_name
-
-    html_content = generate_standalone_html(course_data)
-    html_filename = f"{clean_name}.html"
-    pub_html_path = os.path.join(PUBLIC_DIR, html_filename)
-    with open(pub_html_path, "w", encoding="utf-8") as f:
-        f.write(html_content)
-
-    if os.path.exists(DIST_DIR):
-        try:
-            shutil.copy2(pub_html_path, os.path.join(DIST_DIR, html_filename))
-        except Exception:
-            pass
-
-    return Response(
-        content=html_content,
-        media_type="text/html",
-        headers={
-            "Content-Disposition": f'attachment; filename="{html_filename}"',
-            "Cache-Control": "no-cache"
-        }
-    )
-
 @app.post("/api/upload_audio")
 async def upload_audio_endpoint(file: UploadFile = File(...)):
     """
@@ -357,8 +255,7 @@ async def upload_audio_endpoint(file: UploadFile = File(...)):
 
     orig_name = file.filename or f"audio_{int(time.time())}.mp3"
     name, ext = os.path.splitext(orig_name)
-    clean_base = re.sub(r'[^a-zA-Z0-9_\-]', '_', name).strip('_')
-    clean_base = re.sub(r'_+', '_', clean_base)
+    clean_base = re.sub(r'[^a-zA-Z0-9_\- ]', '_', name).strip()
     if not clean_base:
         clean_base = f"audio_{int(time.time())}"
     clean_filename = f"{clean_base}{ext.lower()}"
@@ -381,21 +278,23 @@ async def upload_audio_endpoint(file: UploadFile = File(...)):
         "size": len(content)
     }
 
-@app.post("/api/upload_image")
-async def upload_image_endpoint(file: UploadFile = File(...)):
+@app.post("/api/upload_video")
+async def upload_video_endpoint(file: UploadFile = File(...)):
     """
-    Uploads an image file (.png, .jpg, .jpeg, .gif, .webp, .svg) to public/media/
-    so it can be placed in any section or image block, and packaged into SCORM 2004 ZIP and standalone HTML.
+    Uploads a video walkthrough file (.mp4, .webm, .ogg, .mov, .m4v) to media/
+    so it can be embedded into video slots and packaged into SCORM 2004 ZIP and standalone HTML.
     """
     media_dir = os.path.join(PUBLIC_DIR, "media")
     os.makedirs(media_dir, exist_ok=True)
+    if os.path.exists(ROOT_MEDIA):
+        os.makedirs(ROOT_MEDIA, exist_ok=True)
 
-    orig_name = file.filename or f"image_{int(time.time())}.png"
+    orig_name = file.filename or f"video_{int(time.time())}.mp4"
     name, ext = os.path.splitext(orig_name)
     clean_base = re.sub(r'[^a-zA-Z0-9_\-]', '_', name).strip('_')
     clean_base = re.sub(r'_+', '_', clean_base)
     if not clean_base:
-        clean_base = f"image_{int(time.time())}"
+        clean_base = f"video_{int(time.time())}"
     clean_filename = f"{clean_base}{ext.lower()}"
 
     target_path = os.path.join(media_dir, clean_filename)
@@ -409,6 +308,15 @@ async def upload_image_endpoint(file: UploadFile = File(...)):
     with open(target_path, "wb") as f:
         f.write(content)
 
+    # Also save to root media if it exists
+    if os.path.exists(ROOT_MEDIA):
+        try:
+            with open(os.path.join(ROOT_MEDIA, clean_filename), "wb") as f:
+                f.write(content)
+        except Exception:
+            pass
+
+    # Also save to dist/media if dist exists
     if os.path.exists(DIST_DIR):
         dist_media = os.path.join(DIST_DIR, "media")
         os.makedirs(dist_media, exist_ok=True)
@@ -420,41 +328,30 @@ async def upload_image_endpoint(file: UploadFile = File(...)):
 
     return {
         "success": True,
-        "image_url": f"media/{clean_filename}",
+        "video_url": f"media/{clean_filename}",
         "filename": clean_filename,
         "size": len(content)
     }
 
 @app.post("/api/convert")
 async def convert_pptx_endpoint(file: UploadFile = File(...)):
-    # Save uploaded PPTX to temporary file
+    # Save uploaded PPTX or SCORM ZIP to temporary file
     temp_dir = tempfile.mkdtemp(prefix="b2b_conv_")
     try:
-        temp_pptx_path = os.path.join(temp_dir, file.filename)
-        with open(temp_pptx_path, "wb") as f:
+        temp_file_path = os.path.join(temp_dir, file.filename)
+        with open(temp_file_path, "wb") as f:
             content = await file.read()
             f.write(content)
 
-        # Run conversion to rich mobile micro-learning & SCORM 2004
-        result = convert_pptx_to_b2b(temp_pptx_path, output_dir=temp_dir)
+        is_zip = file.filename.lower().endswith(".zip")
+        if is_zip:
+            result = ingest_scorm_zip(temp_file_path, output_dir=temp_dir)
+            base_name = result["course_name"]
+        else:
+            result = convert_pptx_to_b2b(temp_file_path, output_dir=temp_dir)
+            base_name = os.path.splitext(file.filename)[0]
 
-        base_name = os.path.splitext(file.filename)[0]
         clean_base = re.sub(r'[^a-zA-Z0-9_\- ]', '_', base_name).strip() or "Uploaded_Course"
-
-        # Clean up older presentation media and previous converted files in PUBLIC_DIR and DIST_DIR
-        # so previous upload media and content does not linger
-        for folder in [PUBLIC_DIR, DIST_DIR]:
-            if not os.path.exists(folder):
-                continue
-            for sub in ["slides", "media"]:
-                sub_dir = os.path.join(folder, sub)
-                if os.path.exists(sub_dir):
-                    for old_f in os.listdir(sub_dir):
-                        if re.match(r'^(slide_\d+\.png|image\d+\.png|image_upload_\d+\.\w+|media\d+\.mp4)$', old_f, re.I):
-                            try:
-                                os.remove(os.path.join(sub_dir, old_f))
-                            except Exception:
-                                pass
 
         # Copy generated files to public directory for instant download and preview
         pub_html_path = os.path.join(PUBLIC_DIR, f"{base_name}.html")
@@ -513,15 +410,16 @@ async def convert_pptx_endpoint(file: UploadFile = File(...)):
             "scorm_zip_url": f"/{encoded_name}_SCORM2004.zip",
             "course_data": result.get("course_data", {})
         }
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return JSONResponse(
-            status_code=500,
-            content={"success": False, "error": f"Conversion error: {str(e)}"}
-        )
     finally:
         shutil.rmtree(temp_dir, ignore_errors=True)
+
+@app.post("/api/upload_scorm")
+async def upload_scorm_endpoint(file: UploadFile = File(...)):
+    """
+    Dedicated endpoint to upload, extract, and ingest a SCORM 2004 Zip Package.
+    Returns chapters and media ready for interactive preview and course architecture editing.
+    """
+    return await convert_pptx_endpoint(file)
 
 DIST_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dist")
 if os.path.exists(DIST_DIR) and os.path.exists(os.path.join(DIST_DIR, "assets")):
@@ -529,30 +427,23 @@ if os.path.exists(DIST_DIR) and os.path.exists(os.path.join(DIST_DIR, "assets"))
 
 @app.api_route("/{full_path:path}", methods=["GET", "HEAD"])
 async def serve_static_or_spa(full_path: str):
-    unquoted = urllib.parse.unquote_plus(full_path).lstrip("/")
-    html_headers = {
+    no_cache_headers = {
         "Cache-Control": "no-cache, no-store, must-revalidate",
         "Pragma": "no-cache",
         "Expires": "0"
     }
-
+    unquoted = urllib.parse.unquote(full_path).lstrip("/")
     if unquoted:
-        # Check if this is an image, audio, or video requested at root or subpath
-        if unquoted.lower().endswith(MEDIA_EXTS) or unquoted.startswith(("media/", "slides/")):
-            media_res = await serve_media_file(unquoted)
-            if media_res.status_code == 200:
-                return media_res
-
         pub_file = os.path.join(PUBLIC_DIR, unquoted)
         if os.path.isfile(pub_file):
-            headers = html_headers if unquoted.lower().endswith(".html") else {}
-            return FileResponse(pub_file, headers=headers)
+            return FileResponse(pub_file)
+            return FileResponse(pub_file, headers=no_cache_headers)
 
         if os.path.exists(DIST_DIR):
             dist_file = os.path.join(DIST_DIR, unquoted)
             if os.path.isfile(dist_file):
-                headers = html_headers if unquoted.lower().endswith(".html") else {}
-                return FileResponse(dist_file, headers=headers)
+                return FileResponse(dist_file)
+                return FileResponse(dist_file, headers=no_cache_headers)
 
         # Match case-insensitively or with normalized underscores
         norm = re.sub(r'[\s_]+', '_', unquoted).lower()
@@ -560,14 +451,14 @@ async def serve_static_or_spa(full_path: str):
             if os.path.exists(d):
                 for f in os.listdir(d):
                     if re.sub(r'[\s_]+', '_', f).lower() == norm:
-                        matched = os.path.join(d, f)
-                        headers = html_headers if f.lower().endswith(".html") else {}
-                        return FileResponse(matched, headers=headers)
+                        return FileResponse(os.path.join(d, f))
+                        return FileResponse(os.path.join(d, f), headers=no_cache_headers)
 
     if os.path.exists(DIST_DIR):
         index_file = os.path.join(DIST_DIR, "index.html")
         if os.path.isfile(index_file):
-            return FileResponse(index_file, headers=html_headers)
+            return FileResponse(index_file)
+            return FileResponse(index_file, headers=no_cache_headers)
 
     return PlainTextResponse("Page Not Found", status_code=404)
 

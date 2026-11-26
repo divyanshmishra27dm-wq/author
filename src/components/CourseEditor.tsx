@@ -422,8 +422,58 @@ export const CourseEditor: React.FC<CourseEditorProps> = ({
   // ---------------------------------------------------------------------------
   const [uploadingAudioBlockIdx, setUploadingAudioBlockIdx] = useState<number | null>(null);
   const [uploadingImageBlockIdx, setUploadingImageBlockIdx] = useState<number | null>(null);
+  const [uploadingVideoBlockIdx, setUploadingVideoBlockIdx] = useState<number | null>(null);
   const [flippedPreviewCards, setFlippedPreviewCards] = useState<Record<string, boolean>>({});
   const [openPreviewCollapsibles, setOpenPreviewCollapsibles] = useState<Record<string, boolean>>({});
+
+  const handleUploadVideoForBlock = async (bIdx: number, file: File) => {
+    try {
+      setUploadingVideoBlockIdx(bIdx);
+      const formData = new FormData();
+      formData.append('file', file);
+      const headers = getAuthHeaders();
+      let res: Response;
+      try {
+        res = await fetch(getApiUrl('/api/upload_video'), {
+          method: 'POST',
+          headers,
+          body: formData
+        });
+        if (!res.ok && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+          res = await fetch('http://127.0.0.1:8000/api/upload_video', {
+            method: 'POST',
+            headers,
+            body: formData
+          });
+        }
+      } catch (networkErr) {
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+          res = await fetch('http://127.0.0.1:8000/api/upload_video', {
+            method: 'POST',
+            headers,
+            body: formData
+          });
+        } else {
+          throw networkErr;
+        }
+      }
+      const data = await res.json();
+      if (data.success && data.video_url) {
+        updateBlock(bIdx, b => ({
+          ...b,
+          embedUrl: data.video_url,
+          title: b.title || file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ')
+        }));
+      } else {
+        alert('Video upload failed: ' + (data.error || 'Unknown error'));
+      }
+    } catch (err: any) {
+      console.error('Video upload error:', err);
+      alert('Video upload failed: ' + (err?.message || 'Could not connect to server.'));
+    } finally {
+      setUploadingVideoBlockIdx(null);
+    }
+  };
 
   const handleUploadImageForBlock = async (bIdx: number, file: File) => {
     try {
@@ -1980,35 +2030,102 @@ export const CourseEditor: React.FC<CourseEditorProps> = ({
                         </div>
                       </div>
 
-                      <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <label className="text-xs font-semibold text-slate-400">
-                            Video File Path or Embed Link
-                          </label>
-                          <div className="flex items-center gap-1">
+                      {/* Embedded Video Live Player Preview */}
+                      {block.embedUrl ? (
+                        <div className="rounded-xl overflow-hidden bg-black/90 border border-slate-800 shadow-md">
+                          {/\.(mp4|webm|ogg|mov|m4v)(\?.*)?$/i.test(block.embedUrl) || block.embedUrl.startsWith('media/') ? (
+                            <video
+                              src={block.embedUrl.startsWith('http') || block.embedUrl.startsWith('/') ? block.embedUrl : `/${block.embedUrl}`}
+                              controls
+                              playsInline
+                              preload="metadata"
+                              className="w-full max-h-60 object-contain mx-auto"
+                            />
+                          ) : (
+                            <iframe
+                              src={block.embedUrl}
+                              className="w-full h-52 border-0"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                            />
+                          )}
+                          <div className="flex items-center justify-between px-3 py-1.5 bg-slate-900 border-t border-slate-800 text-[11px] text-slate-300">
+                            <span className="flex items-center gap-1 font-mono text-emerald-400 truncate max-w-[280px]">
+                              <CheckCircle2 className="h-3 w-3 shrink-0" />
+                              <span className="truncate">{block.embedUrl}</span>
+                            </span>
                             <button
                               type="button"
-                              onClick={() => updateBlock(bIdx, b => ({ ...b, embedUrl: 'media/media1.mp4' }))}
-                              className="text-[10px] bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded text-slate-300 font-mono"
+                              onClick={() => updateBlock(bIdx, b => ({ ...b, embedUrl: '' }))}
+                              className="text-slate-400 hover:text-rose-400 transition-colors font-medium text-[11px] shrink-0 ml-2"
                             >
-                              media1.mp4
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => updateBlock(bIdx, b => ({ ...b, embedUrl: 'media/media2.mp4' }))}
-                              className="text-[10px] bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded text-slate-300 font-mono"
-                            >
-                              media2.mp4
+                              Remove
                             </button>
                           </div>
                         </div>
-                        <input
-                          type="text"
-                          value={block.embedUrl || ''}
-                          onChange={(e) => updateBlock(bIdx, b => ({ ...b, embedUrl: e.target.value }))}
-                          placeholder="e.g. media/media1.mp4 or YouTube embed URL"
-                          className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-1.5 text-xs font-mono text-rose-300 focus:border-rose-500 focus:outline-none"
-                        />
+                      ) : (
+                        <div className="rounded-xl border border-dashed border-rose-500/30 bg-rose-950/10 p-4 text-center">
+                          <Video className="h-6 w-6 text-rose-400 mx-auto mb-1.5 opacity-80" />
+                          <p className="text-xs font-semibold text-rose-200">No Video Attached Yet</p>
+                          <p className="text-[10px] text-slate-400 mt-0.5">Upload an MP4 walkthrough below or select an extracted video</p>
+                        </div>
+                      )}
+
+                      {/* Video Upload and Selector Toolbar */}
+                      <div className="space-y-2 p-3 rounded-xl bg-slate-950/60 border border-slate-800">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <label className="text-xs font-semibold text-rose-300">
+                            Attach or Upload Video (.mp4, .webm, .mov)
+                          </label>
+                          <div className="flex items-center gap-1 flex-wrap">
+                            <span className="text-[10px] text-slate-400">PPT Videos:</span>
+                            {['media1.mp4', 'media2.mp4', 'media3.mp4', 'media4.mp4', 'media5.mp4'].map((vidName) => (
+                              <button
+                                key={vidName}
+                                type="button"
+                                onClick={() => updateBlock(bIdx, b => ({ ...b, embedUrl: `media/${vidName}` }))}
+                                className={`text-[10px] px-2 py-0.5 rounded font-mono transition-colors ${
+                                  block.embedUrl === `media/${vidName}`
+                                    ? 'bg-rose-600 text-white font-bold'
+                                    : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+                                }`}
+                              >
+                                {vidName}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                          <label className={`cursor-pointer inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
+                            uploadingVideoBlockIdx === bIdx
+                              ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 cursor-wait'
+                              : 'bg-gradient-to-r from-rose-600 to-pink-600 text-white hover:from-rose-500 hover:to-pink-500 shadow-md shadow-rose-500/20'
+                          }`}>
+                            <Upload className="h-3.5 w-3.5" />
+                            <span>{uploadingVideoBlockIdx === bIdx ? 'Uploading Video...' : 'Upload Video File'}</span>
+                            <input
+                              type="file"
+                              accept="video/mp4,video/webm,video/ogg,video/quicktime,.mp4,.webm,.ogg,.mov,.m4v"
+                              disabled={uploadingVideoBlockIdx === bIdx}
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  handleUploadVideoForBlock(bIdx, file);
+                                }
+                              }}
+                            />
+                          </label>
+
+                          <input
+                            type="text"
+                            value={block.embedUrl || ''}
+                            onChange={(e) => updateBlock(bIdx, b => ({ ...b, embedUrl: e.target.value }))}
+                            placeholder="Or enter path (e.g. media/media1.mp4) or YouTube/Vimeo link..."
+                            className="flex-1 rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-xs font-mono text-rose-300 focus:border-rose-500 focus:outline-none"
+                          />
+                        </div>
                       </div>
 
                       <div className="space-y-1.5">

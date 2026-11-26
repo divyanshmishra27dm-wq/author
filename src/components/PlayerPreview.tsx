@@ -134,17 +134,28 @@ export const PlayerPreview: React.FC<PlayerPreviewProps> = ({
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs font-bold text-slate-400">Course Preview:</span>
           <div className="flex items-center bg-slate-950 rounded-lg p-0.5 border border-slate-800 flex-wrap gap-1">
-            {uploadedCourse ? (
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold bg-emerald-600 text-white shadow">
-                <FileCheck className="h-3.5 w-3.5" />
-                <span>{uploadedCourse.title} ({uploadedCourse.totalChapters} Chapters · Interactive SCORM 2004)</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold bg-blue-600 text-white shadow">
-                <BookOpen className="h-3.5 w-3.5" />
-                <span>{course.title}</span>
-              </div>
-            )}
+            <button
+              onClick={() => onSelectPreviewUrl('/HDFC_Academy_Day_3_Products_Account_Opening.html')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
+                safePreviewUrl.includes('HDFC_Academy_Day_3_Products_Account_Opening')
+                  ? 'bg-emerald-600 text-white shadow'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <FileCheck className="h-3.5 w-3.5" />
+              <span>HDFC Academy · Day 3 (11 Chapters · Voiceovers &amp; Videos)</span>
+            </button>
+            <button
+              onClick={() => onSelectPreviewUrl('/Day%203%20-%20HDFC%20-SB%20-without%20voice%20over.html')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
+                safePreviewUrl.includes('without%20voice%20over') || safePreviewUrl.includes('without+voice+over')
+                  ? 'bg-blue-600 text-white shadow'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <FileCheck className="h-3.5 w-3.5" />
+              <span>Day 3 - HDFC -SB (Without VO Deck)</span>
+            </button>
           </div>
         </div>
 

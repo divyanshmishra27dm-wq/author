@@ -9,7 +9,7 @@ export default defineConfig({
     port: 5173,
     host: true,
     watch: {
-      ignored: ['**/dist/**', '**/public/**', '**/*.zip', '**/media/**']
+      ignored: ['**/dist/**', '**/public/**', '**/*.zip', '**/*.html', '**/media/**']
     },
     proxy: {
       '/api': {
@@ -24,7 +24,7 @@ export default defineConfig({
         target: 'http://127.0.0.1:8000',
         changeOrigin: true
       },
-      '^/.*\\.(png|jpg|jpeg|gif|webp|svg|mp3|mp4|wav|ogg|m4a)$': {
+      '^/.*\\.(png|jpg|jpeg|gif|webp|svg|mp3|mp4|wav|ogg|m4a|webm|mov)$': {
         target: 'http://127.0.0.1:8000',
         changeOrigin: true,
         bypass: (req) => {

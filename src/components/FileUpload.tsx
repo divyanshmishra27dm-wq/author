@@ -35,8 +35,11 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     if (!files || files.length === 0) return;
     const file = files[0];
 
-    if (!file.name.match(/\.(pptx)$/i)) {
-      setError('Please upload a valid PowerPoint presentation (.pptx) file.');
+    const isZip = !!file.name.match(/\.(zip)$/i);
+    const isPptx = !!file.name.match(/\.(pptx)$/i);
+
+    if (!isZip && !isPptx) {
+      setError('Please upload a valid PowerPoint presentation (.pptx) or SCORM package (.zip) file.');
       return;
     }
 
@@ -49,7 +52,8 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     formData.append('file', file);
 
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', getApiUrl('/api/convert'));
+    const endpoint = isZip ? getApiUrl('/api/upload_scorm') : getApiUrl('/api/convert');
+    xhr.open('POST', endpoint);
     xhr.setRequestHeader('X-Access-Key', APP_PASSWORD);
 
     xhr.upload.onprogress = (event) => {
@@ -58,13 +62,14 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         setUploadProgress(pct);
         const loadedMB = (event.loaded / (1024 * 1024)).toFixed(1);
         const totalMB = (event.total / (1024 * 1024)).toFixed(1);
-        setStatusMessage(`Uploading presentation: ${loadedMB} MB / ${totalMB} MB (${pct}%)...`);
+        const fileTypeLabel = isZip ? 'SCORM package' : 'presentation';
+        setStatusMessage(`Uploading ${fileTypeLabel}: ${loadedMB} MB / ${totalMB} MB (${pct}%)...`);
       }
     };
 
     xhr.upload.onload = () => {
       setUploadProgress(100);
-      setStatusMessage('Extracting media, analyzing slides & compiling SCORM 2004 package...');
+      setStatusMessage(isZip ? 'Unpacking SCORM package, extracting media & loading architecture...' : 'Extracting media, analyzing slides & compiling SCORM 2004 package...');
     };
 
     xhr.onload = () => {
@@ -72,7 +77,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         try {
           const data = JSON.parse(xhr.responseText);
           if (data.success) {
-            setStatusMessage(`✓ Successfully generated ${data.total_chapters} micro-learning chapters with interactive quizzes and SCORM 2004!`);
+            setStatusMessage(`✓ Successfully loaded ${data.total_chapters} micro-learning chapters with interactive quizzes and SCORM 2004!`);
 
             const courseTitle = data.title || file.name.replace(/\.[^/.]+$/, '');
             const courseData: CourseData = {
@@ -164,7 +169,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         <input
           ref={fileInputRef}
           type="file"
-          accept=".pptx"
+          accept=".pptx,.zip"
           className="hidden"
           onChange={(e) => handleFiles(e.target.files)}
           disabled={isProcessing}
@@ -175,10 +180,10 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         </div>
 
         <h4 className="text-sm font-bold text-white text-center">
-          {isProcessing ? 'Processing Presentation...' : 'Drop your PowerPoint (.pptx) file here'}
+          {isProcessing ? 'Processing Course File...' : 'Drop your PowerPoint (.pptx) or SCORM Package (.zip) here'}
         </h4>
         <p className="text-xs text-slate-400 text-center mt-1 max-w-sm">
-          Supports enterprise decks with embedded videos, audio, and quizzes.
+          Supports PPTX presentations and existing SCORM 2004 ZIP packages with embedded videos, audio voiceovers, and interactive drills.
         </p>
 
         {isProcessing && (

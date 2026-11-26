@@ -111,7 +111,7 @@ export const Header: React.FC<HeaderProps> = ({
             className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
           >
             <Upload className="h-3.5 w-3.5" />
-            <span>Upload PPTX</span>
+            <span>Upload PPT / SCORM</span>
           </button>
 
           <button
