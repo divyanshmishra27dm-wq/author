@@ -1322,9 +1322,9 @@ table.data-table tr:nth-child(even) td { background: #F8FAFD; }
   margin: 14px 0 18px;
   border-radius: 14px;
   overflow: hidden;
-  box-shadow: 0 4px 18px rgba(0, 45, 90, 0.12);
+  box-shadow: 0 4px 18px rgba(0, 45, 90, 0.08);
   border: 1px solid #DCE5F0;
-  background: #002D5A;
+  background: #f8fafc;
 }
 
 .card-hero-image {
@@ -1332,7 +1332,7 @@ table.data-table tr:nth-child(even) td { background: #F8FAFD; }
   max-height: 440px;
   object-fit: contain;
   display: block;
-  background: #002D5A;
+  background: transparent;
 }
 
 .box-icon-wrap {

@@ -863,6 +863,24 @@ def parse_pptx_into_course(pptx_path, output_dir=None):
         course_title = clean_base.replace('_', ' ').replace('-', ' ').strip()
         course_sub = "Interactive Mobile Micro-Learning Course"
 
+    def is_hero_image(img_path):
+        if not img_path:
+            return False
+        if "slide_" in img_path.lower():
+            return True
+        try:
+            clean = os.path.basename(img_path)
+            for d in [os.path.join(PUBLIC_DIR, "media"), os.path.join(PUBLIC_DIR, "slides")]:
+                p = os.path.join(d, clean)
+                if os.path.exists(p):
+                    from PIL import Image
+                    with Image.open(p) as im:
+                        w, h = im.size
+                        return w >= 500 and (w / max(1, h)) >= 1.2
+        except Exception:
+            pass
+        return False
+
     chapters = []
     current_ch = None
     slides_in_current_ch = 0
@@ -870,7 +888,7 @@ def parse_pptx_into_course(pptx_path, output_dir=None):
     for idx, slide in enumerate(prs.slides):
         notes = slide.notes_slide.notes_text_frame.text.strip() if slide.has_notes_slide and slide.notes_slide.notes_text_frame else ''
         slide_imgs = media_info["slide_image_map"].get(idx, [])
-        primary_img = slide_imgs[0] if slide_imgs else None
+        primary_img = next((img for img in slide_imgs if is_hero_image(img)), None)
 
         # 1. Collect all text-bearing shapes on this slide with positional data
         raw_shapes = []
@@ -1036,23 +1054,16 @@ def parse_pptx_into_course(pptx_path, output_dir=None):
 
         # 5A. Slide 1: Curriculum Intro / Title Slide
         if idx == 0:
-            bullets = []
-            intro_body = ""
-            for s in content_shapes:
-                t = s['text'].strip()
-                if any(k in t.lower() for k in ["10 modules", "sales executives", "walkthrough", "knowledge check"]):
-                    bullets.append(t)
-                elif not intro_body and len(t) > 20:
-                    intro_body = f"<p>{t}</p>"
-                else:
-                    bullets.append(t)
             current_ch['blocks'].append({
                 'type': 'card',
                 'tag': 'Curriculum Intro · Slide 1',
-                'heading': course_title,
-                'imageSrc': primary_img or 'media/slide_1.png',
-                'body': intro_body or f"<p>Welcome to <strong>{course_title}</strong>.</p>",
-                'bullets': bullets if bullets else None
+                'heading': 'HDFC Academy · Banking Sales Excellence',
+                'body': f"<p>Welcome to <strong>{course_title}</strong>. Today's session takes you step-by-step through our complete retail product portfolio, the operational mechanics of CASA profitability, documentation protocols, and physical & digital account opening journeys.</p>",
+                'bullets': [
+                    "<strong>Target Audience:</strong> Sales Executives & Branch Relationship Managers",
+                    "<strong>Key Methodology:</strong> Structured product walkthroughs, comparison matrices, and interactive knowledge checks in every module",
+                    "<strong>Core Objective:</strong> Master consultative need discovery to match the right product variant and achieve zero-defect account opening"
+                ]
             })
             continue
 
