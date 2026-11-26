@@ -57,7 +57,7 @@ export const PlayerPreview: React.FC<PlayerPreviewProps> = ({
     : (uploadedCourse?.previewUrl || '');
   const cleanPath = safePreviewUrl.split('?')[0].replace(/^\//, '');
   const existingQuery = safePreviewUrl.includes('?') ? safePreviewUrl.split('?')[1] : '';
-  const safeFilename = cleanPath.split('/').map(seg => encodeURIComponent(decodeURIComponent(seg))).join('/');
+  const safeFilename = encodeURIComponent(decodeURIComponent(cleanPath));
   const queryParams = new URLSearchParams(existingQuery);
   queryParams.set('_t', String(reloadKey || Date.now()));
   if (reloadKey > 0) {
@@ -65,7 +65,7 @@ export const PlayerPreview: React.FC<PlayerPreviewProps> = ({
   }
   const qStr = queryParams.toString();
   const basePath = BACKEND_URL ? `${BACKEND_URL}/` : '/';
-  const fullIframeSrc = `${basePath}${safeFilename}?${qStr}`;
+  const fullIframeSrc = `${basePath}${safeFilename}${qStr ? '?' + qStr : `?t=${reloadKey}`}`;
 
   useEffect(() => {
     setReloadKey(Date.now());
