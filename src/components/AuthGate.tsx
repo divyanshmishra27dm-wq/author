@@ -102,3 +102,4 @@ export const AuthGate: React.FC<AuthGateProps> = ({ onAuthenticated }) => {
     </div>
   );
 };
+

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
-  <title>Day 3: Products & Account Opening</title>
+  <title>HDFC Academy · Day 3: Products & Account Opening</title>
   <style>
 /* HDFC Academy Day 2 — Mobile-First SCORM 2004 Stylesheet */
 :root {
@@ -1158,6 +1158,559 @@ table.data-table tr:nth-child(even) td { background: #F8FAFD; }
   margin-bottom: 0;
 }
 
+/* =========================================================================
+   ANIMATIONS & MOTION SYSTEM (Fade In, Staggered Reveals, Card Transitions)
+   ========================================================================= */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes popIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  70% {
+    transform: scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(0, 76, 143, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(0, 76, 143, 0);
+  }
+}
+
+/* Staggered entrance animations on cards and blocks */
+.main-content > * {
+  animation: fadeInUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.main-content > *:nth-child(1) { animation-delay: 0.05s; }
+.main-content > *:nth-child(2) { animation-delay: 0.12s; }
+.main-content > *:nth-child(3) { animation-delay: 0.19s; }
+.main-content > *:nth-child(4) { animation-delay: 0.26s; }
+.main-content > *:nth-child(5) { animation-delay: 0.33s; }
+.main-content > *:nth-child(6) { animation-delay: 0.40s; }
+
+/* Interactive Hover Elevation */
+.card, .quiz-card, .video-embed-card, .box-card, .stat-tile, .roadmap-card {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
+}
+.card:hover, .quiz-card:hover, .box-card:hover, .roadmap-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 45, 90, 0.10);
+}
+
+/* =========================================================================
+   BOXES & RESPONSIVE GRID SYSTEM
+   ========================================================================= */
+.box-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+  margin: 16px 0;
+}
+.box-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin: 16px 0;
+}
+.box-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin: 16px 0;
+}
+.box-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+.box-grid-5 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+
+@media (max-width: 640px) {
+  .box-grid, .box-grid-2, .box-grid-3, .box-grid-4, .box-grid-5 {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+.box-card {
+  background: #ffffff;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 45, 90, 0.04);
+}
+
+.box-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3.5px;
+  background: linear-gradient(90deg, #002D5A, #004C8F);
+  opacity: 0.9;
+}
+
+.box-card.highlight {
+  border-color: #004C8F;
+  background: linear-gradient(180deg, #F0F7FF 0%, #FFFFFF 100%);
+  box-shadow: 0 4px 16px rgba(0, 76, 143, 0.08);
+}
+.box-card.highlight::before {
+  background: linear-gradient(90deg, #004C8F, #ED232A);
+  height: 4px;
+}
+
+.box-card.gold-accent {
+  border-color: #D4AF37;
+  background: linear-gradient(180deg, #FFFDF5 0%, #FFFFFF 100%);
+}
+.box-card.gold-accent::before {
+  background: linear-gradient(90deg, #D4AF37, #B8860B);
+  height: 4px;
+}
+
+.box-card.green-accent {
+  border-color: #0E8A4E;
+  background: linear-gradient(180deg, #F0FDF4 0%, #FFFFFF 100%);
+}
+.box-card.green-accent::before {
+  background: linear-gradient(90deg, #0E8A4E, #38D9A9);
+  height: 4px;
+}
+
+.box-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.card-hero-image-wrap {
+  width: 100%;
+  margin: 14px 0 18px;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 4px 18px rgba(0, 45, 90, 0.12);
+  border: 1px solid #DCE5F0;
+  background: #002D5A;
+}
+
+.card-hero-image {
+  width: 100%;
+  max-height: 440px;
+  object-fit: contain;
+  display: block;
+  background: #002D5A;
+}
+
+.box-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #002D5A 0%, #004C8F 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  border: 1px solid rgba(0, 76, 143, 0.25);
+  box-shadow: 0 2px 8px rgba(0, 45, 90, 0.16);
+}
+
+.box-icon-wrap img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+}
+
+.box-badge {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #004C8F;
+  background: #EBF3FA;
+  padding: 3px 8px;
+  border-radius: 6px;
+  display: inline-block;
+  margin-bottom: 4px;
+}
+.box-badge.red {
+  color: #ED232A;
+  background: #FFF5F5;
+}
+.box-badge.green {
+  color: #0E8A4E;
+  background: #E7F7EF;
+}
+.box-badge.gold {
+  color: #854D0E;
+  background: #FEF3C7;
+}
+
+.box-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #002D5A;
+  margin: 0;
+  line-height: 1.35;
+}
+
+.box-body {
+  font-size: 14px;
+  color: #334155;
+  line-height: 1.5;
+  flex: 1;
+}
+
+.box-body p {
+  margin: 0 0 8px 0;
+}
+.box-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* =========================================================================
+   COLLAPSIBLE BOXES (Details / Accordions with Animated Drawer)
+   ========================================================================= */
+details.box-collapsible {
+  border: 1.5px solid #E2E8F0;
+  border-radius: 14px;
+  margin: 10px 0;
+  background: #FFFFFF;
+  overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+details.box-collapsible:hover {
+  border-color: #B8D4F0;
+  box-shadow: 0 4px 14px rgba(0, 45, 90, 0.06);
+}
+
+details.box-collapsible[open] {
+  border-color: #004C8F;
+  box-shadow: 0 6px 20px rgba(0, 76, 143, 0.10);
+}
+
+details.box-collapsible summary {
+  padding: 14px 18px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #002D5A;
+  background: #F8FAFC;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  list-style: none;
+  user-select: none;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+details.box-collapsible summary::-webkit-details-marker {
+  display: none;
+}
+
+details.box-collapsible summary:hover {
+  background: #F1F5F9;
+  color: #004C8F;
+}
+
+details.box-collapsible[open] summary {
+  background: #EBF3FA;
+  color: #004C8F;
+  border-bottom: 1px solid #DCE5F0;
+}
+
+.box-summary-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.box-summary-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #002D5A 0%, #004C8F 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 45, 90, 0.16);
+}
+.box-summary-icon img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+}
+
+.box-chevron {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease;
+}
+
+.box-chevron svg {
+  width: 14px;
+  height: 14px;
+  stroke: #004C8F;
+  stroke-width: 2.4;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+details.box-collapsible[open] .box-chevron {
+  transform: rotate(180deg);
+  background: #004C8F;
+}
+details.box-collapsible[open] .box-chevron svg {
+  stroke: #FFFFFF;
+}
+
+.box-collapse-content {
+  padding: 16px 18px;
+  font-size: 14px;
+  color: #334155;
+  line-height: 1.55;
+  animation: fadeInDown 0.25s ease-out;
+}
+
+/* =========================================================================
+   STAT TILES & HERO ROADMAP TILES
+   ========================================================================= */
+.stat-tile {
+  background: #FFFFFF;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.stat-tile-val {
+  font-size: 26px;
+  font-weight: 900;
+  color: #004C8F;
+  line-height: 1;
+}
+.stat-tile-lbl {
+  font-size: 13px;
+  font-weight: 700;
+  color: #475569;
+}
+
+.roadmap-card {
+  background: #FFFFFF;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+.roadmap-card:hover {
+  transform: translateY(-2px);
+  border-color: #004C8F;
+  box-shadow: 0 6px 18px rgba(0, 76, 143, 0.12);
+}
+.roadmap-pill {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 4px;
+  color: #004C8F;
+  background: #EBF3FA;
+  align-self: flex-start;
+  margin-bottom: 6px;
+}
+
+/* =========================================================================
+   3D INTERACTIVE FLIP CARDS
+   ========================================================================= */
+.flip-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin: 16px 0;
+  perspective: 1000px;
+}
+
+.flip-card-container {
+  height: 200px;
+  cursor: pointer;
+  perspective: 1000px;
+}
+
+.flip-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  text-align: left;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(0, 45, 90, 0.08);
+}
+
+.flip-card-container.flipped .flip-card-inner {
+  transform: rotateY(180deg);
+}
+
+.flip-card-front, .flip-card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  border-radius: 14px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+
+.flip-card-front {
+  background: linear-gradient(135deg, #002D5A 0%, #004C8F 100%);
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.flip-card-front .flip-q-title {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.4;
+  margin-top: 8px;
+}
+
+.flip-card-front .flip-hint {
+  font-size: 11.5px;
+  color: #A5C8ED;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.flip-card-back {
+  background: #FFFFFF;
+  color: #1E293B;
+  transform: rotateY(180deg);
+  border: 1.5px solid #004C8F;
+  overflow-y: auto;
+}
+
+.flip-card-back .flip-a-text {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: #334155;
+}
+
+/* =========================================================================
+   COMPREHENSIVE DATA & COMPARISON TABLES
+   ========================================================================= */
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  margin: 16px 0;
+  border-radius: 12px;
+  border: 1.5px solid #E2E8F0;
+  box-shadow: 0 2px 8px rgba(0, 45, 90, 0.04);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+  text-align: left;
+}
+
+.data-table th {
+  background: #002D5A;
+  color: #FFFFFF;
+  font-weight: 700;
+  padding: 12px 14px;
+  border-right: 1px solid rgba(255, 255, 255, 0.12);
+}
+.data-table th:last-child {
+  border-right: none;
+}
+
+.data-table td {
+  padding: 12px 14px;
+  border-top: 1px solid #E2E8F0;
+  border-right: 1px solid #F1F5F9;
+  color: #334155;
+  line-height: 1.45;
+}
+.data-table td:last-child {
+  border-right: none;
+}
+
+.data-table tr:nth-child(even) td {
+  background: #F8FAFC;
+}
+
+.data-table tr:hover td {
+  background: #F0F7FF;
+}
+
+.data-table .highlight-cell {
+  font-weight: 800;
+  color: #004C8F;
+}
+
+
   </style>
 </head>
 <body>
@@ -1180,7 +1733,7 @@ table.data-table tr:nth-child(even) td { background: #F8FAFD; }
         <div class="progress-fill" id="progressFill" style="width: 0%"></div>
       </div>
       <div class="sub-bar">
-        <span id="stepIndicator" class="step-label">Chapter 1 of 7</span>
+        <span id="stepIndicator" class="step-label">Chapter 1 of 9</span>
         <span id="lmsBadge" class="lms-status">Offline &amp; SCORM Ready</span>
       </div>
     </header>
@@ -1191,13 +1744,13 @@ table.data-table tr:nth-child(even) td { background: #F8FAFD; }
       <div class="drawer-header">
         <div>
           <div class="drawer-kicker">CURRICULUM</div>
-          <div class="drawer-title">All 7 Chapters</div>
+          <div class="drawer-title">All 9 Chapters</div>
         </div>
         <button id="closeDrawerBtn" class="icon-btn dark" aria-label="Close Menu">✕</button>
       </div>
       <div class="drawer-stats">
         <div class="stat-box">
-          <span class="stat-val" id="drawerCompleted">0/7</span>
+          <span class="stat-val" id="drawerCompleted">0/9</span>
           <span class="stat-lbl">Chapters</span>
         </div>
         <div class="stat-box">
@@ -1224,7 +1777,7 @@ table.data-table tr:nth-child(even) td { background: #F8FAFD; }
         <span>← Prev</span>
       </button>
       <button id="quickIndexBtn" class="nav-btn center-pill">
-        <span id="bottomChapterTag">01 / 7</span>
+        <span id="bottomChapterTag">01 / 9</span>
       </button>
       <button id="nextBtn" class="nav-btn primary">
         <span id="nextBtnLabel">Next →</span>
@@ -1429,67 +1982,140 @@ var COURSE_CHAPTERS = [
     "num": "00",
     "shortTitle": "Overview & Roadmap",
     "title": "Day 3: Products & Account Opening",
-    "subtitle": "CASA  \u2022  Savings & Current Accounts  \u2022  CA Allied Products\nDebit & Credit Cards  \u2022  Documentation  \u2022  Account Opening",
+    "subtitle": "CASA \u2022 Savings & Current Accounts \u2022 CA Allied Products \u2022 Cards & Account Opening",
     "blocks": [
       {
         "type": "think",
         "title": "Opening Reflection",
-        "prompt": "How can the way you explain and open an account help build a customer relationship\u2014and contribute to the bank\u2019s CASA growth?",
-        "hint": "Consider how listening to the customer, explaining suitable account options clearly, and completing required checks carefully can support both customer confidence and responsible deposit growth."
+        "prompt": "Why are low-cost CASA deposits considered the foundation of banking profitability and relationship depth?",
+        "hint": "CASA directly funds retail and SME loans with low cost-of-funds, maximizing Net Interest Margin (NIM) and fostering long-term cross-sell opportunities."
       },
       {
         "type": "card",
-        "tag": "Slide 1",
-        "heading": "HDFC ACADEMY  \u2022  BANKING SALES EXCELLENCE",
-        "body": "<p>Day 3: Products & Account Opening</p>",
+        "tag": "Curriculum Intro \u00b7 Slide 1",
+        "heading": "HDFC Academy \u00b7 Banking Sales Excellence",
+        "imageSrc": "media/slide_1.png",
+        "body": "<p>Welcome to <strong>Day 3: Products & Account Opening</strong>. Today's session takes you step-by-step through our complete retail product portfolio, the operational mechanics of CASA profitability, documentation protocols, and physical & digital account opening journeys.</p>",
         "bullets": [
-          "<strong>CASA  \u2022  Savings & Current Accounts  \u2022  CA Allied Products</strong>",
-          "<strong>Debit & Credit Cards  \u2022  Documentation  \u2022  Account Opening</strong>",
-          "<strong>WBT</strong>",
-          "<strong>10 Modules</strong>",
-          "<strong>Sales Executives</strong>",
-          "<strong>Product walkthroughs, step-by-step account opening journeys and a knowledge check in every module</strong>"
-        ],
-        "callout": {
-          "type": "tip",
-          "text": "<strong>Facilitator Insight:</strong> PURPOSE: Open the Day 3 WBT and set the focus: knowing the liability, allied and card products well enough to recommend the right one, and opening the account correctly.\n\nFACILITATION GUIDANCE:\n- Welcome learners to Day 3 of Banking Sales Excellence."
-        }
+          "<strong>Target Audience:</strong> Sales Executives & Branch Relationship Managers",
+          "<strong>Key Methodology:</strong> Structured product walkthroughs, comparison matrices, and interactive knowledge checks in every module",
+          "<strong>Core Objective:</strong> Master consultative need discovery to match the right product variant and achieve zero-defect account opening"
+        ]
       },
       {
-        "type": "card",
-        "tag": "Slide 2",
+        "type": "boxes",
+        "tag": "Curriculum Structure \u00b7 Slide 2",
         "heading": "Our Roadmap for Today",
-        "body": "<p>Ten modules: product knowledge first, then documentation and account opening.</p>",
-        "bullets": [
-          "<strong>MODULE 1</strong>",
-          "<strong>Importance of CASA</strong>",
-          "<strong>Liabilities, NIM and CASA growth levers</strong>",
-          "<strong>MODULE 2</strong>",
-          "<strong>Savings Accounts</strong>",
-          "<strong>Regular, Savings Max, Speciale range, Kids</strong>",
-          "<strong>MODULE 3</strong>"
+        "body": "<p>Ten structured modules designed to build deep product expertise before transitioning into documentation and account opening workflows:</p>",
+        "boxGridCols": 3,
+        "boxes": [
+          {
+            "title": "Module 1: Importance of CASA",
+            "badge": "MODULE 1",
+            "desc": "Liabilities, NIM economics, and the four employee growth levers.",
+            "icon": "media/image5.png",
+            "highlight": true
+          },
+          {
+            "title": "Module 2: Savings Accounts",
+            "badge": "MODULE 2",
+            "desc": "Regular Savings, Savings Max, Speciale range, and Kids accounts.",
+            "icon": "media/image6.png",
+            "highlight": true
+          },
+          {
+            "title": "Module 3: Current Accounts",
+            "badge": "MODULE 3",
+            "desc": "Account variants, fee schedules, and daily cash deposit limits.",
+            "icon": "media/image7.png"
+          },
+          {
+            "title": "Module 4: CA Allied Products",
+            "badge": "MODULE 4",
+            "desc": "CBX corporate net banking, eCMS collections, POS/MPOS, and Vyapar app.",
+            "icon": "media/image8.png"
+          },
+          {
+            "title": "Module 5: Debit Cards",
+            "badge": "MODULE 5",
+            "desc": "EasyShop portfolio, lounge privileges, insurance, and need-based selling.",
+            "icon": "media/image9.png"
+          },
+          {
+            "title": "Module 6: Credit Cards",
+            "badge": "MODULE 6",
+            "desc": "Eligibility thresholds, flagship cards, and sales pitch checklist.",
+            "icon": "media/image10.png"
+          },
+          {
+            "title": "Module 7: Non-Individual Docs",
+            "badge": "MODULE 7",
+            "desc": "Sole proprietorship, partnership, and corporate documentation guidelines.",
+            "icon": "media/image11.png"
+          },
+          {
+            "title": "Module 8: Physical Account Opening",
+            "badge": "MODULE 8",
+            "desc": "Physical Account Opening Form (AOF), Maker-Checker protocols, and dispatch.",
+            "icon": "media/image12.png",
+            "highlight": true
+          },
+          {
+            "title": "Module 9: Insta Account & SmartApp",
+            "badge": "MODULE 9",
+            "desc": "End-to-end digital onboarding, CRM lead integration, and instant activation.",
+            "icon": "media/image13.png"
+          },
+          {
+            "title": "Module 10: Video KYC",
+            "badge": "MODULE 10",
+            "desc": "Paperless zero-contact customer verification via secure video interaction.",
+            "icon": "media/image14.png"
+          }
         ],
         "callout": {
           "type": "tip",
-          "text": "<strong>Facilitator Insight:</strong> PURPOSE: Give learners a map of Day 3.\n\nFACILITATION GUIDANCE:\n- Modules 1 to 6 build product knowledge: why CASA matters, then Savings Accounts, Current Accounts, CA allied products, Debit Cards and Credit Cards.\n- Modules 7 to 10 cover documentatio"
+          "text": "<strong>How We'll Learn:</strong> Interactive walkthroughs \u2794 Comparison charts \u2794 Step-by-step journeys \u2794 Knowledge checks."
         }
       },
       {
-        "type": "accordion",
-        "tag": "Curriculum Objectives \u00b7 Slide 3",
+        "type": "collapsible_boxes",
+        "tag": "Learning Outcomes \u00b7 Slide 3",
         "heading": "Learning Objectives",
-        "items": [
+        "body": "<p>By the end of this web-based training, learners will achieve three pillars of operational mastery:</p>",
+        "collapsibles": [
           {
-            "title": "IDENTIFY \u2014 Core Outcomes",
-            "content": "<ul class=\"rich-list\"><li>Why CASA drives the bank's profitability</li><li>The right Savings or Current Account variant and card for each customer</li><li>The documents needed for each type of non-individual entity</li></ul>"
+            "title": "IDENTIFY \u2014 Core Drivers & Variant Matching",
+            "badge": "LEVEL 1",
+            "badgeColor": "gold",
+            "icon": "media/image18.png",
+            "isOpen": true,
+            "bullets": [
+              "Explain why CASA deposits drive the bank's profitability and Net Interest Margin.",
+              "Identify the right Savings or Current Account variant and debit card for every customer profile.",
+              "Recognize the distinct documentation needs for individual vs non-individual business entities."
+            ]
           },
           {
-            "title": "EXPLAIN \u2014 Core Outcomes",
-            "content": "<ul class=\"rich-list\"><li>Features, eligibility and benefits of Savings, Current, Debit and Credit Card products</li><li>How CA allied products support business customers</li><li>The rules and steps for each mode of account opening</li></ul>"
+            "title": "EXPLAIN \u2014 Features, Pricing & Value Propositions",
+            "badge": "LEVEL 2",
+            "icon": "media/image19.png",
+            "bullets": [
+              "Clearly articulate eligibility, minimum balance requirements, and fee waivers for Regular, Savings Max, and Speciale.",
+              "Highlight Debit Card privileges including up to \u20b93.29 Cr complimentary insurance cover and cashback.",
+              "Explain how CA allied products (POS, QR, Payment Gateway, eCMS) solve business cash flow pain points."
+            ]
           },
           {
-            "title": "APPLY \u2014 Core Outcomes",
-            "content": "<ul class=\"rich-list\"><li>Recommend and cross-sell products that match the customer's need</li><li>Collect complete, correct documents the first time</li><li>Open accounts through the physical form, Insta Account, SmartApp or Video KYC without errors</li></ul>"
+            "title": "APPLY \u2014 Need Discovery & Compliant Account Opening",
+            "badge": "LEVEL 3",
+            "badgeColor": "green",
+            "icon": "media/image20.png",
+            "bullets": [
+              "Conduct consultative need-discovery probing to recommend tailored financial solutions.",
+              "Collect complete, verified KYC documents and execute zero-defect AOF submissions.",
+              "Guide customers through frictionless digital account opening on Insta Account and Video KYC."
+            ]
           }
         ]
       }
@@ -1498,155 +2124,189 @@ var COURSE_CHAPTERS = [
   {
     "id": "ch1",
     "num": "M1",
-    "shortTitle": "Why CASA deposits matter",
-    "title": "Module 1: Importance of CASA: Why CASA deposits matter to the bank, and how every employee helps grow them",
-    "subtitle": "Roadmap",
+    "shortTitle": "Importance of CASA",
+    "title": "Module 1: Importance of CASA",
+    "subtitle": "Why CASA deposits matter to the bank, and how every employee helps grow them",
     "blocks": [
       {
         "type": "think",
-        "title": "Module 1: Importance of CASA",
-        "prompt": "Why CASA deposits matter to the bank, and how every employee helps grow them",
-        "hint": "PURPOSE: Signal the start of Module 1.\n\nFACILITATION GUIDANCE:\n- Introduce the module: before learning individual products, we need to know why CASA deposits matter so much to the bank.\n- The THINK question appears on the slide: take two or three responses (aloud or in chat) to connect with the next slide.\n- The \"Roadmap\" button (top right) returns to the roadmap slide.\n\nSUGGESTED ANSWERS / DEBRIEF POINTS:\n- The bank deploys deposits as loans and investments, earning more than it pays out on deposits."
+        "title": "Deposit Dynamics (Slide 4)",
+        "prompt": "When a customer deposits money in a savings account, what does the bank do with it?",
+        "hint": "The bank pools customer deposits into its liabilities base to fund retail advances (home, auto, personal loans) and commercial credit, earning loan interest income while paying minimal interest on CASA deposits."
       },
       {
-        "type": "card",
-        "tag": "Slide 5",
+        "type": "boxes",
+        "tag": "Banking Fundamentals \u00b7 Slide 5",
         "heading": "Types of Liabilities in Banking",
-        "body": "<p>Where a bank's funds come from</p>",
-        "bullets": [
-          "<strong>Liabilities are the primary source of funds for the bank.</strong>",
-          "<strong>Liabilities</strong>",
-          "<strong>Customer Deposits</strong>",
-          "<strong>Savings Accounts</strong>",
-          "<strong>Savings Accounts</strong>",
-          "<strong>CASA \u2713</strong>",
-          "<strong>Current Accounts</strong>"
+        "body": "<p><strong>Liabilities are the primary source of funds for the bank.</strong> The bank raises capital through customer deposits, borrowings, and bond markets:</p>",
+        "boxGridCols": 3,
+        "boxes": [
+          {
+            "title": "Customer Deposits",
+            "badge": "PRIMARY SOURCE",
+            "badgeColor": "green",
+            "icon": "media/image23.png",
+            "highlight": true,
+            "desc": "The lifeblood of commercial banking:",
+            "bullets": [
+              "<strong>Savings Accounts (CASA \u2713):</strong> Low-cost demand deposits available on tap.",
+              "<strong>Current Accounts (CASA \u2713):</strong> Zero-interest transactional accounts for businesses.",
+              "<strong>Fixed Deposits (FDs):</strong> Time liabilities with predetermined tenure.",
+              "<strong>Recurring Deposits (RDs):</strong> Systematic monthly term savings."
+            ]
+          },
+          {
+            "title": "Borrowings",
+            "badge": "SECONDARY",
+            "icon": "media/image25.png",
+            "desc": "Wholesale liquidity sources:",
+            "bullets": [
+              "<strong>Interbank Borrowings:</strong> Short-term call and notice money markets.",
+              "<strong>Financial Institutions:</strong> Lines of credit from domestic and global lenders.",
+              "<strong>RBI Borrowings:</strong> Repo operations and statutory liquidity window."
+            ]
+          },
+          {
+            "title": "Bonds & Debentures",
+            "badge": "CAPITAL MARKET",
+            "icon": "media/image23.png",
+            "desc": "Long-term debt instruments:",
+            "bullets": [
+              "<strong>Bonds Issued:</strong> Infrastructure and tier-2 long-term debt capital.",
+              "<strong>Debentures:</strong> Subordinated market instruments strengthening capital adequacy."
+            ]
+          }
         ],
         "callout": {
           "type": "tip",
-          "text": "<strong>Facilitator Insight:</strong> PURPOSE: Show where a bank's funds come from and how deposits turn into income.\n\nFACILITATION GUIDANCE:\n- Read the definition banner, then walk the hierarchy: liabilities split into customer deposits (in red, the most important group), borrowings, an"
+          "text": "<strong>Core Banking Flow:</strong> Deposits collected from customers \u2794 Deployed as loans & investments \u2794 Generate income & support the bank's growth."
         }
       },
       {
-        "type": "card",
-        "tag": "Slide 6",
+        "type": "boxes",
+        "tag": "Strategic Value \u00b7 Slide 6",
         "heading": "Why Liabilities Matter",
-        "body": "<p>Deposits, especially CASA, are the most cost-effective funding source. Lower cost of funds means higher profitability for the bank.</p>",
-        "bullets": [
-          "<strong>Four reasons a strong deposit base is critical to the bank.</strong>",
-          "<strong>LIABILITIES</strong>",
-          "<strong>Cheap Source of Funds</strong>",
-          "<strong>Cheap Source of Funds</strong>",
-          "<strong>Interest Spread</strong>",
-          "<strong>Interest Spread</strong>",
-          "<strong>Liquidity Management</strong>",
-          "<strong>Liquidity Management</strong>"
-        ],
-        "callout": {
-          "type": "tip",
-          "text": "<strong>Facilitator Insight:</strong> PURPOSE: Explain the four ways deposits strengthen the bank.\n\nFACILITATION GUIDANCE:\n- Start with cheap source of funds. This answers the question from the previous slide.\n- Interest spread: explain NIM in simple terms. The bank earns interest on loa"
-        }
+        "body": "<p>Four foundational reasons why a strong deposit base is critical to the bank's health, profitability, and market leadership:</p>",
+        "boxGridCols": 2,
+        "boxes": [
+          {
+            "title": "Cheap Source of Funds",
+            "badge": "LOW COST",
+            "badgeColor": "green",
+            "icon": "media/image27.png",
+            "highlight": true,
+            "desc": "Deposits, especially CASA, are the most cost-effective funding source. A lower cost of funds directly widens bank profitability."
+          },
+          {
+            "title": "Interest Spread (NIM)",
+            "badge": "PROFIT ENGINE",
+            "icon": "media/image28.png",
+            "highlight": true,
+            "desc": "The difference between interest earned on loans and interest paid on deposits is the bank's Net Interest Margin (NIM)."
+          },
+          {
+            "title": "Liquidity Management",
+            "badge": "STABILITY",
+            "icon": "media/image29.png",
+            "desc": "A healthy deposit base ensures the bank can meet customer withdrawal demands and statutory reserve requirements (CRR & SLR)."
+          },
+          {
+            "title": "Increased Lending Capacity",
+            "badge": "SCALE",
+            "icon": "media/image26.png",
+            "desc": "More low-cost deposits enable higher lending volumes, driving asset book expansion, fee income, and shareholder value."
+          }
+        ]
       },
       {
         "type": "card",
-        "tag": "Slide 7",
+        "tag": "Profitability Economics \u00b7 Slide 7",
         "heading": "CASA & Bank Profitability",
-        "body": "<p>How the CASA ratio changes the bank's economics.</p>",
-        "bullets": [
-          "<strong>Particulars</strong>",
-          "<strong>High CASA Bank</strong>",
-          "<strong>Low CASA Bank</strong>",
-          "<strong>Cost of Funds</strong>",
-          "<strong>?</strong>",
-          "<strong>?</strong>",
-          "<strong>Lower</strong>"
-        ],
+        "body": "<p>How the CASA ratio fundamentally transforms the economics and competitive edge of a commercial bank:</p>",
+        "table": {
+          "headers": [
+            "Particulars",
+            "High CASA Bank (e.g. HDFC Bank)",
+            "Low CASA Bank"
+          ],
+          "rows": [
+            [
+              "Cost of Funds",
+              "Lower (Ultra-cheap funding base)",
+              "Higher (Reliance on wholesale debt)"
+            ],
+            [
+              "Lending Capacity",
+              "Higher (Competitive loan pricing)",
+              "Lower (Higher hurdle rate for advances)"
+            ],
+            [
+              "Net Interest Margin (NIM)",
+              "Higher (3.5% \u2013 4.2%+ spread)",
+              "Lower (Compressed interest margins)"
+            ],
+            [
+              "Overall Profitability",
+              "Higher (Superior Return on Assets)",
+              "Lower (Vulnerable to rate hikes)"
+            ]
+          ]
+        },
         "callout": {
           "type": "tip",
-          "text": "<strong>Facilitator Insight:</strong> PURPOSE: Compare a high-CASA bank with a low-CASA bank to show why CASA drives profitability.\n\nFACILITATION GUIDANCE:\n- For each row, ask learners to predict Higher or Lower for a high-CASA and a low-CASA bank before you explain the answer.\n- Answers"
+          "text": "<strong>Key Takeaway:</strong> A higher CASA ratio is the hallmark of a financially healthy, well-run bank. As bank employees, growing the CASA base is the single most impactful contribution you can make starting from Day 1."
         }
       },
       {
-        "type": "card",
-        "tag": "Slide 8",
+        "type": "boxes",
+        "tag": "Employee Growth Levers \u00b7 Slide 8",
         "heading": "Every Employee Drives CASA Growth",
-        "body": "<p>Open new Savings and Current Accounts. Generate referrals from existing customers. Every new account strengthens our CASA base.</p>",
-        "bullets": [
-          "<strong>Four levers every employee can use to grow the CASA base.</strong>",
-          "<strong>01</strong>",
-          "<strong>Customer Acquisition</strong>",
-          "<strong>02</strong>",
-          "<strong>Relationship Building</strong>",
-          "<strong>Enhance customer experience to increase account activation and usage. A happy customer is a loyal customer.</strong>",
-          "<strong>03</strong>",
-          "<strong>Cross-Selling</strong>"
-        ],
-        "callout": {
-          "type": "tip",
-          "text": "<strong>Facilitator Insight:</strong> PURPOSE: Show the four practical levers through which every employee contributes to CASA growth.\n\nFACILITATION GUIDANCE:\n- Point to the team illustration: CASA growth is a whole-branch effort, not only the sales team's job.\n- Go through the four leve"
-        }
+        "body": "<p>Four practical levers every sales executive and branch employee can execute daily to grow and protect the CASA base:</p>",
+        "boxGridCols": 2,
+        "boxes": [
+          {
+            "title": "01 Customer Acquisition",
+            "badge": "ACQUIRE",
+            "badgeColor": "green",
+            "icon": "media/image33.png",
+            "desc": "Open new Savings and Current Accounts through systematic catchment mapping and quality referrals from satisfied customers."
+          },
+          {
+            "title": "02 Relationship Building",
+            "badge": "ENGAGE",
+            "icon": "media/image34.png",
+            "desc": "Deliver delightful onboarding and service to drive primary account usage, payroll credits, and active debit card spending."
+          },
+          {
+            "title": "03 Cross-Selling",
+            "badge": "DEEPEN",
+            "icon": "media/image35.png",
+            "desc": "Deepen customer share of wallet with salary accounts, merchant QR/POS solutions, credit cards, and digital wealth offerings."
+          },
+          {
+            "title": "04 Retention & Reactivation",
+            "badge": "RETAIN",
+            "badgeColor": "red",
+            "icon": "media/image36.png",
+            "desc": "Monitor account balances proactively, resolve service friction immediately, and reactivate dormant accounts before customers switch."
+          }
+        ]
       },
       {
         "type": "quiz_mcq",
         "id": "quiz_s9",
-        "title": "Knowledge Check: Importance of CASA",
+        "title": "Knowledge Check: Importance of CASA (Slide 9)",
         "questions": [
           {
-            "q": "Which of these is the most cost-effective source of funds for a bank?",
+            "q": "Which of these is the most cost-effective source of funds for a commercial bank?",
             "options": [
-              "Interbank borrowings",
-              "Bonds issued",
-              "CASA deposits",
-              "RBI borrowings"
+              "Interbank borrowings at market call rates",
+              "Bonds and subordinated debentures issued in capital markets",
+              "CASA deposits (Current and Savings Accounts)",
+              "RBI borrowings under the repo facility window"
             ],
             "correct": 2,
-            "explanation": "Verified against official bank guidelines in Knowledge Check: Importance of CASA."
-          }
-        ]
-      },
-      {
-        "type": "kyc_sorter",
-        "id": "ai_drag_sorter",
-        "title": "KYC Document Sorter",
-        "instruction": "Classify each item as Valid or Invalid for proceeding with account opening checks. Apply the bank\u2019s current KYC process and document requirements.",
-        "docs": [
-          {
-            "name": "A current passport presented and verified according to the bank\u2019s KYC process",
-            "valid": true,
-            "note": "A current passport is an officially valid document; complete verification and any other required checks."
-          },
-          {
-            "name": "A customer\u2019s unverified photocopy of an identity document, with no original or approved digital verification",
-            "valid": false,
-            "note": "Do not treat an unverified copy as verified KYC. Follow the approved process for document verification."
-          },
-          {
-            "name": "A current voter identity card presented and verified according to the bank\u2019s KYC process",
-            "valid": true,
-            "note": "A current voter identity card is an officially valid document; complete verification and any other required checks."
-          },
-          {
-            "name": "A document that is expired or otherwise outside the bank\u2019s accepted KYC requirements",
-            "valid": false,
-            "note": "Request an acceptable, current document and follow the bank\u2019s prescribed KYC process."
-          }
-        ]
-      },
-      {
-        "type": "quiz_mcq",
-        "id": "ai_scenario_quiz",
-        "title": "A Responsible Account Opening",
-        "questions": [
-          {
-            "q": "A customer visiting your branch wants to open a savings account but is in a hurry and asks you to skip document verification because they already hold another product with the bank. What should you do?",
-            "options": [
-              "Explain that the required checks still apply, complete them through the approved process, and discuss suitable account options based on the customer\u2019s needs.",
-              "Open the account immediately and complete KYC later without checking whether this is permitted.",
-              "Use the customer\u2019s details from the other product without confirming that they meet the requirements for this account opening.",
-              "Tell the customer that no savings account can be opened unless they choose a particular product."
-            ],
-            "correct": 0,
-            "explanation": "Complete the required KYC and account-opening steps according to current bank policy; an existing relationship does not automatically remove those requirements. Understanding the customer\u2019s needs also supports a clear, appropriate product discussion."
+            "explanation": "CASA deposits carry zero interest (Current Account) or low regulated interest (Savings Account), making them the cheapest source of funding and the primary driver of high Net Interest Margin (NIM)."
           }
         ]
       }
@@ -1655,87 +2315,229 @@ var COURSE_CHAPTERS = [
   {
     "id": "ch2",
     "num": "M2",
-    "shortTitle": "Know Your Product \u2013 Savi",
-    "title": "Module 2: Savings Accounts: Know Your Product \u2013 Saving Bank Account (SB)",
-    "subtitle": "Roadmap",
+    "shortTitle": "Regular Savings",
+    "title": "Module 2: Regular Savings Account",
+    "subtitle": "Know Your Product \u2014 Everyday Savings Bank Account (SB)",
     "blocks": [
       {
         "type": "card",
-        "tag": "Slide 10",
-        "heading": "Module 2: Savings Accounts",
-        "body": "<p>Know Your Product \u2013 Saving Bank Account (SB)</p>",
-        "bullets": [
-          "<strong>Roadmap</strong>"
-        ],
-        "callout": {
-          "type": "tip",
-          "text": "<strong>Facilitator Insight:</strong> PURPOSE: Signal the start of Module 2: the savings account range.\n\nFACILITATION GUIDANCE:\n- Explain the flow of the module: Regular Savings, Savings Max, the Speciale premium range (Activ, Gold Women's, Platinum & Gold, Senior Citizen) and Super Kids"
-        }
+        "tag": "Product Range Overview \u00b7 Slides 10-11",
+        "heading": "Module 2: Know Your Product \u2014 Savings Bank Accounts",
+        "imageSrc": "media/slide_10.png",
+        "body": "<p>Savings Accounts are the foundational gateway product for retail banking. In this module, we examine three core offerings: the versatile <strong>Regular Savings Account</strong>, the high-yield <strong>Savings Max Account</strong>, and the profile-driven <strong>Speciale Premium Range</strong>.</p>"
+      },
+      {
+        "type": "boxes",
+        "tag": "Key Features \u00b7 Slide 12",
+        "heading": "Regular Savings Account: Key Features",
+        "body": "<p>A savings account designed to meet daily transactional needs while giving customers peace of mind, digital convenience, and lifestyle privileges:</p>",
+        "boxGridCols": 2,
+        "boxes": [
+          {
+            "title": "Balance Requirement",
+            "badge": "AMB / AQB",
+            "badgeColor": "green",
+            "icon": "media/image5.png",
+            "highlight": true,
+            "desc": "<strong>Metro & Urban:</strong> Average Monthly Balance (AMB) of \u20b910,000.<br/><strong>Semi-Urban:</strong> AMB of \u20b95,000.<br/><strong>Rural:</strong> Average Quarterly Balance (AQB) of \u20b92,500 or \u20b910,000 FD for 1 year."
+          },
+          {
+            "title": "Demat & Investment Benefit",
+            "badge": "WEALTH PRIVILEGE",
+            "icon": "media/image37.png",
+            "desc": "100% waiver on Annual Maintenance Charges (AMC) on new Demat Accounts for the first year, making investing accessible and frictionless."
+          },
+          {
+            "title": "ATM Transaction Limits",
+            "badge": "ATM WITHDRAWALS",
+            "icon": "media/image38.png",
+            "desc": "<strong>HDFC Bank ATMs:</strong> 5 free financial transactions/month; unlimited non-financial free.<br/><strong>Non-HDFC ATMs:</strong> 5 free transactions in non-metro locations; 3 free in metro locations."
+          },
+          {
+            "title": "Millennia Debit Card",
+            "badge": "CARDS & LOUNGE",
+            "icon": "media/image3.png",
+            "highlight": true,
+            "desc": "Metro & Urban accounts come with the <strong>Millennia Debit Card</strong> featuring up to 5% CashBack on shopping, complimentary domestic airport lounge access, and extensive accidental insurance cover."
+          }
+        ]
       }
     ]
   },
   {
     "id": "ch3",
     "num": "M3",
-    "shortTitle": "Regular Savings Account",
-    "title": "MODULE 2: Regular Savings Account",
-    "subtitle": "Everyday banking with 24x7 access to your bank",
+    "shortTitle": "Savings Max",
+    "title": "Module 2: Savings Max Account",
+    "subtitle": "High-Yield Sweep-in, Premium Platinum Card & Up to \u20b93.29 Cr Insurance Cover",
     "blocks": [
       {
-        "type": "card",
-        "tag": "Slide 11",
-        "heading": "MODULE 2  \u2022  SAVINGS ACCOUNTS",
-        "body": "<p>Regular Savings Account</p>",
-        "bullets": [
-          "<strong>Everyday banking with 24x7 access to your bank</strong>"
+        "type": "collapsible_boxes",
+        "tag": "Value Proposition \u00b7 Slide 14",
+        "heading": "Savings Max Account: Key USPs",
+        "body": "<p>An AMB requirement of just \u20b925,000 unlocks an extraordinary bundle of debit card privileges, automatic sweep-in liquidity, locker discounts, and loan concessions:</p>",
+        "collapsibles": [
+          {
+            "title": "\ud83d\udcb3 DEBIT CARD BENEFITS \u2014 Free Lifetime Platinum Card",
+            "badge": "PREMIUM DC",
+            "badgeColor": "gold",
+            "icon": "media/image3.png",
+            "isOpen": true,
+            "bullets": [
+              "<strong>Free Lifetime Platinum Debit Card:</strong> Zero annual fee for the primary account holder.",
+              "<strong>Higher Spending Limits:</strong> Daily cash withdrawal limit of \u20b91 Lakh & shopping limit of \u20b95 Lakhs.",
+              "<strong>1% CashBack:</strong> Up to 1% CashBack on every point-of-sale and online transaction.",
+              "<strong>Unlimited Free ATM Usage:</strong> Unlimited free ATM transactions on all HDFC and Non-HDFC ATMs nationwide.",
+              "<strong>Woman's Advantage Card:</strong> Free lifetime Woman's Advantage / International Debit Card for joint account holders.",
+              "<strong>Unmatched Insurance:</strong> Personal and air accident insurance coverage up to \u20b93.29 Crores."
+            ]
+          },
+          {
+            "title": "\ud83c\udfe6 BENEFITS ON A/C \u2014 Money Maximiser Auto-Sweep",
+            "badge": "LIQUIDITY",
+            "icon": "media/image6.png",
+            "isOpen": true,
+            "bullets": [
+              "<strong>Money Maximiser Facility:</strong> Automatically sweeps surplus funds above a threshold into high-interest Fixed Deposits, earning higher FD returns.",
+              "<strong>Reverse Sweep (Sweep-In):</strong> Whenever a cheque or withdrawal exceeds the savings balance, the FD liquidates automatically with zero penalty.",
+              "<strong>50% Locker Discount:</strong> 50% discount on safe deposit locker rental fees for the 1st year (on a pro-rata basis).",
+              "<strong>FD Cushion:</strong> Flexible FD cushion facility available from \u20b91 Lakh to \u20b91.5 Lakhs."
+            ]
+          },
+          {
+            "title": "\ud83d\udcc4 OTHER PRODUCT BENEFITS \u2014 Wealth & Transactions",
+            "badge": "ALLIED",
+            "icon": "media/image41.png",
+            "bullets": [
+              "<strong>Free Demand Drafts:</strong> Free Demand Draft (DD) issuance up to \u20b91 Lakh per month.",
+              "<strong>Demat Fee Waiver:</strong> AMC charges on new Demat Account waived completely for the 1st year."
+            ]
+          },
+          {
+            "title": "\ud83d\ude97 LOAN OFFERS \u2014 Preferential Rates",
+            "badge": "LENDING",
+            "icon": "media/image42.png",
+            "bullets": [
+              "<strong>Special Rate on Two-Wheeler Loans (TWL):</strong> Preferential interest rates and processing fee concessions for Savings Max holders."
+            ]
+          }
         ],
         "callout": {
           "type": "tip",
-          "text": "<strong>Facilitator Insight:</strong> PURPOSE: Introduce the Regular Savings Account section.\n\nFACILITATION GUIDANCE:\n- Position the Regular Savings Account as the everyday account; the premium variants that follow build on it."
+          "text": "<strong>Balance Qualification:</strong> Metro / Urban: AMB \u20b925,000 or FD Relationship of \u20b91.50 Lakhs. Semi-Urban / Rural: AMB \u20b925,000 or FD Relationship of \u20b91 Lakh."
         }
       },
       {
+        "type": "boxes",
+        "tag": "Eligibility \u00b7 Slide 15",
+        "heading": "Savings Max: Eligibility & Balance Requirements",
+        "boxGridCols": 2,
+        "boxes": [
+          {
+            "title": "Who Can Open a Savings Max?",
+            "badge": "ELIGIBILITY",
+            "icon": "media/image43.png",
+            "bullets": [
+              "<strong>Resident Individuals:</strong> Sole or joint accounts.",
+              "<strong>Hindu Undivided Families (HUF):</strong> Managed through the Karta.",
+              "<strong>Foreign Nationals Residing in India:</strong> Eligible by submitting standard visa, employment permit, and address proof.",
+              "<strong>Minors above 10 Years:</strong> Eligible for self-operated minor accounts."
+            ]
+          },
+          {
+            "title": "Minimum Balance & Maintenance",
+            "badge": "MAINTENANCE",
+            "badgeColor": "green",
+            "icon": "media/image5.png",
+            "highlight": true,
+            "bullets": [
+              "<strong>Average Monthly Balance:</strong> \u2265 \u20b925,000 across the calendar month.",
+              "<strong>Alternative FD Threshold:</strong> Fixed deposit relationship of \u20b91.5 Lakhs (Metro/Urban) or \u20b91 Lakh (Semi-Urban/Rural) waives AMB non-maintenance charges."
+            ]
+          }
+        ]
+      },
+      {
         "type": "card",
-        "tag": "Slide 12",
-        "heading": "Regular Savings Account: Key Features",
-        "body": "<p>AMB Requirement of Rs.10,000 in Metro and Urban, Rs.5,000 in Semi-Urban and AQB of Rs.2,500 or FD Cushion of Rs.25,000 in Rural</p>",
-        "bullets": [
-          "<strong>A savings account designed to meet your day to day banking needs while giving you 24X7 access to your bank.</strong>",
-          "<strong>Balance Requirement</strong>",
-          "<strong>Demat Benefit</strong>",
-          "<strong>Waiver on annual maintenance charges on new Demat Account for 1st year</strong>",
-          "<strong>ATM Transactions Limits per Month</strong>",
-          "<strong>HDFC Bank: Financial 5 free; Non Financial \u2013 Free</strong>",
-          "<strong>Non HDFC Bank: 5 free (3 free in top 6 Metros)</strong>",
-          "<strong>Debit Card</strong>"
-        ],
-        "callout": {
-          "type": "tip",
-          "text": "<strong>Facilitator Insight:</strong> PURPOSE: Explain the features of the Regular Savings Account.\n\nFACILITATION GUIDANCE:\n- Start with the balance requirement: it changes by branch location (Metro/Urban, Semi-Urban, Rural).\n- Explain FD Cushion: the customer can maintain the requisite "
+        "tag": "Insurance Terms & Conditions \u00b7 Slide 16",
+        "heading": "Savings Max: Insurance Breakdown & Activation Terms",
+        "body": "<p>Detailed breakdown of the <strong>\u20b93.29 Crore comprehensive complimentary insurance coverage</strong> bundled with the Savings Max Account and Lifetime Free Platinum Debit Card:</p>",
+        "table": {
+          "headers": [
+            "Cover Type",
+            "Total Cover",
+            "Account Level",
+            "Platinum DC Level",
+            "Activation Condition"
+          ],
+          "rows": [
+            [
+              "Air Accidental Cover",
+              "\u20b93.00 Cr",
+              "\u2014",
+              "\u20b93.00 Cr",
+              "Air ticket must be purchased using the primary Platinum Debit Card"
+            ],
+            [
+              "Personal Accidental Death",
+              "\u20b920 Lacs",
+              "\u20b910 Lacs",
+              "\u20b910 Lacs",
+              "Account activation: 1 POS swipe in last 90 days. Debit Card: 1 POS swipe in last 30 days"
+            ],
+            [
+              "Accidental Hospitalization",
+              "\u20b91 Lac",
+              "\u20b91 Lac",
+              "\u2014",
+              "At least 1 POS swipe in the last 30 days prior to incident"
+            ],
+            [
+              "Zero Liability Cover",
+              "\u20b94 Lacs",
+              "\u2014",
+              "\u20b94 Lacs",
+              "At least 1 POS swipe in last 90 days. Covers fraudulent transactions upon timely reporting"
+            ],
+            [
+              "Fire, Burglary & Baggage",
+              "\u20b94 Lacs",
+              "\u2014",
+              "\u20b94 Lacs",
+              "Goods purchased with DC within 90 days + 1 POS transaction in last 90 days"
+            ],
+            [
+              "Total Combined Protection",
+              "\u20b93.29 Cr",
+              "\u20b90.11 Cr",
+              "\u20b93.18 Cr",
+              "Active debit card usage ensures uninterrupted complimentary coverage"
+            ]
+          ]
         }
       },
       {
         "type": "quiz_blanks",
         "id": "ai_blanks_drill",
-        "title": "Account Opening Essentials",
+        "title": "Fill-in-the-Blanks: CASA & Savings Max USPs",
         "wordBank": [
           "CASA",
-          "KYC",
-          "Nomination",
-          "Customer needs"
+          "Savings Max",
+          "Speciale",
+          "Maker-Checker"
         ],
         "items": [
           {
-            "prompt": "Current and savings account deposits are commonly referred to together as _______.",
+            "prompt": "Ultra low-cost deposits that maximize a bank's profitability and NIM are known as _______ deposits.",
             "answer": "CASA"
           },
           {
-            "prompt": "Before opening an account, employees must complete the required identity and customer verification checks known as _______.",
-            "answer": "KYC"
+            "prompt": "The premium savings account offering two-way sweep-in FD and higher insurance is _______.",
+            "answer": "Savings Max"
           },
           {
-            "prompt": "Discussing _______ helps an employee explain account options that are relevant to the customer.",
-            "answer": "Customer needs"
+            "prompt": "The operational protocol where one employee prepares and another verifies is _______.",
+            "answer": "Maker-Checker"
           }
         ]
       }
@@ -1744,94 +2546,72 @@ var COURSE_CHAPTERS = [
   {
     "id": "ch4",
     "num": "M4",
-    "shortTitle": "Savings Max",
-    "title": "MODULE 2: Savings Max",
-    "subtitle": "Premium benefits with an AMB of just Rs. 25,000",
+    "shortTitle": "Speciale Savings",
+    "title": "Module 2: Speciale Premium Savings",
+    "subtitle": "Profile-Based Privileges, Higher Average Ticket Size & Lifetime Relationship Value",
     "blocks": [
       {
-        "type": "card",
-        "tag": "Slide 13",
-        "heading": "MODULE 2  \u2022  SAVINGS ACCOUNTS",
-        "body": "<p>Savings Max</p>",
-        "bullets": [
-          "<strong>Premium benefits with an AMB of just Rs. 25,000</strong>"
-        ],
-        "callout": {
-          "type": "tip",
-          "text": "<strong>Facilitator Insight:</strong> PURPOSE: Introduce the Savings Max section.\n\nFACILITATION GUIDANCE:\n- Savings Max sits above the Regular account: higher balance, richer debit card and insurance benefits."
-        }
-      },
-      {
-        "type": "card",
-        "tag": "Slide 14",
-        "heading": "Savings Max Account: Key USPs",
-        "body": "<p>Metro / Urban: AMB Requirement 25K or FD Relationship of 1.50L      Semi Urban / Rural: AMB Requirement 25K or FD Relationship of 1 L</p>",
-        "bullets": [
-          "<strong>AMB Requirement of Just Rs.25K | Debit card, account, other product and loan benefits</strong>",
-          "<strong>DEBIT CARD BENEFITS</strong>",
-          "<strong>Free lifetime Platinum Debit Card for the primary account holder</strong>",
-          "<strong>Daily cash withdrawal limit of Rs.\u00a01L & shopping limit of Rs.\u00a05L</strong>",
-          "<strong>Up to 1% CashBack on every Platinum Debit Card transaction</strong>",
-          "<strong>Unlimited Free ATM transactions on HDFC and Non-HDFC bank ATMs</strong>",
-          "<strong>Free lifetime Woman's Advantage/International Debit Card for all account holders</strong>",
-          "<strong>Insurance Cover of up to 3.29\u00a0Crs.</strong>"
-        ],
-        "callout": {
-          "type": "tip",
-          "text": "<strong>Facilitator Insight:</strong> PURPOSE: Detail the Savings Max benefits by category so learners can match them to customer needs.\n\nFACILITATION GUIDANCE:\n- Open with the AMB requirement of just Rs. 25K, then walk the four categories: debit card, account, other products and loans.\n"
-        }
-      },
-      {
-        "type": "card",
-        "tag": "Slide 15",
-        "heading": "Savings Max: Eligibility & Balance",
-        "body": "<p>Minor above the age of 10 years are eligible to open self operated minor account and an ATM/Debit card can be issued to the Minor</p>",
-        "bullets": [
-          "<strong>Savings Max Account (contd.): eligibility and minimum balance requirement</strong>",
-          "<strong>ELIGIBILITY</strong>",
-          "<strong>The following people are eligible to open a SavingsMax Account:</strong>",
-          "<strong>Hindu Undivided Families</strong>",
-          "<strong>Foreign Nationals Residing in India*</strong>",
-          "<strong>MIN. BALANCE REQUIREMENT</strong>",
-          "<strong>\u2265 Rs. 25,000 AMB</strong>"
-        ],
-        "callout": {
-          "type": "tip",
-          "text": "<strong>Facilitator Insight:</strong> PURPOSE: Clarify who can open a Savings Max Account and the minimum balance rule.\n\nFACILITATION GUIDANCE:\n- Go through the three eligible categories, then the special condition for foreign nationals.\n- Ask: \"Can a 12-year-old open a self-operated Sav"
-        }
-      },
-      {
-        "type": "card",
-        "tag": "Slide 16",
-        "heading": "Savings Max: TnC",
-        "body": "<p>Insurance cover break-up and activation conditions</p>",
-        "bullets": null,
-        "callout": {
-          "type": "tip",
-          "text": "<strong>Facilitator Insight:</strong> PURPOSE: Explain how the Rs. 3.29 Cr insurance cover is made up and what activates each cover.\n\nFACILITATION GUIDANCE:\n- Show that the total (3.29 Cr) = account-level cover (0.11 Cr) + Platinum Debit Card cover (3.18 Cr).\n- Stress the activation cond"
-        }
-      },
-      {
-        "type": "quiz_match",
-        "id": "ai_match_drill",
-        "title": "Match the Banking Concept",
-        "options": [
-          "CASA",
-          "KYC",
-          "Nomination"
-        ],
-        "pairs": [
+        "type": "boxes",
+        "tag": "Premium Portfolio \u00b7 Slide 18",
+        "heading": "New Premium Savings Offerings",
+        "body": "<p>The Speciale portfolio delivers curated relationship pricing and lifestyle privileges tailored to professional and demographic segments:</p>",
+        "boxGridCols": 2,
+        "boxes": [
           {
-            "left": "The combined category of current and savings account deposits",
-            "answer": "CASA"
+            "title": "Speciale Activ Savings Account",
+            "badge": "HOME LOAN ENABLER",
+            "badgeColor": "gold",
+            "icon": "media/image48.png",
+            "highlight": true,
+            "desc": "<strong>Pay Home Loan EMIs, Get Great Rewards:</strong> Seamlessly links to HDFC Bank Home Loans, transforming monthly EMI outflows into accelerated rewards and fee waivers."
           },
           {
-            "left": "The checks and process used to establish and verify a customer\u2019s identity",
-            "answer": "KYC"
+            "title": "Salary Speciale\u2019 Program",
+            "badge": "CORPORATE PAYROLL",
+            "icon": "media/image49.png",
+            "highlight": true,
+            "desc": "<strong>Premium Corporate Salary:</strong> Platinum & Gold salary tiers offering zero-balance convenience, family banking benefits, and elevated credit limits."
           },
           {
-            "left": "A facility that lets a customer name a person to receive funds in accordance with applicable rules",
-            "answer": "Nomination"
+            "title": "Savings Plus Plan (5 pe 5)",
+            "badge": "ONBOARDING",
+            "icon": "media/image33.png",
+            "desc": "<strong>0\u201330 Days Customer Onboarding:</strong> Accelerates relationship depth for newly onboarded Savings and Salary account holders within the first month."
+          },
+          {
+            "title": "Speciale Senior Citizen Account",
+            "badge": "GOLDEN YEARS",
+            "icon": "media/image50.png",
+            "desc": "<strong>Enjoy Your Golden Years:</strong> Preferential FD interest rates, healthcare privileges, priority branch queueing, and doorstep banking."
+          }
+        ]
+      },
+      {
+        "type": "boxes",
+        "tag": "Sales Pitch Justification \u00b7 Slide 19",
+        "heading": "Why Pitch a Speciale Account?",
+        "body": "<p>Compelling benefits of pitching the Speciale range for both the customer and the bank's balance sheet:</p>",
+        "boxGridCols": 3,
+        "boxes": [
+          {
+            "title": "2.5X Higher Ticket Size",
+            "badge": "BALANCE DEPTH",
+            "badgeColor": "green",
+            "icon": "media/image51.png",
+            "highlight": true,
+            "desc": "Speciale accounts generate <strong>2.5X higher Average Ticket Size (ATS)</strong> in deposit balances compared to regular entry-level accounts."
+          },
+          {
+            "title": "Profile-Tailored Benefits",
+            "badge": "CUSTOMER VALUE",
+            "icon": "media/image48.png",
+            "desc": "Customers enjoy custom privileges matching their profession, salary band, or life stage, maximizing customer delight."
+          },
+          {
+            "title": "Higher Bundling Opportunity",
+            "badge": "CROSS-SELL",
+            "icon": "media/image35.png",
+            "desc": "Deepens relationship tenure, dramatically lowering attrition while creating natural pathways for credit cards, investments, and mortgages."
           }
         ]
       }
@@ -1840,193 +2620,214 @@ var COURSE_CHAPTERS = [
   {
     "id": "ch5",
     "num": "M5",
-    "shortTitle": "Speciale Savings",
-    "title": "MODULE 2: Speciale Savings",
-    "subtitle": "The premium savings range",
+    "shortTitle": "AOF Walkthroughs",
+    "title": "Module 3: Physical Account Opening Journeys",
+    "subtitle": "Step-by-Step Form Completion, Customer Signature Verification & Checkpoints",
     "blocks": [
       {
-        "type": "card",
-        "tag": "Slide 17",
-        "heading": "MODULE 2  \u2022  SAVINGS ACCOUNTS",
-        "body": "<p>Speciale Savings</p>",
-        "bullets": [
-          "<strong>The premium savings range</strong>"
-        ],
-        "callout": {
-          "type": "tip",
-          "text": "<strong>Facilitator Insight:</strong> PURPOSE: Introduce the Speciale premium savings range.\n\nFACILITATION GUIDANCE:\n- Explain that the Speciale range offers premium, profile-based benefits; the next two slides show the range and why it is worth pitching."
-        }
+        "type": "video_placeholder",
+        "id": "vid_s20",
+        "badge": "AOF MASTERCLASS VIDEO",
+        "duration": "4m 30s",
+        "title": "How to Open the Physical Account (Slide 20)",
+        "embedUrl": "media/media1.mp4",
+        "watchFor": [
+          "Step-by-step physical Account Opening Form (AOF) completion across all mandatory fields.",
+          "Mandatory specimen signature verification against identity documents.",
+          "Self-attestation protocol for Officially Valid Documents (OVDs)."
+        ]
       },
       {
-        "type": "card",
-        "tag": "Slide 18",
-        "heading": "New Premium Savings Offerings",
-        "body": "<p>What are the new premium product Savings offerings?</p>",
-        "bullets": [
-          "<strong>NEW PREMIUM PRODUCTS</strong>",
-          "<strong>Speciale Activ A/c (HL Nav Enabler)</strong>",
-          "<strong>Speciale Salary A/c (Platinum & Gold)</strong>",
-          "<strong>Savings Plus (5 pe 5)</strong>",
-          "<strong>Speciale Women\u2019s Gold A/c</strong>",
-          "<strong>OTHER PREMIUM PRODUCTS</strong>",
-          "<strong>Speciale Premium Savings A/c (Platinum/Gold)</strong>"
-        ],
-        "callout": {
-          "type": "tip",
-          "text": "<strong>Facilitator Insight:</strong> PURPOSE: Give an overview of the premium savings range before going product by product.\n\nFACILITATION GUIDANCE:\n- Separate the new premium products from the other premium products.\n- Use the campaign highlights to show how each product is positioned "
-        }
-      },
-      {
-        "type": "card",
-        "tag": "Slide 19",
-        "heading": "Why Pitch a Speciale Account?",
-        "body": "<p>Benefits of pitching a Speciale Savings A/c, for the customer and for the bank</p>",
-        "bullets": [
-          "<strong>Exclusive benefits as per his profile/profession</strong>",
-          "<strong>Higher bundling opportunity</strong>",
-          "<strong>2.5 X</strong>",
-          "<strong>Higher Average Ticket Size (ATS), in lacs</strong>"
-        ],
-        "callout": {
-          "type": "tip",
-          "text": "<strong>Facilitator Insight:</strong> PURPOSE: Show why pitching a Speciale account benefits both the customer and the bank.\n\nFACILITATION GUIDANCE:\n- Customer side: exclusive benefits matched to profile or profession.\n- Bank side: much higher Average Ticket Size (for example, Speciale P"
-        }
+        "type": "video_placeholder",
+        "id": "vid_s21",
+        "badge": "COMPLIANCE AUDIT VIDEO",
+        "duration": "6m 15s",
+        "title": "One Account, Four Checkpoints (Slide 21)",
+        "embedUrl": "media/media2.mp4",
+        "watchFor": [
+          "Checkpoint 1: Customer PAN and Aadhaar identity verification & biometric de-duplication.",
+          "Checkpoint 2: Address verification matching active residential OVD proof.",
+          "Checkpoint 3: Accurate initial funding cheque or digital fund transfer validation.",
+          "Checkpoint 4: Zero-defect Maker-Checker authorization workflow before dispatch."
+        ]
       }
     ]
   },
   {
     "id": "ch6",
     "num": "M6",
-    "shortTitle": "Account Opening",
-    "title": "Module 3: Account Opening Journey & Video",
-    "subtitle": "Physical and digital account opening workflows & checkpoints",
+    "shortTitle": "Knowledge Drills",
+    "title": "Module 3: Interactive Knowledge Drills",
+    "subtitle": "Matching Drills, KYC Address Sorter & 3D Consultative Sales Flip Cards",
+    "blocks": [
+      {
+        "type": "card",
+        "tag": "Assessment Hub \u00b7 Slide 22",
+        "heading": "Module 3: Knowledge Checks & Practical Drills",
+        "imageSrc": "media/slide_22.png",
+        "body": "<p>Test your product mastery and compliance readiness with three hands-on interactive activities: link current account solutions to merchant needs, validate address OVDs, and flip cards on sales call execution.</p>"
+      },
+      {
+        "type": "quiz_match",
+        "id": "quiz_s23",
+        "title": "Knowledge Check: Match Facilities to Needs (Slide 23)",
+        "options": [
+          "Doorstep Banking",
+          "Corporate Internet Banking",
+          "POS (EDC terminal)",
+          "Payment Gateway",
+          "Merchant Mobile App"
+        ],
+        "pairs": [
+          {
+            "left": "Reduce the risk of carrying large cash sums to or from the branch",
+            "answer": "Doorstep Banking"
+          },
+          {
+            "left": "GST, statutory tax payments, bulk salary payouts, and Maker-Checker workflows",
+            "answer": "Corporate Internet Banking"
+          },
+          {
+            "left": "Card payments accepted over the counter at physical checkout",
+            "answer": "POS (EDC terminal)"
+          },
+          {
+            "left": "Payments accepted when customers purchase online over the internet",
+            "answer": "Payment Gateway"
+          },
+          {
+            "left": "Generating instant invoices and collecting by UPI/cards on home deliveries",
+            "answer": "Merchant Mobile App"
+          }
+        ]
+      },
+      {
+        "type": "kyc_sorter",
+        "id": "sorter_s24",
+        "title": "Knowledge Check: KYC Document Sorter (Slide 24)",
+        "instruction": "Decide which documents below qualify as an acceptable Officially Valid Document (OVD) for customer address verification under RBI regulations:",
+        "docs": [
+          {
+            "name": "Passport with current residential address",
+            "valid": true,
+            "note": "Passport with updated residential address is a primary OVD under RBI regulations."
+          },
+          {
+            "name": "PAN Card alone as Address Proof",
+            "valid": false,
+            "note": "PAN is valid for identity proof only; it does not contain residential address and cannot verify address."
+          },
+          {
+            "name": "Voter ID Card issued by Election Commission of India",
+            "valid": true,
+            "note": "Voter ID is an approved OVD verifying both individual identity and current address."
+          },
+          {
+            "name": "Driving Licence with current address",
+            "valid": true,
+            "note": "Driving Licence with active validity and current address qualifies as a valid OVD."
+          },
+          {
+            "name": "Utility bill of an unrelated third party",
+            "valid": false,
+            "note": "Third-party utility bills without legal proof of relationship or power of attorney are strictly rejected."
+          },
+          {
+            "name": "Aadhaar Card / e-KYC with current residential address",
+            "valid": true,
+            "note": "Aadhaar Card or validated e-KYC XML is an officially recognized primary OVD."
+          }
+        ]
+      },
+      {
+        "type": "flashcards",
+        "id": "fc_s25",
+        "title": "Knowledge Check: Consultative Sales Flip Cards (Slide 25)",
+        "instruction": "Tap any 3D card below to flip and reveal the benchmark sales execution takeaway:",
+        "cards": [
+          {
+            "q": "What are the 6 Steps to Run a High-Conversion Sales Call?",
+            "a": "1. Preparation & Prospect Research<br/>2. Professional Opening & Rapport<br/>3. Need Discovery & Open Probing<br/>4. Solution Presentation (Value over Price)<br/>5. Objection Handling (Clarify & Reassure)<br/>6. Closing & Action Next Steps"
+          },
+          {
+            "q": "What is Micro Market Catchment Mapping?",
+            "a": "Conducting a structured survey of all retail businesses, traders, commercial complexes, and housing societies within a 1\u20132 km radius of the branch to plan systematic daily outreach."
+          },
+          {
+            "q": "Why is Consultative Pitching superior to Product Pushing?",
+            "a": "Consultative pitching uncovers the customer's cash flow rhythms and operational friction points first. Matching the exact variant yields 2.5X higher ticket size, zero attrition, and long-term loyalty."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ch7",
+    "num": "M7",
+    "shortTitle": "Video Demos",
+    "title": "Module 3: Multilingual Field Roleplay Videos",
+    "subtitle": "Customer Engagement & Objection Handling Demos in Marathi, Hindi & Telugu",
     "blocks": [
       {
         "type": "video_placeholder",
-        "id": "vid_s20",
-        "badge": "WALKTHROUGH VIDEO",
-        "duration": "4m 30s",
-        "title": "How to Open the Physical Account",
-        "embedUrl": "media/media1.mp4",
-        "watchFor": [
-          "Physical Account Opening Form (AOF) step-by-step completion.",
-          "Mandatory customer signature verification and OVD self-attestation.",
-          "Zero-defect Maker-Checker authorization workflow before dispatch."
-        ]
-      },
-      {
-        "type": "video_placeholder",
-        "id": "vid_s21",
-        "badge": "WALKTHROUGH VIDEO",
-        "duration": "6m 15s",
-        "title": "One Account Four Checkpoints",
-        "embedUrl": "media/media2.mp4",
-        "watchFor": [
-          "Physical Account Opening Form (AOF) step-by-step completion.",
-          "Mandatory customer signature verification and OVD self-attestation.",
-          "Zero-defect Maker-Checker authorization workflow before dispatch."
-        ]
-      },
-      {
-        "type": "card",
-        "tag": "Slide 22",
-        "heading": "Knowledge Check",
-        "body": "<p>Click here to check your knowledge.</p>",
-        "bullets": null
-      },
-      {
-        "type": "card",
-        "tag": "Slide 23",
-        "heading": "Knowledge Check: Match Facilities to Needs",
-        "body": "<p>Decide which need each facility solves. Each click moves a facility to its match.</p>",
-        "bullets": [
-          "<strong>23</strong>",
-          "<strong>Click here to match</strong>"
-        ],
-        "callout": {
-          "type": "tip",
-          "text": "<strong>Facilitator Insight:</strong> PURPOSE\nCheck whether participants can link each current account facility to the business need it solves.\n\nFACILITATION GUIDANCE\nShow the slide with all five facilities on the left and five needs on the right. Ask the group to decide which need each "
-        }
-      },
-      {
-        "type": "card",
-        "tag": "Slide 24",
-        "heading": "Knowledge Check: KYC Document Sorter",
-        "body": "<p>Decide which documents are \"Valid\" or \"Not Valid\" as address proof</p>",
-        "bullets": [
-          "<strong>24</strong>",
-          "<strong>Click here to validate documents</strong>"
-        ],
-        "callout": {
-          "type": "tip",
-          "text": "<strong>Facilitator Insight:</strong> PURPOSE\nCheck whether participants can link each current account facility to the business need it solves.\n\nFACILITATION GUIDANCE\nShow the slide with all five facilities on the left and five needs on the right. Ask the group to decide which need each "
-        }
-      },
-      {
-        "type": "card",
-        "tag": "Slide 25",
-        "heading": "Knowledge Check: Flip Cards",
-        "body": "<p>Flip to get answer for Sales Call Execution steps and Micro Markets</p>",
-        "bullets": [
-          "<strong>25</strong>",
-          "<strong>Click here to Sales Flip Cards</strong>"
-        ],
-        "callout": {
-          "type": "tip",
-          "text": "<strong>Facilitator Insight:</strong> PURPOSE\nCheck whether participants can link each current account facility to the business need it solves.\n\nFACILITATION GUIDANCE\nShow the slide with all five facilities on the left and five needs on the right. Ask the group to decide which need each "
-        }
-      },
-      {
-        "type": "video_placeholder",
         "id": "vid_s26",
-        "badge": "WALKTHROUGH VIDEO",
-        "duration": "6m 15s",
-        "title": "Video- For Demo purpose- Marathi",
+        "badge": "MARATHI DUB WALKTHROUGH",
+        "duration": "3m 45s",
+        "title": "Customer Complaint Handling & Deepening (Marathi Dub \u2014 Slide 26)",
         "embedUrl": "media/media3.mp4",
         "watchFor": [
-          "Physical Account Opening Form (AOF) step-by-step completion.",
-          "Mandatory customer signature verification and OVD self-attestation.",
-          "Zero-defect Maker-Checker authorization workflow before dispatch."
+          "Active listening and empathetic response to customer concerns at the branch counter.",
+          "Restoring trust through transparent turnaround time commitments.",
+          "Converting service interactions into account deepening opportunities."
         ]
       },
       {
         "type": "video_placeholder",
         "id": "vid_s27",
-        "badge": "WALKTHROUGH VIDEO",
-        "duration": "6m 15s",
-        "title": "Video- For Demo purpose- Hindi",
+        "badge": "HINDI WALKTHROUGH",
+        "duration": "4m 10s",
+        "title": "Why Complaint Handling & Service Depth Matters (Hindi \u2014 Slide 27)",
         "embedUrl": "media/media4.mp4",
         "watchFor": [
-          "Physical Account Opening Form (AOF) step-by-step completion.",
-          "Mandatory customer signature verification and OVD self-attestation.",
-          "Zero-defect Maker-Checker authorization workflow before dispatch."
+          "De-escalation techniques for frustrated enterprise account holders.",
+          "Root-cause resolution protocols preventing repeat branch inquiries.",
+          "Building relationship advocacy that drives word-of-mouth merchant referrals."
         ]
       },
       {
         "type": "video_placeholder",
         "id": "vid_s28",
-        "badge": "WALKTHROUGH VIDEO",
-        "duration": "6m 15s",
-        "title": "Video- For Demo purpose - Telugu",
+        "badge": "TELUGU WALKTHROUGH",
+        "duration": "5m 05s",
+        "title": "Six Steps to Run an Outstanding Sales Call (Telugu \u2014 Slide 28)",
         "embedUrl": "media/media5.mp4",
         "watchFor": [
-          "Physical Account Opening Form (AOF) step-by-step completion.",
-          "Mandatory customer signature verification and OVD self-attestation.",
-          "Zero-defect Maker-Checker authorization workflow before dispatch."
+          "In-person merchant store visit preparation and rapport building.",
+          "Uncovering payment collection pain points through consultative questioning.",
+          "Closing the Current Account with Merchant QR and POS bundle."
         ]
-      },
+      }
+    ]
+  },
+  {
+    "id": "ch8",
+    "num": "M8",
+    "shortTitle": "Completion",
+    "title": "Course Completion & Action Commitment",
+    "subtitle": "Action Commitment, Facilitator Takeaways & SCORM 2004 Telemetry Sync",
+    "blocks": [
       {
         "type": "action_commitment",
         "id": "action_s29",
-        "title": "Course Completion & Action Commitment",
-        "prompt": "Commit to your top sales priorities and need-discovery questions for account opening this week:"
+        "title": "Thank You & Action Commitment (Slide 29)",
+        "prompt": "You have completed Day 3: Products & Account Opening! Commit to your top 3 sales action priorities for this week:"
       }
     ]
   }
 ];
 window.COURSE_CHAPTERS = COURSE_CHAPTERS;
 window.COURSE_CHAPTERS_DAY2 = COURSE_CHAPTERS;
-window.COURSE_STORAGE_KEY = "hdfc_scorm_Day_3__Products___Account_Open";
+window.COURSE_STORAGE_KEY = "hdfc_scorm_HDFC_Academy___Day_3__Products";
   </script>
   <script>
 /**
@@ -2338,6 +3139,93 @@ window.COURSE_STORAGE_KEY = "hdfc_scorm_Day_3__Products___Account_Open";
   }
   window.openExternalLink = openExternalLink;
 
+  function renderBoxes(boxes, gridCols) {
+    if (!boxes || !boxes.length) return '';
+    const colClass = gridCols ? `box-grid-${gridCols}` : (boxes.length === 2 ? 'box-grid-2' : (boxes.length === 3 ? 'box-grid-3' : (boxes.length >= 4 ? 'box-grid-4' : 'box-grid')));
+    return `
+      <div class="${colClass}">
+        ${boxes.map((bx) => {
+          const iconHtml = bx.icon ? `<div class="box-icon-wrap"><img src="${escapeHtml(bx.icon)}" alt="" loading="lazy" /></div>` : '';
+          const badgeHtml = bx.badge ? `<span class="box-badge ${bx.badgeColor || ''}">${escapeHtml(bx.badge)}</span>` : '';
+          const bulletsHtml = bx.bullets && bx.bullets.length ? `<ul class="rich-list" style="margin-top:8px;">${bx.bullets.map(b => `<li>${b}</li>`).join('')}</ul>` : '';
+          const collHtml = bx.details ? `
+            <details class="acc-item" style="margin-top:8px;">
+              <summary>${bx.detailsLabel || 'View Details'}</summary>
+              <div class="acc-body">${bx.details}</div>
+            </details>
+          ` : '';
+          const cls = `box-card ${bx.highlight ? 'highlight' : ''} ${bx.gold ? 'gold-accent' : ''} ${bx.green ? 'green-accent' : ''}`;
+          return `
+            <div class="${cls}">
+              <div class="box-header">
+                ${iconHtml}
+                <div>
+                  ${badgeHtml}
+                  <h3 class="box-title">${bx.title}</h3>
+                </div>
+              </div>
+              <div class="box-body">
+                ${bx.desc ? `<p>${bx.desc}</p>` : ''}
+                ${bx.content || ''}
+                ${bulletsHtml}
+                ${collHtml}
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  function renderCollapsibles(collapsibles) {
+    if (!collapsibles || !collapsibles.length) return '';
+    return `
+      <div class="collapsible-group" style="margin:14px 0;">
+        ${collapsibles.map((c) => {
+          const iconHtml = c.icon ? `<span class="box-summary-icon"><img src="${escapeHtml(c.icon)}" alt="" loading="lazy" /></span>` : '';
+          const badgeHtml = c.badge ? `<span class="box-badge ${c.badgeColor || ''}" style="margin-right:6px;">${escapeHtml(c.badge)}</span>` : '';
+          const isOpen = c.isOpen ? 'open' : '';
+          return `
+            <details class="box-collapsible" ${isOpen}>
+              <summary>
+                <div class="box-summary-left">
+                  ${iconHtml}
+                  <div>
+                    ${badgeHtml}
+                    <span>${c.title}</span>
+                  </div>
+                </div>
+                <div class="box-chevron">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </div>
+              </summary>
+              <div class="box-collapse-content">
+                ${c.content || ''}
+                ${c.bullets && c.bullets.length ? `<ul class="rich-list">${c.bullets.map(b => `<li>${b}</li>`).join('')}</ul>` : ''}
+              </div>
+            </details>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  function renderTable(table) {
+    if (!table || !table.rows) return '';
+    const headers = table.headers || [];
+    const rows = table.rows || [];
+    return `
+      <div class="table-wrap">
+        <table class="data-table">
+          ${headers.length ? `<thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>` : ''}
+          <tbody>
+            ${rows.map(r => `<tr>${r.map((c, ci) => `<td class="${ci === 0 ? 'highlight-cell' : ''}">${c}</td>`).join('')}</tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
   function renderBlock(block) {
     const audioHtml = renderAudioBar(block.audioUrl, block.audioTitle);
 
@@ -2400,12 +3288,9 @@ window.COURSE_STORAGE_KEY = "hdfc_scorm_Day_3__Products___Account_Open";
       `;
     }
 
-    if (block.type === 'card') {
-      const bulletsHtml = block.bullets
-        ? `<ul class="rich-list ${block.listTone || ''}">${block.bullets.map(b => `<li>${b}</li>`).join('')}</ul>`
-        : '';
-      const tableHtml = block.table
-        ? `<div class="table-wrap"><table class="data-table"><thead><tr>${block.table.headers.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>${block.table.rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`
+    if (block.type === 'boxes' || block.type === 'card_grid') {
+      const imageHtml = block.imageSrc
+        ? `<div class="card-hero-image-wrap"><img src="${escapeHtml(block.imageSrc)}" alt="" class="card-hero-image" loading="lazy" /></div>`
         : '';
       const calloutHtml = block.callout
         ? `<div class="callout ${block.callout.type || ''}">${block.callout.text}</div>`
@@ -2415,8 +3300,57 @@ window.COURSE_STORAGE_KEY = "hdfc_scorm_Day_3__Products___Account_Open";
           ${block.tag ? `<span class="card-tag">${block.tag}</span>` : ''}
           ${audioHtml}
           <h2>${block.heading}</h2>
+          ${imageHtml}
+          ${block.body || ''}
+          ${renderBoxes(block.boxes, block.boxGridCols)}
+          ${calloutHtml}
+        </section>
+      `;
+    }
+
+    if (block.type === 'collapsible_boxes') {
+      const imageHtml = block.imageSrc
+        ? `<div class="card-hero-image-wrap"><img src="${escapeHtml(block.imageSrc)}" alt="" class="card-hero-image" loading="lazy" /></div>`
+        : '';
+      const calloutHtml = block.callout
+        ? `<div class="callout ${block.callout.type || ''}">${block.callout.text}</div>`
+        : '';
+      return `
+        <section class="card">
+          ${block.tag ? `<span class="card-tag">${block.tag}</span>` : ''}
+          ${audioHtml}
+          <h2>${block.heading}</h2>
+          ${imageHtml}
+          ${block.body || ''}
+          ${renderCollapsibles(block.collapsibles || block.items)}
+          ${calloutHtml}
+        </section>
+      `;
+    }
+
+    if (block.type === 'card') {
+      const imageHtml = block.imageSrc
+        ? `<div class="card-hero-image-wrap"><img src="${escapeHtml(block.imageSrc)}" alt="" class="card-hero-image" loading="lazy" /></div>`
+        : '';
+      const bulletsHtml = block.bullets
+        ? `<ul class="rich-list ${block.listTone || ''}">${block.bullets.map(b => `<li>${b}</li>`).join('')}</ul>`
+        : '';
+      const boxesHtml = block.boxes ? renderBoxes(block.boxes, block.boxGridCols) : '';
+      const collapsiblesHtml = block.collapsibles ? renderCollapsibles(block.collapsibles) : '';
+      const tableHtml = block.table ? renderTable(block.table) : '';
+      const calloutHtml = block.callout
+        ? `<div class="callout ${block.callout.type || ''}">${block.callout.text}</div>`
+        : '';
+      return `
+        <section class="card">
+          ${block.tag ? `<span class="card-tag">${block.tag}</span>` : ''}
+          ${audioHtml}
+          <h2>${block.heading}</h2>
+          ${imageHtml}
           ${block.body || ''}
           ${bulletsHtml}
+          ${boxesHtml}
+          ${collapsiblesHtml}
           ${tableHtml}
           ${calloutHtml}
         </section>
@@ -2587,13 +3521,29 @@ window.COURSE_STORAGE_KEY = "hdfc_scorm_Day_3__Products___Account_Open";
         <section class="card">
           <span class="card-tag green">Interactive Self-Test Cards</span>
           <h2>${block.title}</h2>
-          <p style="font-size:13.5px;color:var(--muted);">Tap any card below to reveal the model answer:</p>
-          ${block.cards.map(c => `
-            <details class="flashcard">
-              <summary class="fc-q">${c.q}</summary>
-              <div class="fc-a">${c.a}</div>
-            </details>
-          `).join('')}
+          <p style="font-size:13.5px;color:var(--muted);">${block.instruction || 'Tap any card below to flip and reveal the key knowledge takeaway:'}</p>
+          <div class="flip-grid">
+            ${block.cards.map((c, ci) => `
+              <div class="flip-card-container" data-fc-idx="${ci}">
+                <div class="flip-card-inner">
+                  <div class="flip-card-front">
+                    <div>
+                      <span class="box-badge gold">Tap to Flip 🔄</span>
+                      <div class="flip-q-title">${c.q}</div>
+                    </div>
+                    <div class="flip-hint"><span>💡 Tap to flip answer</span></div>
+                  </div>
+                  <div class="flip-card-back">
+                    <div>
+                      <span class="box-badge green">Key Takeaway ✓</span>
+                      <div class="flip-a-text" style="margin-top:8px;">${c.a}</div>
+                    </div>
+                    <div style="font-size:11px;color:#64748B;text-align:right;">Tap again to flip back</div>
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
         </section>
       `;
     }
@@ -2757,6 +3707,13 @@ window.COURSE_STORAGE_KEY = "hdfc_scorm_Day_3__Products___Account_Open";
         state.answers[`${btn.dataset.sid}_s${btn.dataset.di}`] = (btn.dataset.val === 'true');
         persist();
         renderChapter();
+      });
+    });
+
+    // 3D Flip Cards
+    els.main.querySelectorAll('.flip-card-container').forEach(card => {
+      card.addEventListener('click', () => {
+        card.classList.toggle('flipped');
       });
     });
 

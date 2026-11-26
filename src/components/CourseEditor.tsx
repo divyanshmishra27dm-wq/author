@@ -512,8 +512,8 @@ export const CourseEditor: React.FC<CourseEditorProps> = ({
                 key={c.id || actualIdx}
                 onClick={() => setSelectedChapterIndex(actualIdx)}
                 className={`group relative rounded-xl border p-3 transition-all cursor-pointer ${isSelected
-                    ? 'border-blue-500 bg-blue-500/10 text-white shadow-md ring-1 ring-blue-500/30'
-                    : 'border-slate-800/80 bg-slate-900/40 text-slate-300 hover:border-slate-700 hover:bg-slate-900'
+                  ? 'border-blue-500 bg-blue-500/10 text-white shadow-md ring-1 ring-blue-500/30'
+                  : 'border-slate-800/80 bg-slate-900/40 text-slate-300 hover:border-slate-700 hover:bg-slate-900'
                   }`}
               >
                 {/* Header Row */}
@@ -856,33 +856,33 @@ export const CourseEditor: React.FC<CourseEditorProps> = ({
                 <div
                   key={block.id || bIdx}
                   className={`rounded-2xl border p-5 shadow-sm transition-all ${block.type === 'quiz_mcq'
-                      ? 'border-purple-500/40 bg-slate-900/80 border-l-4 border-l-purple-500'
-                      : block.type === 'kyc_sorter'
-                        ? 'border-emerald-500/40 bg-slate-900/80 border-l-4 border-l-emerald-500'
-                        : block.type === 'quiz_blanks'
-                          ? 'border-cyan-500/40 bg-slate-900/80 border-l-4 border-l-cyan-500'
-                          : block.type === 'quiz_match'
-                            ? 'border-amber-500/40 bg-slate-900/80 border-l-4 border-l-amber-500'
-                            : block.type === 'video_placeholder'
-                              ? 'border-rose-500/40 bg-slate-900/80 border-l-4 border-l-rose-500'
-                              : block.type === 'think'
-                                ? 'border-yellow-500/40 bg-slate-900/80 border-l-4 border-l-yellow-500'
-                                : block.type === 'url_redirect'
-                                  ? 'border-emerald-500/40 bg-slate-900/80 border-l-4 border-l-emerald-500'
-                                  : 'border-slate-800 bg-slate-900/60 border-l-4 border-l-blue-500'
+                    ? 'border-purple-500/40 bg-slate-900/80 border-l-4 border-l-purple-500'
+                    : block.type === 'kyc_sorter'
+                      ? 'border-emerald-500/40 bg-slate-900/80 border-l-4 border-l-emerald-500'
+                      : block.type === 'quiz_blanks'
+                        ? 'border-cyan-500/40 bg-slate-900/80 border-l-4 border-l-cyan-500'
+                        : block.type === 'quiz_match'
+                          ? 'border-amber-500/40 bg-slate-900/80 border-l-4 border-l-amber-500'
+                          : block.type === 'video_placeholder'
+                            ? 'border-rose-500/40 bg-slate-900/80 border-l-4 border-l-rose-500'
+                            : block.type === 'think'
+                              ? 'border-yellow-500/40 bg-slate-900/80 border-l-4 border-l-yellow-500'
+                              : block.type === 'url_redirect'
+                                ? 'border-emerald-500/40 bg-slate-900/80 border-l-4 border-l-emerald-500'
+                                : 'border-slate-800 bg-slate-900/60 border-l-4 border-l-blue-500'
                     }`}
                 >
                   {/* Block Header Toolbar */}
                   <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-800">
                     <div className="flex items-center gap-2">
                       <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md ${block.type === 'quiz_mcq' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' :
-                          block.type === 'kyc_sorter' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
-                            block.type === 'quiz_blanks' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' :
-                              block.type === 'quiz_match' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
-                                block.type === 'video_placeholder' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' :
-                                  block.type === 'think' ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' :
-                                    block.type === 'url_redirect' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
-                                      'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                        block.type === 'kyc_sorter' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
+                          block.type === 'quiz_blanks' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' :
+                            block.type === 'quiz_match' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
+                              block.type === 'video_placeholder' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' :
+                                block.type === 'think' ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' :
+                                  block.type === 'url_redirect' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
+                                    'bg-blue-500/20 text-blue-300 border border-blue-500/30'
                         }`}>
                         {block.type === 'url_redirect' ? 'URL REDIRECT' : block.type.replace('_', ' ')}
                       </span>
@@ -1158,8 +1158,8 @@ export const CourseEditor: React.FC<CourseEditorProps> = ({
                                   });
                                 }}
                                 className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-colors shrink-0 ${doc.valid
-                                    ? 'bg-emerald-600/20 border-emerald-500 text-emerald-300'
-                                    : 'bg-red-600/20 border-red-500 text-red-300'
+                                  ? 'bg-emerald-600/20 border-emerald-500 text-emerald-300'
+                                  : 'bg-red-600/20 border-red-500 text-red-300'
                                   }`}
                               >
                                 {doc.valid ? '✓ Valid / In Bucket' : '✕ Not Valid / Excluded'}
@@ -1899,8 +1899,8 @@ export const CourseEditor: React.FC<CourseEditorProps> = ({
                   {/* ------------------------------------------------------------- */}
                   <div className="mt-4 pt-3 border-t border-slate-800/80">
                     <div className={`rounded-xl border p-3.5 transition-all ${block.audioUrl
-                        ? 'border-blue-500/40 bg-gradient-to-r from-blue-950/60 to-slate-900/80 shadow-md shadow-blue-950/20'
-                        : 'border-slate-800/80 bg-slate-950/40 hover:border-slate-700'
+                      ? 'border-blue-500/40 bg-gradient-to-r from-blue-950/60 to-slate-900/80 shadow-md shadow-blue-950/20'
+                      : 'border-slate-800/80 bg-slate-950/40 hover:border-slate-700'
                       }`}>
                       <div className="flex items-center justify-between gap-2 mb-2.5">
                         <div className="flex items-center gap-2">
@@ -1960,8 +1960,8 @@ export const CourseEditor: React.FC<CourseEditorProps> = ({
                               className="flex-1 rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-white font-mono placeholder-slate-600 focus:border-blue-500 focus:outline-none"
                             />
                             <label className={`cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${uploadingAudioBlockIdx === bIdx
-                                ? 'bg-blue-600/50 text-white cursor-wait animate-pulse'
-                                : 'bg-blue-600 hover:bg-blue-500 text-white shadow-sm'
+                              ? 'bg-blue-600/50 text-white cursor-wait animate-pulse'
+                              : 'bg-blue-600 hover:bg-blue-500 text-white shadow-sm'
                               }`}>
                               <Upload className="h-3 w-3" />
                               <span>{uploadingAudioBlockIdx === bIdx ? 'Uploading...' : 'Upload MP3'}</span>

@@ -307,6 +307,93 @@
   }
   window.openExternalLink = openExternalLink;
 
+  function renderBoxes(boxes, gridCols) {
+    if (!boxes || !boxes.length) return '';
+    const colClass = gridCols ? `box-grid-${gridCols}` : (boxes.length === 2 ? 'box-grid-2' : (boxes.length === 3 ? 'box-grid-3' : (boxes.length >= 4 ? 'box-grid-4' : 'box-grid')));
+    return `
+      <div class="${colClass}">
+        ${boxes.map((bx) => {
+          const iconHtml = bx.icon ? `<div class="box-icon-wrap"><img src="${escapeHtml(bx.icon)}" alt="" loading="lazy" /></div>` : '';
+          const badgeHtml = bx.badge ? `<span class="box-badge ${bx.badgeColor || ''}">${escapeHtml(bx.badge)}</span>` : '';
+          const bulletsHtml = bx.bullets && bx.bullets.length ? `<ul class="rich-list" style="margin-top:8px;">${bx.bullets.map(b => `<li>${b}</li>`).join('')}</ul>` : '';
+          const collHtml = bx.details ? `
+            <details class="acc-item" style="margin-top:8px;">
+              <summary>${bx.detailsLabel || 'View Details'}</summary>
+              <div class="acc-body">${bx.details}</div>
+            </details>
+          ` : '';
+          const cls = `box-card ${bx.highlight ? 'highlight' : ''} ${bx.gold ? 'gold-accent' : ''} ${bx.green ? 'green-accent' : ''}`;
+          return `
+            <div class="${cls}">
+              <div class="box-header">
+                ${iconHtml}
+                <div>
+                  ${badgeHtml}
+                  <h3 class="box-title">${bx.title}</h3>
+                </div>
+              </div>
+              <div class="box-body">
+                ${bx.desc ? `<p>${bx.desc}</p>` : ''}
+                ${bx.content || ''}
+                ${bulletsHtml}
+                ${collHtml}
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  function renderCollapsibles(collapsibles) {
+    if (!collapsibles || !collapsibles.length) return '';
+    return `
+      <div class="collapsible-group" style="margin:14px 0;">
+        ${collapsibles.map((c) => {
+          const iconHtml = c.icon ? `<span class="box-summary-icon"><img src="${escapeHtml(c.icon)}" alt="" loading="lazy" /></span>` : '';
+          const badgeHtml = c.badge ? `<span class="box-badge ${c.badgeColor || ''}" style="margin-right:6px;">${escapeHtml(c.badge)}</span>` : '';
+          const isOpen = c.isOpen ? 'open' : '';
+          return `
+            <details class="box-collapsible" ${isOpen}>
+              <summary>
+                <div class="box-summary-left">
+                  ${iconHtml}
+                  <div>
+                    ${badgeHtml}
+                    <span>${c.title}</span>
+                  </div>
+                </div>
+                <div class="box-chevron">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </div>
+              </summary>
+              <div class="box-collapse-content">
+                ${c.content || ''}
+                ${c.bullets && c.bullets.length ? `<ul class="rich-list">${c.bullets.map(b => `<li>${b}</li>`).join('')}</ul>` : ''}
+              </div>
+            </details>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  function renderTable(table) {
+    if (!table || !table.rows) return '';
+    const headers = table.headers || [];
+    const rows = table.rows || [];
+    return `
+      <div class="table-wrap">
+        <table class="data-table">
+          ${headers.length ? `<thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>` : ''}
+          <tbody>
+            ${rows.map(r => `<tr>${r.map((c, ci) => `<td class="${ci === 0 ? 'highlight-cell' : ''}">${c}</td>`).join('')}</tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
   function renderBlock(block) {
     const audioHtml = renderAudioBar(block.audioUrl, block.audioTitle);
 
@@ -369,12 +456,9 @@
       `;
     }
 
-    if (block.type === 'card') {
-      const bulletsHtml = block.bullets
-        ? `<ul class="rich-list ${block.listTone || ''}">${block.bullets.map(b => `<li>${b}</li>`).join('')}</ul>`
-        : '';
-      const tableHtml = block.table
-        ? `<div class="table-wrap"><table class="data-table"><thead><tr>${block.table.headers.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>${block.table.rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`
+    if (block.type === 'boxes' || block.type === 'card_grid') {
+      const imageHtml = block.imageSrc
+        ? `<div class="card-hero-image-wrap"><img src="${escapeHtml(block.imageSrc)}" alt="" class="card-hero-image" loading="lazy" /></div>`
         : '';
       const calloutHtml = block.callout
         ? `<div class="callout ${block.callout.type || ''}">${block.callout.text}</div>`
@@ -384,8 +468,57 @@
           ${block.tag ? `<span class="card-tag">${block.tag}</span>` : ''}
           ${audioHtml}
           <h2>${block.heading}</h2>
+          ${imageHtml}
+          ${block.body || ''}
+          ${renderBoxes(block.boxes, block.boxGridCols)}
+          ${calloutHtml}
+        </section>
+      `;
+    }
+
+    if (block.type === 'collapsible_boxes') {
+      const imageHtml = block.imageSrc
+        ? `<div class="card-hero-image-wrap"><img src="${escapeHtml(block.imageSrc)}" alt="" class="card-hero-image" loading="lazy" /></div>`
+        : '';
+      const calloutHtml = block.callout
+        ? `<div class="callout ${block.callout.type || ''}">${block.callout.text}</div>`
+        : '';
+      return `
+        <section class="card">
+          ${block.tag ? `<span class="card-tag">${block.tag}</span>` : ''}
+          ${audioHtml}
+          <h2>${block.heading}</h2>
+          ${imageHtml}
+          ${block.body || ''}
+          ${renderCollapsibles(block.collapsibles || block.items)}
+          ${calloutHtml}
+        </section>
+      `;
+    }
+
+    if (block.type === 'card') {
+      const imageHtml = block.imageSrc
+        ? `<div class="card-hero-image-wrap"><img src="${escapeHtml(block.imageSrc)}" alt="" class="card-hero-image" loading="lazy" /></div>`
+        : '';
+      const bulletsHtml = block.bullets
+        ? `<ul class="rich-list ${block.listTone || ''}">${block.bullets.map(b => `<li>${b}</li>`).join('')}</ul>`
+        : '';
+      const boxesHtml = block.boxes ? renderBoxes(block.boxes, block.boxGridCols) : '';
+      const collapsiblesHtml = block.collapsibles ? renderCollapsibles(block.collapsibles) : '';
+      const tableHtml = block.table ? renderTable(block.table) : '';
+      const calloutHtml = block.callout
+        ? `<div class="callout ${block.callout.type || ''}">${block.callout.text}</div>`
+        : '';
+      return `
+        <section class="card">
+          ${block.tag ? `<span class="card-tag">${block.tag}</span>` : ''}
+          ${audioHtml}
+          <h2>${block.heading}</h2>
+          ${imageHtml}
           ${block.body || ''}
           ${bulletsHtml}
+          ${boxesHtml}
+          ${collapsiblesHtml}
           ${tableHtml}
           ${calloutHtml}
         </section>
@@ -556,13 +689,29 @@
         <section class="card">
           <span class="card-tag green">Interactive Self-Test Cards</span>
           <h2>${block.title}</h2>
-          <p style="font-size:13.5px;color:var(--muted);">Tap any card below to reveal the model answer:</p>
-          ${block.cards.map(c => `
-            <details class="flashcard">
-              <summary class="fc-q">${c.q}</summary>
-              <div class="fc-a">${c.a}</div>
-            </details>
-          `).join('')}
+          <p style="font-size:13.5px;color:var(--muted);">${block.instruction || 'Tap any card below to flip and reveal the key knowledge takeaway:'}</p>
+          <div class="flip-grid">
+            ${block.cards.map((c, ci) => `
+              <div class="flip-card-container" data-fc-idx="${ci}">
+                <div class="flip-card-inner">
+                  <div class="flip-card-front">
+                    <div>
+                      <span class="box-badge gold">Tap to Flip 🔄</span>
+                      <div class="flip-q-title">${c.q}</div>
+                    </div>
+                    <div class="flip-hint"><span>💡 Tap to flip answer</span></div>
+                  </div>
+                  <div class="flip-card-back">
+                    <div>
+                      <span class="box-badge green">Key Takeaway ✓</span>
+                      <div class="flip-a-text" style="margin-top:8px;">${c.a}</div>
+                    </div>
+                    <div style="font-size:11px;color:#64748B;text-align:right;">Tap again to flip back</div>
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
         </section>
       `;
     }
@@ -726,6 +875,13 @@
         state.answers[`${btn.dataset.sid}_s${btn.dataset.di}`] = (btn.dataset.val === 'true');
         persist();
         renderChapter();
+      });
+    });
+
+    // 3D Flip Cards
+    els.main.querySelectorAll('.flip-card-container').forEach(card => {
+      card.addEventListener('click', () => {
+        card.classList.toggle('flipped');
       });
     });
 

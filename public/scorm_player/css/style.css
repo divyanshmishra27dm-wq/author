@@ -1150,3 +1150,556 @@ table.data-table tr:nth-child(even) td { background: #F8FAFD; }
   margin-top: 14px;
   margin-bottom: 0;
 }
+
+/* =========================================================================
+   ANIMATIONS & MOTION SYSTEM (Fade In, Staggered Reveals, Card Transitions)
+   ========================================================================= */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes popIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  70% {
+    transform: scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(0, 76, 143, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(0, 76, 143, 0);
+  }
+}
+
+/* Staggered entrance animations on cards and blocks */
+.main-content > * {
+  animation: fadeInUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.main-content > *:nth-child(1) { animation-delay: 0.05s; }
+.main-content > *:nth-child(2) { animation-delay: 0.12s; }
+.main-content > *:nth-child(3) { animation-delay: 0.19s; }
+.main-content > *:nth-child(4) { animation-delay: 0.26s; }
+.main-content > *:nth-child(5) { animation-delay: 0.33s; }
+.main-content > *:nth-child(6) { animation-delay: 0.40s; }
+
+/* Interactive Hover Elevation */
+.card, .quiz-card, .video-embed-card, .box-card, .stat-tile, .roadmap-card {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
+}
+.card:hover, .quiz-card:hover, .box-card:hover, .roadmap-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 45, 90, 0.10);
+}
+
+/* =========================================================================
+   BOXES & RESPONSIVE GRID SYSTEM
+   ========================================================================= */
+.box-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+  margin: 16px 0;
+}
+.box-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin: 16px 0;
+}
+.box-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin: 16px 0;
+}
+.box-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+.box-grid-5 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+
+@media (max-width: 640px) {
+  .box-grid, .box-grid-2, .box-grid-3, .box-grid-4, .box-grid-5 {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+.box-card {
+  background: #ffffff;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 45, 90, 0.04);
+}
+
+.box-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3.5px;
+  background: linear-gradient(90deg, #002D5A, #004C8F);
+  opacity: 0.9;
+}
+
+.box-card.highlight {
+  border-color: #004C8F;
+  background: linear-gradient(180deg, #F0F7FF 0%, #FFFFFF 100%);
+  box-shadow: 0 4px 16px rgba(0, 76, 143, 0.08);
+}
+.box-card.highlight::before {
+  background: linear-gradient(90deg, #004C8F, #ED232A);
+  height: 4px;
+}
+
+.box-card.gold-accent {
+  border-color: #D4AF37;
+  background: linear-gradient(180deg, #FFFDF5 0%, #FFFFFF 100%);
+}
+.box-card.gold-accent::before {
+  background: linear-gradient(90deg, #D4AF37, #B8860B);
+  height: 4px;
+}
+
+.box-card.green-accent {
+  border-color: #0E8A4E;
+  background: linear-gradient(180deg, #F0FDF4 0%, #FFFFFF 100%);
+}
+.box-card.green-accent::before {
+  background: linear-gradient(90deg, #0E8A4E, #38D9A9);
+  height: 4px;
+}
+
+.box-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.card-hero-image-wrap {
+  width: 100%;
+  margin: 14px 0 18px;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 4px 18px rgba(0, 45, 90, 0.12);
+  border: 1px solid #DCE5F0;
+  background: #002D5A;
+}
+
+.card-hero-image {
+  width: 100%;
+  max-height: 440px;
+  object-fit: contain;
+  display: block;
+  background: #002D5A;
+}
+
+.box-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #002D5A 0%, #004C8F 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  border: 1px solid rgba(0, 76, 143, 0.25);
+  box-shadow: 0 2px 8px rgba(0, 45, 90, 0.16);
+}
+
+.box-icon-wrap img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+}
+
+.box-badge {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #004C8F;
+  background: #EBF3FA;
+  padding: 3px 8px;
+  border-radius: 6px;
+  display: inline-block;
+  margin-bottom: 4px;
+}
+.box-badge.red {
+  color: #ED232A;
+  background: #FFF5F5;
+}
+.box-badge.green {
+  color: #0E8A4E;
+  background: #E7F7EF;
+}
+.box-badge.gold {
+  color: #854D0E;
+  background: #FEF3C7;
+}
+
+.box-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #002D5A;
+  margin: 0;
+  line-height: 1.35;
+}
+
+.box-body {
+  font-size: 14px;
+  color: #334155;
+  line-height: 1.5;
+  flex: 1;
+}
+
+.box-body p {
+  margin: 0 0 8px 0;
+}
+.box-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* =========================================================================
+   COLLAPSIBLE BOXES (Details / Accordions with Animated Drawer)
+   ========================================================================= */
+details.box-collapsible {
+  border: 1.5px solid #E2E8F0;
+  border-radius: 14px;
+  margin: 10px 0;
+  background: #FFFFFF;
+  overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+details.box-collapsible:hover {
+  border-color: #B8D4F0;
+  box-shadow: 0 4px 14px rgba(0, 45, 90, 0.06);
+}
+
+details.box-collapsible[open] {
+  border-color: #004C8F;
+  box-shadow: 0 6px 20px rgba(0, 76, 143, 0.10);
+}
+
+details.box-collapsible summary {
+  padding: 14px 18px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #002D5A;
+  background: #F8FAFC;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  list-style: none;
+  user-select: none;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+details.box-collapsible summary::-webkit-details-marker {
+  display: none;
+}
+
+details.box-collapsible summary:hover {
+  background: #F1F5F9;
+  color: #004C8F;
+}
+
+details.box-collapsible[open] summary {
+  background: #EBF3FA;
+  color: #004C8F;
+  border-bottom: 1px solid #DCE5F0;
+}
+
+.box-summary-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.box-summary-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #002D5A 0%, #004C8F 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 45, 90, 0.16);
+}
+.box-summary-icon img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+}
+
+.box-chevron {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease;
+}
+
+.box-chevron svg {
+  width: 14px;
+  height: 14px;
+  stroke: #004C8F;
+  stroke-width: 2.4;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+details.box-collapsible[open] .box-chevron {
+  transform: rotate(180deg);
+  background: #004C8F;
+}
+details.box-collapsible[open] .box-chevron svg {
+  stroke: #FFFFFF;
+}
+
+.box-collapse-content {
+  padding: 16px 18px;
+  font-size: 14px;
+  color: #334155;
+  line-height: 1.55;
+  animation: fadeInDown 0.25s ease-out;
+}
+
+/* =========================================================================
+   STAT TILES & HERO ROADMAP TILES
+   ========================================================================= */
+.stat-tile {
+  background: #FFFFFF;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.stat-tile-val {
+  font-size: 26px;
+  font-weight: 900;
+  color: #004C8F;
+  line-height: 1;
+}
+.stat-tile-lbl {
+  font-size: 13px;
+  font-weight: 700;
+  color: #475569;
+}
+
+.roadmap-card {
+  background: #FFFFFF;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+.roadmap-card:hover {
+  transform: translateY(-2px);
+  border-color: #004C8F;
+  box-shadow: 0 6px 18px rgba(0, 76, 143, 0.12);
+}
+.roadmap-pill {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 4px;
+  color: #004C8F;
+  background: #EBF3FA;
+  align-self: flex-start;
+  margin-bottom: 6px;
+}
+
+/* =========================================================================
+   3D INTERACTIVE FLIP CARDS
+   ========================================================================= */
+.flip-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin: 16px 0;
+  perspective: 1000px;
+}
+
+.flip-card-container {
+  height: 200px;
+  cursor: pointer;
+  perspective: 1000px;
+}
+
+.flip-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  text-align: left;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(0, 45, 90, 0.08);
+}
+
+.flip-card-container.flipped .flip-card-inner {
+  transform: rotateY(180deg);
+}
+
+.flip-card-front, .flip-card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  border-radius: 14px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+
+.flip-card-front {
+  background: linear-gradient(135deg, #002D5A 0%, #004C8F 100%);
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.flip-card-front .flip-q-title {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.4;
+  margin-top: 8px;
+}
+
+.flip-card-front .flip-hint {
+  font-size: 11.5px;
+  color: #A5C8ED;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.flip-card-back {
+  background: #FFFFFF;
+  color: #1E293B;
+  transform: rotateY(180deg);
+  border: 1.5px solid #004C8F;
+  overflow-y: auto;
+}
+
+.flip-card-back .flip-a-text {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: #334155;
+}
+
+/* =========================================================================
+   COMPREHENSIVE DATA & COMPARISON TABLES
+   ========================================================================= */
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  margin: 16px 0;
+  border-radius: 12px;
+  border: 1.5px solid #E2E8F0;
+  box-shadow: 0 2px 8px rgba(0, 45, 90, 0.04);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+  text-align: left;
+}
+
+.data-table th {
+  background: #002D5A;
+  color: #FFFFFF;
+  font-weight: 700;
+  padding: 12px 14px;
+  border-right: 1px solid rgba(255, 255, 255, 0.12);
+}
+.data-table th:last-child {
+  border-right: none;
+}
+
+.data-table td {
+  padding: 12px 14px;
+  border-top: 1px solid #E2E8F0;
+  border-right: 1px solid #F1F5F9;
+  color: #334155;
+  line-height: 1.45;
+}
+.data-table td:last-child {
+  border-right: none;
+}
+
+.data-table tr:nth-child(even) td {
+  background: #F8FAFC;
+}
+
+.data-table tr:hover td {
+  background: #F0F7FF;
+}
+
+.data-table .highlight-cell {
+  font-weight: 800;
+  color: #004C8F;
+}
+

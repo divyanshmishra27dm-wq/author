@@ -59,22 +59,20 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center rounded-xl bg-slate-900 p-1 border border-slate-800">
           <button
             onClick={() => onTabChange('preview')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              activeTab === 'preview'
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${activeTab === 'preview'
                 ? 'bg-blue-600 text-white shadow-sm'
                 : 'text-slate-400 hover:text-slate-200'
-            }`}
+              }`}
           >
             <Smartphone className="h-3.5 w-3.5" />
             <span>Interactive Preview</span>
           </button>
           <button
             onClick={() => onTabChange('editor')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              activeTab === 'editor'
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${activeTab === 'editor'
                 ? 'bg-blue-600 text-white shadow-sm'
                 : 'text-slate-400 hover:text-slate-200'
-            }`}
+              }`}
           >
             <Layers className="h-3.5 w-3.5" />
             <span>Course Architecture</span>
@@ -88,22 +86,20 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 onClick={() => onViewportChange('mobile')}
                 title="Mobile Viewport (Responsive Micro-learning Cards)"
-                className={`p-1.5 rounded-md text-xs font-medium transition-all ${
-                  viewportMode === 'mobile'
+                className={`p-1.5 rounded-md text-xs font-medium transition-all ${viewportMode === 'mobile'
                     ? 'bg-slate-800 text-blue-400 shadow'
                     : 'text-slate-400 hover:text-slate-200'
-                }`}
+                  }`}
               >
                 <Smartphone className="h-4 w-4" />
               </button>
               <button
                 onClick={() => onViewportChange('desktop')}
                 title="Desktop / Tablet Viewport"
-                className={`p-1.5 rounded-md text-xs font-medium transition-all ${
-                  viewportMode === 'desktop'
+                className={`p-1.5 rounded-md text-xs font-medium transition-all ${viewportMode === 'desktop'
                     ? 'bg-slate-800 text-blue-400 shadow'
                     : 'text-slate-400 hover:text-slate-200'
-                }`}
+                  }`}
               >
                 <Monitor className="h-4 w-4" />
               </button>

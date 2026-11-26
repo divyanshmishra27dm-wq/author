@@ -29,6 +29,8 @@ ENV/
 *.zip
 *.tar.gz
 *.mp4
+*.pptx
+media/
 Day3_B2B_Exact.html
 
 # Logs

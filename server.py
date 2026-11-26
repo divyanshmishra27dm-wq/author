@@ -277,6 +277,13 @@ async def convert_pptx_endpoint(file: UploadFile = File(...)):
             "scorm_zip_url": f"/{encoded_name}_SCORM2004.zip",
             "course_data": result.get("course_data", {})
         }
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "error": f"Conversion error: {str(e)}"}
+        )
     finally:
         shutil.rmtree(temp_dir, ignore_errors=True)
 

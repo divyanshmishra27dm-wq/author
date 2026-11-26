@@ -283,69 +283,69 @@ export function App() {
         }}
       />
 
-              {/* Main Body */}
-              <main className="flex-1 flex flex-col overflow-hidden">
-                {activeTab === 'preview' ? (
-                  <PlayerPreview
-                    course={course}
-                    uploadedCourse={uploadedCourse}
-                    currentPreviewUrl={currentPreviewUrl}
-                    onSelectPreviewUrl={handleSelectPreviewUrl}
-                    viewportMode={viewportMode}
-                    onViewportChange={setViewportMode}
-                    onOpenEditor={() => {
-                      setActiveTab('editor');
-                      if (richCourse.chapters.length === 0) {
-                        fetchCourseData(uploadedCourse?.title || 'Sample PPT for VO 1');
-                      }
-                    }}
-                  />
-                ) : (
-                  <CourseEditor
-                    richCourse={richCourse}
-                    onUpdateRichCourse={setRichCourse}
-                    onSyncPreview={handleSyncPreview}
-                    onPreviewSlide={handlePreviewSlide}
-                    isSyncing={isSyncing}
-                  />
-                )}
-              </main>
+      {/* Main Body */}
+      <main className="flex-1 flex flex-col overflow-hidden">
+        {activeTab === 'preview' ? (
+          <PlayerPreview
+            course={course}
+            uploadedCourse={uploadedCourse}
+            currentPreviewUrl={currentPreviewUrl}
+            onSelectPreviewUrl={handleSelectPreviewUrl}
+            viewportMode={viewportMode}
+            onViewportChange={setViewportMode}
+            onOpenEditor={() => {
+              setActiveTab('editor');
+              if (richCourse.chapters.length === 0) {
+                fetchCourseData(uploadedCourse?.title || 'Sample PPT for VO 1');
+              }
+            }}
+          />
+        ) : (
+          <CourseEditor
+            richCourse={richCourse}
+            onUpdateRichCourse={setRichCourse}
+            onSyncPreview={handleSyncPreview}
+            onPreviewSlide={handlePreviewSlide}
+            isSyncing={isSyncing}
+          />
+        )}
+      </main>
 
-              {/* Upload Modal */}
-              {showUploadModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fadeIn">
-                  <div className="relative w-full max-w-2xl rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
-                    <div className="flex items-center justify-between pb-4 border-b border-slate-800">
-                      <h3 className="text-lg font-bold text-white">Upload PowerPoint File</h3>
-                      <button
-                        onClick={() => setShowUploadModal(false)}
-                        className="text-slate-400 hover:text-white"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                    <div className="mt-4">
-                      <FileUpload
-                        onCourseLoaded={handleCourseLoaded}
-                        onClose={() => setShowUploadModal(false)}
-                        onLoadSample={handleLoadSample}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Export Modal */}
-              {showExportModal && (
-                <ExportModal
-                  course={course}
-                  uploadedCourse={uploadedCourse}
-                  onClose={() => setShowExportModal(false)}
-                  onUpdateCourse={setCourse}
-                />
-              )}
+      {/* Upload Modal */}
+      {showUploadModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fadeIn">
+          <div className="relative w-full max-w-2xl rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+              <h3 className="text-lg font-bold text-white">Upload PowerPoint File</h3>
+              <button
+                onClick={() => setShowUploadModal(false)}
+                className="text-slate-400 hover:text-white"
+              >
+                ✕
+              </button>
             </div>
-          );
-        }
+            <div className="mt-4">
+              <FileUpload
+                onCourseLoaded={handleCourseLoaded}
+                onClose={() => setShowUploadModal(false)}
+                onLoadSample={handleLoadSample}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Export Modal */}
+      {showExportModal && (
+        <ExportModal
+          course={course}
+          uploadedCourse={uploadedCourse}
+          onClose={() => setShowExportModal(false)}
+          onUpdateCourse={setCourse}
+        />
+      )}
+    </div>
+  );
+}
 
 export default App;
