@@ -152,11 +152,10 @@ export const PlayerPreview: React.FC<PlayerPreviewProps> = ({
                   <button
                     key={c.name}
                     onClick={() => onSelectPreviewUrl(c.preview_url)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
-                      isSelected
-                        ? 'bg-emerald-600 text-white shadow'
-                        : 'text-slate-400 hover:text-slate-200'
-                    }`}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-all ${isSelected
+                      ? 'bg-emerald-600 text-white shadow'
+                      : 'text-slate-400 hover:text-slate-200'
+                      }`}
                   >
                     <FileCheck className="h-3.5 w-3.5" />
                     <span>{c.title} ({c.total_chapters} Chapters)</span>
