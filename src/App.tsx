@@ -340,6 +340,7 @@ export function App() {
         <ExportModal
           course={course}
           uploadedCourse={uploadedCourse}
+          richCourse={richCourse}
           onClose={() => setShowExportModal(false)}
           onUpdateCourse={setCourse}
         />

@@ -1547,6 +1547,33 @@ def build_scorm2004_zip(course_data, zip_path, media_dir=None):
     Packages the course into a certified SCORM 2004 4th Edition Zip Archive.
     Includes all assets and embedded video files.
     """
+    import copy
+    course_data = copy.deepcopy(course_data)
+
+    # 1. Extract embedded Base64 Data URLs to real media files in zip
+    data_url_pattern = re.compile(r'data:image/([a-zA-Z0-9+]+);base64,([A-Za-z0-9+/=]+)')
+    raw_json = json.dumps(course_data)
+    extracted_media = {}
+    counter = [0]
+
+    def data_url_repl(match):
+        counter[0] += 1
+        ext = match.group(1).lower()
+        if 'svg' in ext:
+            ext = 'svg'
+        elif ext == 'jpeg':
+            ext = 'jpg'
+        b64_data = match.group(2)
+        arcname = f"media/image_upload_{counter[0]}.{ext}"
+        try:
+            extracted_media[arcname] = base64.b64decode(b64_data)
+            return arcname
+        except Exception:
+            return match.group(0)
+
+    cleaned_json = data_url_pattern.sub(data_url_repl, raw_json)
+    course_data = json.loads(cleaned_json)
+
     css_content = load_template_file("css/style.css")
     scorm2004_js = load_template_file("js/scorm2004.js")
     app_js = load_template_file("js/app.js")
@@ -1558,17 +1585,25 @@ def build_scorm2004_zip(course_data, zip_path, media_dir=None):
     course_data_js = f"""var COURSE_CHAPTERS = {json.dumps(course_data.get('chapters', []), indent=2)};
 window.COURSE_CHAPTERS = COURSE_CHAPTERS;
 window.COURSE_CHAPTERS_DAY2 = COURSE_CHAPTERS;
+window.COURSE_CHAPTERS_DAY3 = COURSE_CHAPTERS;
 window.COURSE_STORAGE_KEY = "{storage_key}";
 """
-    first_short_title = course_data['chapters'][0]['shortTitle'] if course_data.get('chapters') else 'Course'
+    first_short_title = 'Overview'
+    if course_data.get('chapters') and len(course_data['chapters']) > 0:
+        first_short_title = course_data['chapters'][0].get('shortTitle') or course_data['chapters'][0].get('title') or 'Overview'
     num_chapters = len(course_data.get('chapters', []))
+
+    total_videos = sum(
+        len([b for b in ch.get('blocks', []) if b.get('type') == 'video_placeholder'])
+        for ch in course_data.get('chapters', [])
+    )
 
     index_html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
-  <title>{course_data.get('title', 'Course')}</title>
+  <title>{html.escape(course_data.get('title', 'Course'))}</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -1583,7 +1618,7 @@ window.COURSE_STORAGE_KEY = "{storage_key}";
         </button>
         <div class="brand-lockup">
           <span class="brand-pill">{brand_pill}</span>
-          <h1 id="headerTitle" class="header-title">{first_short_title}</h1>
+          <h1 id="headerTitle" class="header-title">{html.escape(first_short_title)}</h1>
         </div>
         <div class="score-pill" id="scorePill" title="Quiz Mastery Score">0%</div>
       </div>
@@ -1616,7 +1651,7 @@ window.COURSE_STORAGE_KEY = "{storage_key}";
           <span class="stat-lbl">Quiz Score</span>
         </div>
         <div class="stat-box">
-          <span class="stat-val">2</span>
+          <span class="stat-val">{total_videos}</span>
           <span class="stat-lbl">Video Slots</span>
         </div>
       </div>
@@ -1649,30 +1684,82 @@ window.COURSE_STORAGE_KEY = "{storage_key}";
 </body>
 </html>"""
 
-    asset_files_xml = ""
-    for asset in course_data.get("assets", []):
-        asset_files_xml += f'      <file href="assets/{asset}"/>\n'
+    # Discover media referenced specifically by this course
+    media_json_str = json.dumps(course_data)
+    media_exts = r'\.(?:png|jpg|jpeg|gif|webp|svg|mp4|webm|mp3|wav|ogg|m4a|aac)'
+    referenced_media_names = set(re.findall(r'(?:media/|[/\\])?([a-zA-Z0-9_\- .%]+' + media_exts + r')', media_json_str, re.IGNORECASE))
+    referenced_asset_names = set(re.findall(r'(?:assets/|[/\\])?([a-zA-Z0-9_\- .%]+' + media_exts + r')', media_json_str, re.IGNORECASE))
 
-    # Check for media files (videos)
-    media_xml = ""
-    media_files = []
+    for asset in course_data.get("assets", []):
+        referenced_asset_names.add(os.path.basename(asset))
+
+    # Search paths for media
     pub_media = os.path.join(os.path.dirname(os.path.abspath(__file__)), "public", "media")
-    check_dirs = [media_dir, pub_media]
+    template_assets = os.path.join(TEMPLATE_DIR, "assets")
+    ref_assets = os.path.join(REF_SCORM_DIR, "assets")
+
+    media_dirs_to_search = []
+    if media_dir and os.path.exists(media_dir):
+        media_dirs_to_search.append(media_dir)
+    if os.path.exists(pub_media) and pub_media not in media_dirs_to_search:
+        media_dirs_to_search.append(pub_media)
+
+    media_files = []
     seen_media = set()
 
-    for mdir in check_dirs:
-        if mdir and os.path.exists(mdir):
-            for fname in os.listdir(mdir):
-                fpath = os.path.join(mdir, fname)
-                if os.path.isfile(fpath) and fname not in seen_media and not fname.startswith('.'):
-                    seen_media.add(fname)
-                    media_files.append((fpath, f"media/{fname}"))
-                    media_xml += f'      <file href="media/{fname}"/>\n'
+    # 1. Add referenced media files from disk
+    for mname in referenced_media_names:
+        clean_mname = mname.split('?')[0].split('#')[0].strip()
+        if not clean_mname:
+            continue
+        for mdir in media_dirs_to_search:
+            candidate = os.path.join(mdir, clean_mname)
+            if os.path.isfile(candidate) and clean_mname not in seen_media:
+                seen_media.add(clean_mname)
+                media_files.append((candidate, f"media/{clean_mname}"))
+                break
 
-    identifier = re.sub(r'[^a-zA-Z0-9_]', '_', course_data.get("title") or "Course")[:40]
+    # 2. If a dedicated conversion media_dir was provided (not public/media),
+    # include only presentation slide images belonging to this deck
+    if media_dir and os.path.exists(media_dir):
+        try:
+            is_same_as_pub = os.path.samefile(media_dir, pub_media) if os.path.exists(pub_media) else False
+        except Exception:
+            is_same_as_pub = os.path.abspath(media_dir) == os.path.abspath(pub_media)
+        if not is_same_as_pub:
+            for fname in os.listdir(media_dir):
+                if os.path.isfile(os.path.join(media_dir, fname)) and fname not in seen_media and not fname.startswith('.'):
+                    if fname.startswith('slide_') or fname.startswith('image'):
+                        seen_media.add(fname)
+                        media_files.append((os.path.join(media_dir, fname), f"media/{fname}"))
+
+    # 3. Add referenced assets
+    asset_files = []
+    seen_assets = set()
+    for aname in referenced_asset_names:
+        clean_aname = aname.split('?')[0].split('#')[0].strip()
+        if not clean_aname:
+            continue
+        for adir in [template_assets, ref_assets]:
+            candidate = os.path.join(adir, clean_aname)
+            if os.path.isfile(candidate) and clean_aname not in seen_assets:
+                seen_assets.add(clean_aname)
+                asset_files.append((candidate, f"assets/{clean_aname}"))
+                break
+
+    # 4. Generate manifest XML resource items (only for existing files written to zip)
+    asset_files_xml = "".join(f'      <file href="{arc}"/>\n' for _, arc in asset_files)
+    media_files_xml = "".join(f'      <file href="{arc}"/>\n' for _, arc in media_files)
+    extracted_xml = "".join(f'      <file href="{arc}"/>\n' for arc in extracted_media.keys())
+
+    clean_raw_id = re.sub(r'[^a-zA-Z0-9_]', '_', course_data.get("title") or "Course").strip('_')
+    if not clean_raw_id or not clean_raw_id[0].isalpha():
+        clean_raw_id = f"COURSE_{clean_raw_id}"
+    identifier = clean_raw_id[:35]
     xml_safe_title = html.escape(course_data.get("title") or "Course", quote=True)
+
     manifest_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
-<manifest identifier="{identifier}_SCORM2004" version="2.0"
+<manifest identifier="{identifier}_SCORM2004" version="1.0"
           xmlns="http://www.imsglobal.org/xsd/imscp_v1p1"
           xmlns:adlcp="http://www.adlnet.org/xsd/adlcp_v1p3"
           xmlns:adlseq="http://www.adlnet.org/xsd/adlseq_v1p3"
@@ -1706,7 +1793,7 @@ window.COURSE_STORAGE_KEY = "{storage_key}";
       <file href="js/scorm2004.js"/>
       <file href="js/courseData.js"/>
       <file href="js/app.js"/>
-{asset_files_xml}{media_xml}    </resource>
+{asset_files_xml}{media_files_xml}{extracted_xml}    </resource>
   </resources>
 </manifest>"""
 
@@ -1718,13 +1805,14 @@ window.COURSE_STORAGE_KEY = "{storage_key}";
         zf.writestr("js/courseData.js", course_data_js)
         zf.writestr("js/app.js", app_js)
 
-        for asset in course_data.get("assets", []):
-            data = get_asset_binary(asset)
-            if data:
-                zf.writestr(f"assets/{asset}", data)
+        for fpath, arcname in asset_files:
+            zf.write(fpath, arcname)
 
         for fpath, arcname in media_files:
             zf.write(fpath, arcname)
+
+        for arcname, b_data in extracted_media.items():
+            zf.writestr(arcname, b_data)
 
 def convert_pptx_to_b2b(pptx_path, output_dir=None):
     if not output_dir:

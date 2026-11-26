@@ -253,6 +253,23 @@
       .replace(/"/g, '&quot;');
   }
 
+  function sanitizeMediaSrc(src) {
+    if (!src) return '';
+    var s = String(src).trim();
+    if (s.startsWith('data:') || s.startsWith('blob:')) return s;
+    try {
+      return encodeURI(decodeURI(s));
+    } catch (e) {
+      return s.replace(/ /g, '%20');
+    }
+  }
+
+  function renderSectionHeroImage(rawSrc) {
+    if (!rawSrc) return '';
+    var src = sanitizeMediaSrc(rawSrc);
+    return '<div class="card-hero-image-wrap"><img src="' + escapeHtml(src) + '" alt="" class="card-hero-image" loading="lazy" onerror="if(this.src.includes(\'%20\')){this.src=this.src.replace(/%20/g,\'_\');}" /></div>';
+  }
+
   function renderAudioBar(audioUrl, audioTitle) {
     if (!audioUrl || !String(audioUrl).trim()) return '';
     const label = audioTitle || 'Audio Narration';
@@ -432,11 +449,13 @@
     }
 
     if (block.type === 'image') {
+      const rawSrc = block.src || block.imageSrc || block.imageUrl || '';
+      const src = sanitizeMediaSrc(rawSrc);
       return `
         <figure class="visual-card">
           ${audioHtml}
-          <img src="${block.src}" alt="${escapeHtml(block.alt)}" loading="lazy" />
-          ${block.caption ? `<figcaption class="visual-caption">📊 ${block.caption}</figcaption>` : ''}
+          <img src="${escapeHtml(src)}" alt="${escapeHtml(block.alt || block.caption || '')}" loading="lazy" onerror="if(this.src.includes('%20')){this.src=this.src.replace(/%20/g,'_');}" />
+          ${block.caption ? `<figcaption class="visual-caption">📊 ${escapeHtml(block.caption)}</figcaption>` : ''}
         </figure>
       `;
     }
@@ -457,9 +476,7 @@
     }
 
     if (block.type === 'boxes' || block.type === 'card_grid') {
-      const imageHtml = block.imageSrc
-        ? `<div class="card-hero-image-wrap"><img src="${escapeHtml(block.imageSrc)}" alt="" class="card-hero-image" loading="lazy" /></div>`
-        : '';
+      const imageHtml = renderSectionHeroImage(block.imageSrc || block.imageUrl || block.src);
       const calloutHtml = block.callout
         ? `<div class="callout ${block.callout.type || ''}">${block.callout.text}</div>`
         : '';
@@ -477,9 +494,7 @@
     }
 
     if (block.type === 'collapsible_boxes') {
-      const imageHtml = block.imageSrc
-        ? `<div class="card-hero-image-wrap"><img src="${escapeHtml(block.imageSrc)}" alt="" class="card-hero-image" loading="lazy" /></div>`
-        : '';
+      const imageHtml = renderSectionHeroImage(block.imageSrc || block.imageUrl || block.src);
       const calloutHtml = block.callout
         ? `<div class="callout ${block.callout.type || ''}">${block.callout.text}</div>`
         : '';
@@ -497,9 +512,7 @@
     }
 
     if (block.type === 'card') {
-      const imageHtml = block.imageSrc
-        ? `<div class="card-hero-image-wrap"><img src="${escapeHtml(block.imageSrc)}" alt="" class="card-hero-image" loading="lazy" /></div>`
-        : '';
+      const imageHtml = renderSectionHeroImage(block.imageSrc || block.imageUrl || block.src);
       const bulletsHtml = block.bullets
         ? `<ul class="rich-list ${block.listTone || ''}">${block.bullets.map(b => `<li>${b}</li>`).join('')}</ul>`
         : '';
@@ -526,13 +539,16 @@
     }
 
     if (block.type === 'accordion') {
+      const imageHtml = renderSectionHeroImage(block.imageSrc || block.imageUrl || block.src);
       return `
         <section class="card">
           ${block.tag ? `<span class="card-tag">${block.tag}</span>` : ''}
           ${audioHtml}
           <h2>${block.heading}</h2>
+          ${imageHtml}
+          ${block.body ? `<p>${block.body}</p>` : ''}
           <div class="acc-group">
-            ${block.items.map((it, idx) => `
+            ${(block.items || []).map((it, idx) => `
               <details class="acc-item" ${idx === 0 ? 'open' : ''}>
                 <summary>${it.title}</summary>
                 <div class="acc-body">${it.content}</div>
@@ -685,20 +701,24 @@
     }
 
     if (block.type === 'flashcards') {
+      const imageHtml = renderSectionHeroImage(block.imageSrc || block.imageUrl || block.src);
       return `
         <section class="card">
-          <span class="card-tag green">Interactive Self-Test Cards</span>
-          <h2>${block.title}</h2>
+          ${block.tag ? `<span class="card-tag green">${block.tag}</span>` : `<span class="card-tag green">Interactive Self-Test Cards</span>`}
+          ${audioHtml}
+          <h2>${block.title || block.heading || 'Interactive Flip Cards'}</h2>
+          ${imageHtml}
           <p style="font-size:13.5px;color:var(--muted);">${block.instruction || 'Tap any card below to flip and reveal the key knowledge takeaway:'}</p>
           <div class="flip-grid">
-            ${block.cards.map((c, ci) => `
+            ${(block.cards || []).map((c, ci) => `
               <div class="flip-card-container" data-fc-idx="${ci}">
                 <div class="flip-card-inner">
                   <div class="flip-card-front">
                     <div>
-                      <span class="box-badge gold">Tap to Flip 🔄</span>
+                      <span class="box-badge gold">${c.badge || 'Tap to Flip 🔄'}</span>
                       <div class="flip-q-title">${c.q}</div>
                     </div>
+                    ${c.img ? `<div style="margin:8px 0;"><img src="${escapeHtml(c.img)}" alt="" style="max-height:80px;border-radius:6px;object-fit:cover;width:100%;" /></div>` : ''}
                     <div class="flip-hint"><span>💡 Tap to flip answer</span></div>
                   </div>
                   <div class="flip-card-back">

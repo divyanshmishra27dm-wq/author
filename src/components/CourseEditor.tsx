@@ -4,7 +4,8 @@ import {
   Sparkles, Layers, FileText, Sliders, AlertCircle, Video,
   List, Eye, Save, RefreshCw, Copy, BookOpen, Check,
   ChevronDown, ChevronUp, MessageSquare, ExternalLink, ShieldCheck,
-  Volume2, Upload, Headphones
+  Volume2, Upload, Headphones, RotateCw, LayoutGrid, Image as ImageIcon,
+  X, CheckSquare
 } from 'lucide-react';
 import {
   RichCourseData,
@@ -14,9 +15,263 @@ import {
   KYCSorterDoc,
   BlanksItem,
   MatchPairItem,
-  AccordionItem
+  AccordionItem,
+  BoxItem,
+  CollapsibleItem,
+  FlashcardItemEntry
 } from '../types/course';
 import { getApiUrl, getAuthHeaders } from '../utils/apiConfig';
+
+interface SectionImageControlProps {
+  imageSrc?: string;
+  alt?: string;
+  caption?: string;
+  onUpdateImage: (updates: { src?: string; imageSrc?: string; imageUrl?: string; alt?: string; caption?: string }) => void;
+  onUploadFile: (file: File) => void;
+  isUploading?: boolean;
+  title?: string;
+}
+
+function getSafeDisplaySrc(src?: string): string {
+  if (!src) return '';
+  const s = String(src).trim();
+  if (s.startsWith('data:') || s.startsWith('blob:')) return s;
+  const path = s.startsWith('http') || s.startsWith('/') ? s : `/${s}`;
+  try {
+    return encodeURI(decodeURI(path));
+  } catch {
+    return path.replace(/ /g, '%20');
+  }
+}
+
+const SectionImageControl: React.FC<SectionImageControlProps> = ({
+  imageSrc,
+  alt = '',
+  caption = '',
+  onUpdateImage,
+  onUploadFile,
+  isUploading = false,
+  title = 'Section Visual / Placed Image'
+}) => {
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [urlVal, setUrlVal] = useState(imageSrc || '');
+
+  const hasImage = Boolean(imageSrc && String(imageSrc).trim().length > 0);
+
+  return (
+    <div className={`rounded-xl border p-3.5 transition-all ${hasImage
+      ? 'border-pink-500/40 bg-gradient-to-r from-pink-950/40 via-slate-900/80 to-slate-900 border-l-4 border-l-pink-500 shadow-md shadow-pink-950/20'
+      : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
+      }`}>
+      <div className="flex items-center justify-between gap-2 mb-2.5">
+        <div className="flex items-center gap-2">
+          <div className={`p-1 rounded-md ${hasImage ? 'bg-pink-500/20 text-pink-300' : 'bg-slate-800 text-slate-400'}`}>
+            <ImageIcon className="h-3.5 w-3.5" />
+          </div>
+          <span className="text-xs font-bold text-slate-200">
+            {title}
+          </span>
+          {hasImage ? (
+            <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              Image Placed &amp; Visible
+            </span>
+          ) : (
+            <span className="text-[10px] text-slate-500 italic">
+              Optional image for this section
+            </span>
+          )}
+        </div>
+
+        {hasImage && (
+          <button
+            type="button"
+            onClick={() => onUpdateImage({ imageSrc: '', src: '', imageUrl: '', caption: '', alt: '' })}
+            className="text-[11px] font-semibold text-red-400 hover:text-red-300 transition-colors flex items-center gap-1"
+            title="Remove image from this section"
+          >
+            <X className="h-3 w-3" />
+            <span>Remove Image</span>
+          </button>
+        )}
+      </div>
+
+      {hasImage ? (
+        <div className="space-y-3">
+          {/* Live Section Image Preview */}
+          <div className="relative group rounded-xl border border-slate-700/80 bg-slate-950 p-2.5 flex flex-col items-center justify-center overflow-hidden">
+            <img
+              src={getSafeDisplaySrc(imageSrc)}
+              alt={alt || 'Placed section image'}
+              className="max-h-52 w-auto max-w-full rounded-lg object-contain shadow-lg border border-slate-800/80 bg-slate-900/50"
+              onError={(e) => {
+                const target = e.currentTarget;
+                if (target.src.includes('%20') || target.src.includes(' ')) {
+                  target.src = target.src.replace(/%20| /g, '_');
+                }
+              }}
+            />
+            {caption && (
+              <div className="mt-2 text-center text-xs font-semibold text-slate-300 bg-slate-900/90 border border-slate-800 px-3 py-1 rounded-full">
+                📊 {caption}
+              </div>
+            )}
+            <div className="text-[10px] text-slate-400 mt-1 truncate max-w-full font-mono">
+              Source: {imageSrc}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div>
+              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                Image Caption / Label
+              </label>
+              <input
+                type="text"
+                value={caption}
+                onChange={(e) => onUpdateImage({ caption: e.target.value })}
+                placeholder="e.g. Workflow Steps or Product Comparison Table"
+                className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-white placeholder-slate-600 focus:border-pink-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                Image Alt Description
+              </label>
+              <input
+                type="text"
+                value={alt}
+                onChange={(e) => onUpdateImage({ alt: e.target.value })}
+                placeholder="Short description for accessibility"
+                className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-white placeholder-slate-600 focus:border-pink-500 focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-800/80">
+            <label className={`cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${isUploading
+              ? 'bg-pink-600/50 text-white cursor-wait animate-pulse'
+              : 'bg-pink-600 hover:bg-pink-500 text-white shadow-sm'
+              }`}>
+              <Upload className="h-3 w-3" />
+              <span>{isUploading ? 'Uploading...' : 'Replace Image File'}</span>
+              <input
+                type="file"
+                accept="image/*,.png,.jpg,.jpeg,.gif,.webp,.svg"
+                className="hidden"
+                disabled={isUploading}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    onUploadFile(file);
+                    e.target.value = '';
+                  }
+                }}
+              />
+            </label>
+
+            <button
+              type="button"
+              onClick={() => setShowUrlInput(!showUrlInput)}
+              className="text-xs text-slate-400 hover:text-white px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 transition-colors"
+            >
+              {showUrlInput ? 'Hide URL' : 'Edit URL / Path'}
+            </button>
+          </div>
+
+          {showUrlInput && (
+            <div className="pt-2 flex items-center gap-1.5">
+              <input
+                type="text"
+                value={urlVal}
+                onChange={(e) => setUrlVal(e.target.value)}
+                placeholder="media/image1.png or https://..."
+                className="flex-1 rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-white font-mono"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  onUpdateImage({ src: urlVal, imageSrc: urlVal, imageUrl: urlVal });
+                  setShowUrlInput(false);
+                }}
+                className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white"
+              >
+                Apply
+              </button>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 rounded-xl border border-dashed border-slate-800 hover:border-pink-500/40 bg-slate-900/40 transition-colors">
+          <div className="flex items-center gap-2.5">
+            <div className="h-9 w-9 rounded-lg bg-pink-500/10 border border-pink-500/20 text-pink-400 flex items-center justify-center shrink-0">
+              <ImageIcon className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-slate-200">Add an image to this section</p>
+              <p className="text-[11px] text-slate-400">Upload any PNG, JPG, WebP, or SVG. It will appear directly in this section.</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <label className={`cursor-pointer inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${isUploading
+              ? 'bg-pink-600/50 text-white cursor-wait animate-pulse'
+              : 'bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white shadow-md shadow-pink-600/20'
+              }`}>
+              <Upload className="h-3.5 w-3.5" />
+              <span>{isUploading ? 'Uploading...' : 'Upload Image'}</span>
+              <input
+                type="file"
+                accept="image/*,.png,.jpg,.jpeg,.gif,.webp,.svg"
+                className="hidden"
+                disabled={isUploading}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    onUploadFile(file);
+                    e.target.value = '';
+                  }
+                }}
+              />
+            </label>
+
+            <button
+              type="button"
+              onClick={() => setShowUrlInput(!showUrlInput)}
+              className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+            >
+              Paste Link
+            </button>
+          </div>
+
+          {showUrlInput && (
+            <div className="w-full pt-2 border-t border-slate-800 flex items-center gap-1.5">
+              <input
+                type="text"
+                value={urlVal}
+                onChange={(e) => setUrlVal(e.target.value)}
+                placeholder="media/image1.png or https://..."
+                className="flex-1 rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-white font-mono"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (urlVal.trim()) {
+                    onUpdateImage({ src: urlVal.trim(), imageSrc: urlVal.trim(), imageUrl: urlVal.trim() });
+                    setShowUrlInput(false);
+                  }
+                }}
+                className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white"
+              >
+                Add
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
 
 interface CourseEditorProps {
   richCourse: RichCourseData;
@@ -148,6 +403,73 @@ export const CourseEditor: React.FC<CourseEditorProps> = ({
   // Block Level Updaters
   // ---------------------------------------------------------------------------
   const [uploadingAudioBlockIdx, setUploadingAudioBlockIdx] = useState<number | null>(null);
+  const [uploadingImageBlockIdx, setUploadingImageBlockIdx] = useState<number | null>(null);
+  const [flippedPreviewCards, setFlippedPreviewCards] = useState<Record<string, boolean>>({});
+  const [openPreviewCollapsibles, setOpenPreviewCollapsibles] = useState<Record<string, boolean>>({});
+
+  const handleUploadImageForBlock = async (bIdx: number, file: File) => {
+    try {
+      setUploadingImageBlockIdx(bIdx);
+      const formData = new FormData();
+      formData.append('file', file);
+      const headers = getAuthHeaders();
+      let uploadedUrl = '';
+      try {
+        let res = await fetch(getApiUrl('/api/upload_image'), {
+          method: 'POST',
+          headers,
+          body: formData
+        });
+        if (!res.ok && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+          res = await fetch('http://127.0.0.1:8000/api/upload_image', {
+            method: 'POST',
+            headers,
+            body: formData
+          });
+        }
+        if (res && res.ok) {
+          const data = await res.json();
+          if (data.success && data.image_url) {
+            uploadedUrl = data.image_url;
+          }
+        }
+      } catch (netErr) {
+        console.warn('Backend image upload network error, using local FileReader DataURL fallback:', netErr);
+      }
+
+      if (uploadedUrl) {
+        updateBlock(bIdx, b => ({
+          ...b,
+          src: uploadedUrl,
+          imageSrc: uploadedUrl,
+          imageUrl: uploadedUrl,
+          alt: b.alt || file.name,
+          caption: b.caption || file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ')
+        }));
+      } else {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const dataUrl = e.target?.result as string;
+          if (dataUrl) {
+            updateBlock(bIdx, b => ({
+              ...b,
+              src: dataUrl,
+              imageSrc: dataUrl,
+              imageUrl: dataUrl,
+              alt: b.alt || file.name,
+              caption: b.caption || file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ')
+            }));
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    } catch (err: any) {
+      console.error('Image upload error:', err);
+      alert('Image upload failed: ' + (err?.message || 'Could not read file.'));
+    } finally {
+      setUploadingImageBlockIdx(null);
+    }
+  };
 
   const handleUploadAudioForBlock = async (bIdx: number, file: File) => {
     try {
@@ -405,6 +727,115 @@ export const CourseEditor: React.FC<CourseEditorProps> = ({
     updateActiveChapter(ch => ({ ...ch, blocks: [...ch.blocks, newBlock] }));
   };
 
+  const addBlockFlashcards = () => {
+    const newBlock: ChapterBlock = {
+      type: 'flashcards',
+      id: `fc_${Date.now()}`,
+      tag: 'Flip Drill',
+      title: 'Interactive Flip Cards: Concept Mastery',
+      instruction: 'Tap any card below to flip and reveal the key knowledge takeaway:',
+      cards: [
+        {
+          q: 'What is the primary customer eligibility criteria for this account variant?',
+          a: 'Average Monthly Balance (AMB) maintained as prescribed for Metro / Urban or Semi-Urban branches.'
+        },
+        {
+          q: 'Which mandatory document is acceptable as an Officially Valid Document (OVD)?',
+          a: 'Current unexpired Passport, Voter ID, Driving Licence, or Aadhaar letter/card with address and photo.'
+        },
+        {
+          q: 'What are the core value benefits offered on the companion debit card?',
+          a: 'Complimentary airport lounge access, personal accidental death cover, and dining discounts.'
+        }
+      ]
+    };
+    updateActiveChapter(ch => ({ ...ch, blocks: [...ch.blocks, newBlock] }));
+  };
+
+  const addBlockBoxes = () => {
+    const newBlock: ChapterBlock = {
+      type: 'boxes',
+      id: `boxes_${Date.now()}`,
+      tag: 'Key Highlights',
+      heading: 'Core Architecture Pillars & Features',
+      body: '<p>Key product features and essential criteria for sales and operational excellence:</p>',
+      boxGridCols: 2,
+      boxes: [
+        {
+          title: 'Product Eligibility & Tier',
+          badge: 'CRITERIA',
+          badgeColor: 'gold',
+          desc: 'Clear eligibility criteria matching the customer profile and financial turnover.',
+          bullets: [
+            'Minimum balance requirements maintained on Average Monthly basis',
+            'Instant digital onboarding via mobile biometric or OTP'
+          ],
+          highlight: true
+        },
+        {
+          title: 'Value Privileges & Waivers',
+          badge: 'BENEFITS',
+          badgeColor: 'green',
+          desc: 'Customer perks that boost engagement and product adoption.',
+          bullets: [
+            'Complimentary airport lounge access and fuel surcharge waivers',
+            'Comprehensive insurance protection and zero liability cover'
+          ],
+          green: true
+        }
+      ]
+    };
+    updateActiveChapter(ch => ({ ...ch, blocks: [...ch.blocks, newBlock] }));
+  };
+
+  const addBlockCollapsibleBoxes = () => {
+    const newBlock: ChapterBlock = {
+      type: 'collapsible_boxes',
+      id: `coll_${Date.now()}`,
+      tag: 'Explore & Learn',
+      heading: 'Frequently Asked Questions & Detailed Steps',
+      body: '<p>Click any drop-down section below to reveal specific details and conditions:</p>',
+      collapsibles: [
+        {
+          title: '1. What are the key account opening documents needed?',
+          badge: 'STEP 1',
+          badgeColor: 'blue',
+          content: '<p>Branches require valid identity and address proof as per RBI master directions.</p>',
+          bullets: [
+            'Officially Valid Document (Passport, Driving License, Voter ID, Aadhaar)',
+            'Recent passport size photograph and PAN or Form 60'
+          ],
+          isOpen: true
+        },
+        {
+          title: '2. How does the customer activate digital banking services?',
+          badge: 'STEP 2',
+          badgeColor: 'green',
+          content: '<p>Customers can register via mobile app or web portal in under 3 minutes.</p>',
+          bullets: [
+            'Debit card authentication with SMS OTP verification',
+            'Immediate activation of UPI, NEFT, and IMPS transaction channels'
+          ],
+          isOpen: false
+        }
+      ]
+    };
+    updateActiveChapter(ch => ({ ...ch, blocks: [...ch.blocks, newBlock] }));
+  };
+
+  const addBlockImage = () => {
+    const newBlock: ChapterBlock = {
+      type: 'image',
+      id: `img_${Date.now()}`,
+      tag: 'Visual Diagram',
+      heading: 'Process & Architecture Diagram',
+      src: '',
+      alt: 'Process workflow diagram',
+      caption: 'Process Architecture Diagram'
+    };
+    updateActiveChapter(ch => ({ ...ch, blocks: [...ch.blocks, newBlock] }));
+  };
+
   // ---------------------------------------------------------------------------
   // Sync to Preview Action
   // ---------------------------------------------------------------------------
@@ -505,6 +936,10 @@ export const CourseEditor: React.FC<CourseEditorProps> = ({
             const matchCount = c.blocks.filter(b => b.type === 'quiz_match').length;
             const videoCount = c.blocks.filter(b => b.type === 'video_placeholder').length;
             const thinkCount = c.blocks.filter(b => b.type === 'think').length;
+            const flashcardCount = c.blocks.filter(b => b.type === 'flashcards').length;
+            const boxesCount = c.blocks.filter(b => b.type === 'boxes').length;
+            const dropdownCount = c.blocks.filter(b => b.type === 'collapsible_boxes').length;
+            const imageCount = c.blocks.filter(b => b.type === 'image' || !!(b.imageSrc || b.src || b.imageUrl)).length;
             const audioCount = c.blocks.filter(b => !!b.audioUrl).length;
 
             return (
@@ -597,6 +1032,27 @@ export const CourseEditor: React.FC<CourseEditorProps> = ({
                   {thinkCount > 0 && (
                     <span className="rounded bg-yellow-500/20 px-1.5 py-0.5 text-[9px] font-bold text-yellow-300 border border-yellow-500/30">
                       Reflect
+                    </span>
+                  )}
+                  {flashcardCount > 0 && (
+                    <span className="rounded bg-indigo-500/20 px-1.5 py-0.5 text-[9px] font-bold text-indigo-300 border border-indigo-500/30">
+                      Flip Cards
+                    </span>
+                  )}
+                  {boxesCount > 0 && (
+                    <span className="rounded bg-sky-500/20 px-1.5 py-0.5 text-[9px] font-bold text-sky-300 border border-sky-500/30">
+                      Boxes
+                    </span>
+                  )}
+                  {dropdownCount > 0 && (
+                    <span className="rounded bg-teal-500/20 px-1.5 py-0.5 text-[9px] font-bold text-teal-300 border border-teal-500/30">
+                      Drop Downs
+                    </span>
+                  )}
+                  {imageCount > 0 && (
+                    <span className="rounded bg-pink-500/20 px-1.5 py-0.5 text-[9px] font-bold text-pink-300 border border-pink-500/30 flex items-center gap-0.5">
+                      <ImageIcon className="h-2.5 w-2.5" />
+                      Images
                     </span>
                   )}
                   {audioCount > 0 && (
@@ -737,59 +1193,108 @@ export const CourseEditor: React.FC<CourseEditorProps> = ({
             </div>
           </div>
 
-          {/* Quick-Add Tray: Interactive Learning Modules */}
-          <div className="rounded-2xl border border-purple-500/30 bg-gradient-to-r from-purple-950/30 via-slate-900/60 to-emerald-950/30 p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-purple-400" />
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">
-                  Interactive Learning Drills (SCORM 2004 Scored)
-                </h4>
+          {/* Quick-Add Tray: Interactive Learning Modules & Visual Layouts */}
+          <div className="rounded-2xl border border-indigo-500/30 bg-gradient-to-r from-indigo-950/40 via-slate-900/80 to-emerald-950/30 p-5 shadow-sm space-y-4">
+            <div>
+              <div className="flex items-center justify-between mb-2.5">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-indigo-400" />
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">
+                    Course Architecture Modules (Flip Cards · Boxes · Drop Downs · Images)
+                  </h4>
+                </div>
+                <span className="text-[10px] text-indigo-300 font-semibold bg-indigo-500/20 px-2 py-0.5 rounded-full border border-indigo-500/30">
+                  1-Click Add
+                </span>
               </div>
-              <span className="text-[10px] text-purple-300 font-semibold bg-purple-500/20 px-2 py-0.5 rounded-full border border-purple-500/30">
-                1-Click Add
-              </span>
+
+              {/* 4 Requested Primary Architecture Inserters */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <button
+                  onClick={addBlockFlashcards}
+                  className="flex flex-col items-center justify-center p-3 rounded-xl border border-indigo-500/40 bg-indigo-950/40 hover:bg-indigo-900/50 hover:border-indigo-400 text-indigo-300 transition-all text-center group shadow-sm"
+                  title="Add interactive flip cards with question front and takeaway back"
+                >
+                  <RotateCw className="h-5 w-5 mb-1 text-indigo-400 group-hover:rotate-180 transition-transform duration-500" />
+                  <span className="text-xs font-bold">+ Flip the Cards</span>
+                  <span className="text-[10px] text-indigo-400/80">3D Interactive Flip</span>
+                </button>
+
+                <button
+                  onClick={addBlockBoxes}
+                  className="flex flex-col items-center justify-center p-3 rounded-xl border border-sky-500/40 bg-sky-950/40 hover:bg-sky-900/50 hover:border-sky-400 text-sky-300 transition-all text-center group shadow-sm"
+                  title="Add feature & criteria boxes grid"
+                >
+                  <LayoutGrid className="h-5 w-5 mb-1 text-sky-400 group-hover:scale-110 transition-transform" />
+                  <span className="text-xs font-bold">+ Boxes</span>
+                  <span className="text-[10px] text-sky-400/80">Feature Boxes Grid</span>
+                </button>
+
+                <button
+                  onClick={addBlockCollapsibleBoxes}
+                  className="flex flex-col items-center justify-center p-3 rounded-xl border border-teal-500/40 bg-teal-950/40 hover:bg-teal-900/50 hover:border-teal-400 text-teal-300 transition-all text-center group shadow-sm"
+                  title="Add collapsible drop down sections"
+                >
+                  <ChevronDown className="h-5 w-5 mb-1 text-teal-400 group-hover:translate-y-0.5 transition-transform" />
+                  <span className="text-xs font-bold">+ Drop Downs</span>
+                  <span className="text-[10px] text-teal-400/80">Expandable Accordion</span>
+                </button>
+
+                <button
+                  onClick={addBlockImage}
+                  className="flex flex-col items-center justify-center p-3 rounded-xl border border-pink-500/40 bg-pink-950/40 hover:bg-pink-900/50 hover:border-pink-400 text-pink-300 transition-all text-center group shadow-sm"
+                  title="Add an image section or visual diagram"
+                >
+                  <ImageIcon className="h-5 w-5 mb-1 text-pink-400 group-hover:scale-110 transition-transform" />
+                  <span className="text-xs font-bold">+ Add Images</span>
+                  <span className="text-[10px] text-pink-400/80">Upload &amp; Place Visual</span>
+                </button>
+              </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              <button
-                onClick={addBlockMCQ}
-                className="flex flex-col items-center justify-center p-3 rounded-xl border border-purple-500/40 bg-purple-950/30 hover:bg-purple-900/40 hover:border-purple-400 text-purple-300 transition-all text-center group"
-              >
-                <HelpCircle className="h-5 w-5 mb-1 text-purple-400 group-hover:scale-110 transition-transform" />
-                <span className="text-xs font-bold">+ MCQ Quiz</span>
-                <span className="text-[10px] text-purple-400/80">Multiple Choice Check</span>
-              </button>
+            {/* Scored Drills & Checks */}
+            <div className="pt-3 border-t border-slate-800/80">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Interactive Knowledge Checks:
+                </span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <button
+                  onClick={addBlockMCQ}
+                  className="flex items-center gap-2 p-2 rounded-lg border border-purple-500/30 bg-purple-950/20 hover:bg-purple-900/30 text-purple-300 transition-colors text-xs font-bold"
+                >
+                  <HelpCircle className="h-4 w-4 text-purple-400 shrink-0" />
+                  <span>+ MCQ Quiz</span>
+                </button>
 
-              <button
-                onClick={addBlockSorter}
-                className="flex flex-col items-center justify-center p-3 rounded-xl border border-emerald-500/40 bg-emerald-950/30 hover:bg-emerald-900/40 hover:border-emerald-400 text-emerald-300 transition-all text-center group"
-              >
-                <Sliders className="h-5 w-5 mb-1 text-emerald-400 group-hover:scale-110 transition-transform" />
-                <span className="text-xs font-bold">+ Drag &amp; Drop</span>
-                <span className="text-[10px] text-emerald-400/80">KYC &amp; Doc Sorter</span>
-              </button>
+                <button
+                  onClick={addBlockSorter}
+                  className="flex items-center gap-2 p-2 rounded-lg border border-emerald-500/30 bg-emerald-950/20 hover:bg-emerald-900/30 text-emerald-300 transition-colors text-xs font-bold"
+                >
+                  <Sliders className="h-4 w-4 text-emerald-400 shrink-0" />
+                  <span>+ Drag &amp; Drop</span>
+                </button>
 
-              <button
-                onClick={addBlockBlanks}
-                className="flex flex-col items-center justify-center p-3 rounded-xl border border-cyan-500/40 bg-cyan-950/30 hover:bg-cyan-900/40 hover:border-cyan-400 text-cyan-300 transition-all text-center group"
-              >
-                <CheckCircle2 className="h-5 w-5 mb-1 text-cyan-400 group-hover:scale-110 transition-transform" />
-                <span className="text-xs font-bold">+ Word Bank</span>
-                <span className="text-[10px] text-cyan-400/80">Fill in the Blanks</span>
-              </button>
+                <button
+                  onClick={addBlockBlanks}
+                  className="flex items-center gap-2 p-2 rounded-lg border border-cyan-500/30 bg-cyan-950/20 hover:bg-cyan-900/30 text-cyan-300 transition-colors text-xs font-bold"
+                >
+                  <CheckCircle2 className="h-4 w-4 text-cyan-400 shrink-0" />
+                  <span>+ Word Bank</span>
+                </button>
 
-              <button
-                onClick={addBlockMatch}
-                className="flex flex-col items-center justify-center p-3 rounded-xl border border-amber-500/40 bg-amber-950/30 hover:bg-amber-900/40 hover:border-amber-400 text-amber-300 transition-all text-center group"
-              >
-                <Layers className="h-5 w-5 mb-1 text-amber-400 group-hover:scale-110 transition-transform" />
-                <span className="text-xs font-bold">+ Match Pairs</span>
-                <span className="text-[10px] text-amber-400/80">Concept Matching</span>
-              </button>
+                <button
+                  onClick={addBlockMatch}
+                  className="flex items-center gap-2 p-2 rounded-lg border border-amber-500/30 bg-amber-950/20 hover:bg-amber-900/30 text-amber-300 transition-colors text-xs font-bold"
+                >
+                  <Layers className="h-4 w-4 text-amber-400 shrink-0" />
+                  <span>+ Match Pairs</span>
+                </button>
+              </div>
             </div>
 
-            <div className="mt-3 pt-3 border-t border-slate-800/80 flex flex-wrap items-center gap-2">
+            <div className="pt-2 border-t border-slate-800/80 flex flex-wrap items-center gap-2">
               <span className="text-[11px] font-semibold text-slate-400">Add Extras:</span>
               <button
                 onClick={addBlockVideo}
@@ -804,13 +1309,6 @@ export const CourseEditor: React.FC<CourseEditorProps> = ({
               >
                 <Sparkles className="h-3 w-3" />
                 <span>+ Reflect &amp; Think</span>
-              </button>
-              <button
-                onClick={addBlockAccordion}
-                className="rounded-lg bg-blue-500/10 border border-blue-500/30 px-2.5 py-1 text-[11px] font-semibold text-blue-300 hover:bg-blue-500/20 transition-colors flex items-center gap-1"
-              >
-                <ChevronDown className="h-3 w-3" />
-                <span>+ Accordion Group</span>
               </button>
               <button
                 onClick={addBlockCard}
@@ -869,7 +1367,15 @@ export const CourseEditor: React.FC<CourseEditorProps> = ({
                               ? 'border-yellow-500/40 bg-slate-900/80 border-l-4 border-l-yellow-500'
                               : block.type === 'url_redirect'
                                 ? 'border-emerald-500/40 bg-slate-900/80 border-l-4 border-l-emerald-500'
-                                : 'border-slate-800 bg-slate-900/60 border-l-4 border-l-blue-500'
+                                : block.type === 'flashcards'
+                                  ? 'border-indigo-500/40 bg-slate-900/80 border-l-4 border-l-indigo-500'
+                                  : block.type === 'boxes'
+                                    ? 'border-sky-500/40 bg-slate-900/80 border-l-4 border-l-sky-500'
+                                    : block.type === 'collapsible_boxes'
+                                      ? 'border-teal-500/40 bg-slate-900/80 border-l-4 border-l-teal-500'
+                                      : block.type === 'image'
+                                        ? 'border-pink-500/40 bg-slate-900/80 border-l-4 border-l-pink-500'
+                                        : 'border-slate-800 bg-slate-900/60 border-l-4 border-l-blue-500'
                     }`}
                 >
                   {/* Block Header Toolbar */}
@@ -882,13 +1388,23 @@ export const CourseEditor: React.FC<CourseEditorProps> = ({
                               block.type === 'video_placeholder' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' :
                                 block.type === 'think' ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' :
                                   block.type === 'url_redirect' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
-                                    'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                                    block.type === 'flashcards' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' :
+                                      block.type === 'boxes' ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30' :
+                                        block.type === 'collapsible_boxes' ? 'bg-teal-500/20 text-teal-300 border border-teal-500/30' :
+                                          block.type === 'image' ? 'bg-pink-500/20 text-pink-300 border border-pink-500/30' :
+                                            'bg-blue-500/20 text-blue-300 border border-blue-500/30'
                         }`}>
-                        {block.type === 'url_redirect' ? 'URL REDIRECT' : block.type.replace('_', ' ')}
+                        {block.type === 'url_redirect' ? 'URL REDIRECT' : block.type === 'flashcards' ? 'FLIP CARDS' : block.type === 'collapsible_boxes' ? 'DROP DOWNS' : block.type === 'boxes' ? 'BOXES GRID' : block.type.replace('_', ' ')}
                       </span>
                       {block.tag && (
                         <span className="text-[10px] text-slate-400 font-semibold bg-slate-800 px-2 py-0.5 rounded-md">
                           {block.tag}
+                        </span>
+                      )}
+                      {(block.imageSrc || block.src || block.imageUrl) && (
+                        <span className="flex items-center gap-1 text-[10px] font-bold text-pink-300 bg-pink-500/15 border border-pink-500/30 px-2 py-0.5 rounded-md" title={`Image attached: ${block.imageSrc || block.src || block.imageUrl}`}>
+                          <ImageIcon className="h-3 w-3" />
+                          <span>Image Placed</span>
                         </span>
                       )}
                       {block.audioUrl && (
@@ -1616,6 +2132,17 @@ export const CourseEditor: React.FC<CourseEditorProps> = ({
                         </button>
                       </div>
 
+                      {/* Section Image / Visual Uploader */}
+                      <SectionImageControl
+                        imageSrc={block.imageSrc || block.src || block.imageUrl}
+                        alt={block.alt}
+                        caption={block.caption}
+                        onUpdateImage={(upd) => updateBlock(bIdx, b => ({ ...b, ...upd }))}
+                        onUploadFile={(file) => handleUploadImageForBlock(bIdx, file)}
+                        isUploading={uploadingImageBlockIdx === bIdx}
+                        title="Section Visual / Placed Image"
+                      />
+
                       {/* Callout / Facilitator Tip */}
                       <div className="p-3 rounded-xl border border-slate-800 bg-slate-950/80 space-y-2">
                         <div className="flex items-center justify-between">
@@ -1823,6 +2350,17 @@ export const CourseEditor: React.FC<CourseEditorProps> = ({
                         />
                       </div>
 
+                      {/* Section Image Uploader for Accordion */}
+                      <SectionImageControl
+                        imageSrc={block.imageSrc || block.src || block.imageUrl}
+                        alt={block.alt}
+                        caption={block.caption}
+                        onUpdateImage={(upd) => updateBlock(bIdx, b => ({ ...b, ...upd }))}
+                        onUploadFile={(file) => handleUploadImageForBlock(bIdx, file)}
+                        isUploading={uploadingImageBlockIdx === bIdx}
+                        title="Section Visual / Placed Image"
+                      />
+
                       <div className="space-y-2">
                         <label className="text-xs font-semibold text-slate-400 block">
                           Collapsible Items:
@@ -1890,6 +2428,981 @@ export const CourseEditor: React.FC<CourseEditorProps> = ({
                           <span>Add Accordion Item</span>
                         </button>
                       </div>
+                    </div>
+                  )}
+
+                  {/* ------------------------------------------------------------- */}
+                  {/* FLIP THE CARDS BLOCK EDITOR (FLASHCARDS) */}
+                  {/* ------------------------------------------------------------- */}
+                  {block.type === 'flashcards' && (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                        <div>
+                          <label className="text-xs font-semibold text-slate-400 block mb-1">
+                            Card Tag / Badge
+                          </label>
+                          <input
+                            type="text"
+                            value={block.tag || ''}
+                            onChange={(e) => updateBlock(bIdx, b => ({ ...b, tag: e.target.value }))}
+                            placeholder="e.g. Flip Drill"
+                            className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-1.5 text-xs text-white"
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="text-xs font-semibold text-indigo-300 block mb-1">
+                            Flip Cards Section Title
+                          </label>
+                          <input
+                            type="text"
+                            value={block.title || ''}
+                            onChange={(e) => updateBlock(bIdx, b => ({ ...b, title: e.target.value }))}
+                            placeholder="e.g. Interactive Flip Cards: Concept Mastery"
+                            className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-1.5 text-xs font-bold text-white focus:border-indigo-500 focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-semibold text-slate-400 block mb-1">
+                          Learner Instruction
+                        </label>
+                        <input
+                          type="text"
+                          value={block.instruction || ''}
+                          onChange={(e) => updateBlock(bIdx, b => ({ ...b, instruction: e.target.value }))}
+                          placeholder="Tap any card below to flip and reveal the key knowledge takeaway:"
+                          className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-1.5 text-xs text-slate-300"
+                        />
+                      </div>
+
+                      {/* Section Image Uploader for Flip Cards */}
+                      <SectionImageControl
+                        imageSrc={block.imageSrc || block.src || block.imageUrl}
+                        alt={block.alt}
+                        caption={block.caption}
+                        onUpdateImage={(upd) => updateBlock(bIdx, b => ({ ...b, ...upd }))}
+                        onUploadFile={(file) => handleUploadImageForBlock(bIdx, file)}
+                        isUploading={uploadingImageBlockIdx === bIdx}
+                        title="Section Visual / Placed Image"
+                      />
+
+                      {/* Flip Cards List */}
+                      <div className="space-y-3 pt-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-bold text-indigo-300 uppercase tracking-wider flex items-center gap-1.5">
+                            <RotateCw className="h-3.5 w-3.5" />
+                            Flip Cards ({(block.cards || []).length})
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newCard: FlashcardItemEntry = {
+                                q: 'New Concept or Question to Recall',
+                                a: 'Key definition, guideline, or takeaway revealed on flip.'
+                              };
+                              updateBlock(bIdx, b => ({
+                                ...b,
+                                cards: [...(b.cards || []), newCard]
+                              }));
+                            }}
+                            className="text-xs font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 bg-indigo-500/10 border border-indigo-500/30 px-2.5 py-1 rounded-lg"
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                            <span>Add Flip Card</span>
+                          </button>
+                        </div>
+
+                        {(block.cards || []).map((card, cIdx) => (
+                          <div key={cIdx} className="rounded-xl border border-slate-800 bg-slate-950/80 p-4 space-y-3">
+                            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                              <span className="text-[11px] font-bold text-indigo-400 bg-indigo-950/60 border border-indigo-500/30 px-2 py-0.5 rounded-md">
+                                Card #{cIdx + 1}
+                              </span>
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    updateBlock(bIdx, b => {
+                                      const copy = [...(b.cards || [])];
+                                      const cloned = JSON.parse(JSON.stringify(copy[cIdx]));
+                                      copy.splice(cIdx + 1, 0, cloned);
+                                      return { ...b, cards: copy };
+                                    });
+                                  }}
+                                  title="Duplicate Card"
+                                  className="p-1 text-slate-400 hover:text-white"
+                                >
+                                  <Copy className="h-3 w-3" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    updateBlock(bIdx, b => ({
+                                      ...b,
+                                      cards: (b.cards || []).filter((_, idx) => idx !== cIdx)
+                                    }));
+                                  }}
+                                  title="Delete Card"
+                                  className="p-1 text-slate-500 hover:text-red-400"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              {/* Front Side */}
+                              <div className="space-y-1.5 rounded-lg border border-blue-500/30 bg-blue-950/20 p-3">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[10px] font-bold uppercase tracking-wider text-blue-400">
+                                    Card Front (Question / Prompt)
+                                  </span>
+                                  <span className="text-[10px] text-blue-300/80">Visible Initially</span>
+                                </div>
+                                <textarea
+                                  rows={2}
+                                  value={card.q}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    updateBlock(bIdx, b => {
+                                      const copy = [...(b.cards || [])];
+                                      copy[cIdx] = { ...copy[cIdx], q: val };
+                                      return { ...b, cards: copy };
+                                    });
+                                  }}
+                                  placeholder="Enter prompt, question, or term to remember..."
+                                  className="w-full rounded-lg border border-slate-800 bg-slate-900 p-2 text-xs text-white focus:border-blue-500 focus:outline-none"
+                                />
+                              </div>
+
+                              {/* Back Side */}
+                              <div className="space-y-1.5 rounded-lg border border-emerald-500/30 bg-emerald-950/20 p-3">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+                                    Card Back (Answer / Solution)
+                                  </span>
+                                  <span className="text-[10px] text-emerald-300/80">Revealed on Flip</span>
+                                </div>
+                                <textarea
+                                  rows={2}
+                                  value={card.a}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    updateBlock(bIdx, b => {
+                                      const copy = [...(b.cards || [])];
+                                      copy[cIdx] = { ...copy[cIdx], a: val };
+                                      return { ...b, cards: copy };
+                                    });
+                                  }}
+                                  placeholder="Enter answer, explanation, or key takeaway..."
+                                  className="w-full rounded-lg border border-slate-800 bg-slate-900 p-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Interactive In-Editor 3D Flip Card Test Preview */}
+                      {(block.cards || []).length > 0 && (
+                        <div className="mt-4 rounded-xl border border-indigo-500/30 bg-slate-950/90 p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-xs font-bold text-indigo-300 uppercase tracking-wider flex items-center gap-1.5">
+                              <Eye className="h-3.5 w-3.5" />
+                              Live In-Editor Flip Test (Tap any card to test flip!)
+                            </span>
+                            <span className="text-[11px] text-slate-400">
+                              Interactive Preview
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {(block.cards || []).map((card, cIdx) => {
+                              const cardKey = `${bIdx}_${cIdx}`;
+                              const isFlipped = Boolean(flippedPreviewCards[cardKey]);
+                              return (
+                                <div
+                                  key={cIdx}
+                                  onClick={() => setFlippedPreviewCards(prev => ({ ...prev, [cardKey]: !prev[cardKey] }))}
+                                  className="cursor-pointer h-40 select-none group perspective"
+                                  title="Click to flip"
+                                >
+                                  <div className={`relative w-full h-full rounded-xl transition-transform duration-500 [transform-style:preserve-3d] shadow-md ${isFlipped ? '[transform:rotateY(180deg)]' : ''}`}>
+                                    {/* Front Side */}
+                                    <div className="absolute inset-0 [backface-visibility:hidden] rounded-xl p-4 bg-gradient-to-br from-blue-900 via-indigo-900 to-slate-900 border border-blue-500/40 text-white flex flex-col justify-between">
+                                      <div>
+                                        <div className="flex items-center justify-between">
+                                          <span className="text-[10px] font-bold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-500/30">
+                                            Tap to Flip 🔄
+                                          </span>
+                                          <span className="text-[10px] text-blue-300 font-semibold">Front</span>
+                                        </div>
+                                        <p className="mt-2 text-xs font-bold leading-snug line-clamp-3">
+                                          {card.q || 'Untitled Question'}
+                                        </p>
+                                      </div>
+                                      <div className="text-[10px] text-blue-300/80 flex items-center gap-1">
+                                        <span>💡 Click to flip answer</span>
+                                      </div>
+                                    </div>
+
+                                    {/* Back Side */}
+                                    <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] rounded-xl p-4 bg-white text-slate-900 border-2 border-indigo-600 flex flex-col justify-between shadow-lg overflow-y-auto">
+                                      <div>
+                                        <div className="flex items-center justify-between">
+                                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">
+                                            Takeaway ✓
+                                          </span>
+                                          <span className="text-[10px] text-slate-500 font-semibold">Back</span>
+                                        </div>
+                                        <p className="mt-2 text-xs text-slate-800 leading-relaxed font-medium">
+                                          {card.a || 'No answer provided'}
+                                        </p>
+                                      </div>
+                                      <div className="text-[10px] text-slate-500 text-right mt-1">
+                                        Click again to flip back
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* ------------------------------------------------------------- */}
+                  {/* BOXES GRID BLOCK EDITOR */}
+                  {/* ------------------------------------------------------------- */}
+                  {block.type === 'boxes' && (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                        <div>
+                          <label className="text-xs font-semibold text-slate-400 block mb-1">
+                            Card Tag / Badge
+                          </label>
+                          <input
+                            type="text"
+                            value={block.tag || ''}
+                            onChange={(e) => updateBlock(bIdx, b => ({ ...b, tag: e.target.value }))}
+                            placeholder="e.g. Highlights"
+                            className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-1.5 text-xs text-white"
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="text-xs font-semibold text-sky-300 block mb-1">
+                            Section Heading
+                          </label>
+                          <input
+                            type="text"
+                            value={block.heading || ''}
+                            onChange={(e) => updateBlock(bIdx, b => ({ ...b, heading: e.target.value }))}
+                            placeholder="e.g. Core Features & Key Value Propositions"
+                            className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-1.5 text-xs font-bold text-white focus:border-sky-500 focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-semibold text-slate-400 block mb-1">
+                          Body Description (HTML enabled)
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={block.body || ''}
+                          onChange={(e) => updateBlock(bIdx, b => ({ ...b, body: e.target.value }))}
+                          placeholder="Introductory text before boxes..."
+                          className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-1.5 text-xs text-slate-300"
+                        />
+                      </div>
+
+                      {/* Section Image Uploader for Boxes */}
+                      <SectionImageControl
+                        imageSrc={block.imageSrc || block.src || block.imageUrl}
+                        alt={block.alt}
+                        caption={block.caption}
+                        onUpdateImage={(upd) => updateBlock(bIdx, b => ({ ...b, ...upd }))}
+                        onUploadFile={(file) => handleUploadImageForBlock(bIdx, file)}
+                        isUploading={uploadingImageBlockIdx === bIdx}
+                        title="Section Visual / Placed Image"
+                      />
+
+                      {/* Boxes List */}
+                      <div className="space-y-3 pt-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-bold text-sky-300 uppercase tracking-wider flex items-center gap-1.5">
+                            <LayoutGrid className="h-3.5 w-3.5" />
+                            Boxes ({(block.boxes || []).length})
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newBox: BoxItem = {
+                                title: 'New Feature or Value Pillar',
+                                badge: 'FEATURE',
+                                badgeColor: 'blue',
+                                desc: 'Clear, concise description of this feature or product benefit.',
+                                bullets: [
+                                  'Primary attribute or requirement',
+                                  'Key advantage or operational guideline'
+                                ],
+                                highlight: false
+                              };
+                              updateBlock(bIdx, b => ({
+                                ...b,
+                                boxes: [...(b.boxes || []), newBox]
+                              }));
+                            }}
+                            className="text-xs font-bold text-sky-400 hover:text-sky-300 flex items-center gap-1 bg-sky-500/10 border border-sky-500/30 px-2.5 py-1 rounded-lg"
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                            <span>Add Box</span>
+                          </button>
+                        </div>
+
+                        {(block.boxes || []).map((box, bxIdx) => (
+                          <div key={bxIdx} className="rounded-xl border border-slate-800 bg-slate-950/80 p-4 space-y-3">
+                            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                              <span className="text-[11px] font-bold text-sky-400 bg-sky-950/60 border border-sky-500/30 px-2 py-0.5 rounded-md">
+                                Box #{bxIdx + 1}
+                              </span>
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    updateBlock(bIdx, b => {
+                                      const copy = [...(b.boxes || [])];
+                                      const cloned = JSON.parse(JSON.stringify(copy[bxIdx]));
+                                      copy.splice(bxIdx + 1, 0, cloned);
+                                      return { ...b, boxes: copy };
+                                    });
+                                  }}
+                                  title="Duplicate Box"
+                                  className="p-1 text-slate-400 hover:text-white"
+                                >
+                                  <Copy className="h-3 w-3" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    updateBlock(bIdx, b => ({
+                                      ...b,
+                                      boxes: (b.boxes || []).filter((_, idx) => idx !== bxIdx)
+                                    }));
+                                  }}
+                                  title="Delete Box"
+                                  className="p-1 text-slate-500 hover:text-red-400"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                              <div className="sm:col-span-2">
+                                <label className="text-[10px] font-bold text-slate-400 block mb-1 uppercase tracking-wider">
+                                  Box Title
+                                </label>
+                                <input
+                                  type="text"
+                                  value={box.title || ''}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    updateBlock(bIdx, b => {
+                                      const copy = [...(b.boxes || [])];
+                                      copy[bxIdx] = { ...copy[bxIdx], title: val };
+                                      return { ...b, boxes: copy };
+                                    });
+                                  }}
+                                  placeholder="e.g. High Daily Limits"
+                                  className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs font-bold text-white focus:border-sky-500 focus:outline-none"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-[10px] font-bold text-slate-400 block mb-1 uppercase tracking-wider">
+                                  Badge Text
+                                </label>
+                                <input
+                                  type="text"
+                                  value={box.badge || ''}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    updateBlock(bIdx, b => {
+                                      const copy = [...(b.boxes || [])];
+                                      copy[bxIdx] = { ...copy[bxIdx], badge: val };
+                                      return { ...b, boxes: copy };
+                                    });
+                                  }}
+                                  placeholder="e.g. MODULE 1 or POPULAR"
+                                  className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-white"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Style Variant:</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  updateBlock(bIdx, b => {
+                                    const copy = [...(b.boxes || [])];
+                                    copy[bxIdx] = { ...copy[bxIdx], highlight: false, gold: false, green: false };
+                                    return { ...b, boxes: copy };
+                                  });
+                                }}
+                                className={`px-2 py-0.5 rounded text-[10px] font-bold border transition-colors ${!box.highlight && !box.gold && !box.green
+                                  ? 'bg-slate-700 text-white border-slate-500'
+                                  : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-slate-200'
+                                  }`}
+                              >
+                                Standard
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  updateBlock(bIdx, b => {
+                                    const copy = [...(b.boxes || [])];
+                                    copy[bxIdx] = { ...copy[bxIdx], highlight: !copy[bxIdx].highlight, gold: false, green: false };
+                                    return { ...b, boxes: copy };
+                                  });
+                                }}
+                                className={`px-2 py-0.5 rounded text-[10px] font-bold border transition-colors ${box.highlight
+                                  ? 'bg-blue-600 text-white border-blue-400'
+                                  : 'bg-blue-950/40 text-blue-300 border-blue-900/60 hover:border-blue-700'
+                                  }`}
+                              >
+                                Highlight Blue
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  updateBlock(bIdx, b => {
+                                    const copy = [...(b.boxes || [])];
+                                    copy[bxIdx] = { ...copy[bxIdx], gold: !copy[bxIdx].gold, highlight: false, green: false };
+                                    return { ...b, boxes: copy };
+                                  });
+                                }}
+                                className={`px-2 py-0.5 rounded text-[10px] font-bold border transition-colors ${box.gold
+                                  ? 'bg-amber-600 text-white border-amber-400'
+                                  : 'bg-amber-950/40 text-amber-300 border-amber-900/60 hover:border-amber-700'
+                                  }`}
+                              >
+                                Gold Accent
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  updateBlock(bIdx, b => {
+                                    const copy = [...(b.boxes || [])];
+                                    copy[bxIdx] = { ...copy[bxIdx], green: !copy[bxIdx].green, highlight: false, gold: false };
+                                    return { ...b, boxes: copy };
+                                  });
+                                }}
+                                className={`px-2 py-0.5 rounded text-[10px] font-bold border transition-colors ${box.green
+                                  ? 'bg-emerald-600 text-white border-emerald-400'
+                                  : 'bg-emerald-950/40 text-emerald-300 border-emerald-900/60 hover:border-emerald-700'
+                                  }`}
+                              >
+                                Green Accent
+                              </button>
+                            </div>
+
+                            <div>
+                              <label className="text-[10px] font-bold text-slate-400 block mb-1 uppercase tracking-wider">
+                                Description / Body
+                              </label>
+                              <textarea
+                                rows={2}
+                                value={box.desc || ''}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  updateBlock(bIdx, b => {
+                                    const copy = [...(b.boxes || [])];
+                                    copy[bxIdx] = { ...copy[bxIdx], desc: val };
+                                    return { ...b, boxes: copy };
+                                  });
+                                }}
+                                placeholder="Summary of this pillar or feature..."
+                                className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-slate-200"
+                              />
+                            </div>
+
+                            {/* Bullets List */}
+                            <div className="space-y-1.5">
+                              <label className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">
+                                Box Bullet Points:
+                              </label>
+                              {(box.bullets || []).map((bullet, buIdx) => (
+                                <div key={buIdx} className="flex items-center gap-2">
+                                  <input
+                                    type="text"
+                                    value={bullet}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      updateBlock(bIdx, b => {
+                                        const copy = [...(b.boxes || [])];
+                                        const bCopy = [...(copy[bxIdx].bullets || [])];
+                                        bCopy[buIdx] = val;
+                                        copy[bxIdx] = { ...copy[bxIdx], bullets: bCopy };
+                                        return { ...b, boxes: copy };
+                                      });
+                                    }}
+                                    className="flex-1 rounded-lg border border-slate-800 bg-slate-900 px-3 py-1 text-xs text-slate-200"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      updateBlock(bIdx, b => {
+                                        const copy = [...(b.boxes || [])];
+                                        copy[bxIdx] = {
+                                          ...copy[bxIdx],
+                                          bullets: (copy[bxIdx].bullets || []).filter((_, idx) => idx !== buIdx)
+                                        };
+                                        return { ...b, boxes: copy };
+                                      });
+                                    }}
+                                    className="p-1 text-slate-500 hover:text-red-400"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              ))}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  updateBlock(bIdx, b => {
+                                    const copy = [...(b.boxes || [])];
+                                    copy[bxIdx] = {
+                                      ...copy[bxIdx],
+                                      bullets: [...(copy[bxIdx].bullets || []), 'New guideline or benefit']
+                                    };
+                                    return { ...b, boxes: copy };
+                                  });
+                                }}
+                                className="text-[11px] font-semibold text-sky-400 hover:underline pt-0.5"
+                              >
+                                + Add Bullet Point
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Live Boxes Preview in Course Architecture */}
+                      {(block.boxes || []).length > 0 && (
+                        <div className="mt-4 rounded-xl border border-sky-500/30 bg-slate-950/90 p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-xs font-bold text-sky-300 uppercase tracking-wider flex items-center gap-1.5">
+                              <Eye className="h-3.5 w-3.5" />
+                              Live In-Editor Boxes Preview
+                            </span>
+                            <span className="text-[11px] text-slate-400">
+                              Rendered Layout
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {(block.boxes || []).map((box, bxIdx) => (
+                              <div
+                                key={bxIdx}
+                                className={`rounded-xl border p-4 bg-slate-900/90 transition-all ${box.highlight
+                                  ? 'border-blue-500 shadow-md shadow-blue-500/10'
+                                  : box.gold
+                                    ? 'border-amber-500/80 shadow-md shadow-amber-500/10'
+                                    : box.green
+                                      ? 'border-emerald-500/80 shadow-md shadow-emerald-500/10'
+                                      : 'border-slate-800'
+                                  }`}
+                              >
+                                <div className="flex items-start justify-between gap-2 mb-2">
+                                  <h4 className="text-xs font-bold text-white leading-snug">
+                                    {box.title || 'Untitled Box'}
+                                  </h4>
+                                  {box.badge && (
+                                    <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 ${box.gold
+                                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                                      : box.green
+                                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                        : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                                      }`}>
+                                      {box.badge}
+                                    </span>
+                                  )}
+                                </div>
+                                {box.desc && (
+                                  <p className="text-xs text-slate-300 mb-2 leading-relaxed">{box.desc}</p>
+                                )}
+                                {box.bullets && box.bullets.length > 0 && (
+                                  <ul className="text-xs text-slate-400 space-y-1 list-disc list-inside">
+                                    {box.bullets.map((b, bi) => (
+                                      <li key={bi}>{b}</li>
+                                    ))}
+                                  </ul>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* ------------------------------------------------------------- */}
+                  {/* DROP DOWNS (COLLAPSIBLE BOXES) BLOCK EDITOR */}
+                  {/* ------------------------------------------------------------- */}
+                  {block.type === 'collapsible_boxes' && (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                        <div>
+                          <label className="text-xs font-semibold text-slate-400 block mb-1">
+                            Card Tag / Badge
+                          </label>
+                          <input
+                            type="text"
+                            value={block.tag || ''}
+                            onChange={(e) => updateBlock(bIdx, b => ({ ...b, tag: e.target.value }))}
+                            placeholder="e.g. FAQ or Drill-Down"
+                            className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-1.5 text-xs text-white"
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="text-xs font-semibold text-teal-300 block mb-1">
+                            Section Heading
+                          </label>
+                          <input
+                            type="text"
+                            value={block.heading || ''}
+                            onChange={(e) => updateBlock(bIdx, b => ({ ...b, heading: e.target.value }))}
+                            placeholder="e.g. Key Questions & Step-by-Step Drop Downs"
+                            className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-1.5 text-xs font-bold text-white focus:border-teal-500 focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-semibold text-slate-400 block mb-1">
+                          Body Description (HTML enabled)
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={block.body || ''}
+                          onChange={(e) => updateBlock(bIdx, b => ({ ...b, body: e.target.value }))}
+                          placeholder="Introductory text before drop downs..."
+                          className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-1.5 text-xs text-slate-300"
+                        />
+                      </div>
+
+                      {/* Section Image Uploader for Drop Downs */}
+                      <SectionImageControl
+                        imageSrc={block.imageSrc || block.src || block.imageUrl}
+                        alt={block.alt}
+                        caption={block.caption}
+                        onUpdateImage={(upd) => updateBlock(bIdx, b => ({ ...b, ...upd }))}
+                        onUploadFile={(file) => handleUploadImageForBlock(bIdx, file)}
+                        isUploading={uploadingImageBlockIdx === bIdx}
+                        title="Section Visual / Placed Image"
+                      />
+
+                      {/* Drop Down Items List */}
+                      <div className="space-y-3 pt-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-bold text-teal-300 uppercase tracking-wider flex items-center gap-1.5">
+                            <ChevronDown className="h-3.5 w-3.5" />
+                            Drop Down Items ({(block.collapsibles || []).length})
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newItem: CollapsibleItem = {
+                                title: 'New Drop Down Question or Step',
+                                badge: 'STEP',
+                                badgeColor: 'teal',
+                                content: '<p>Detailed description revealed when user taps to open this drop down.</p>',
+                                bullets: [
+                                  'First requirement or condition',
+                                  'Second operational step'
+                                ],
+                                isOpen: false
+                              };
+                              updateBlock(bIdx, b => ({
+                                ...b,
+                                collapsibles: [...(b.collapsibles || []), newItem]
+                              }));
+                            }}
+                            className="text-xs font-bold text-teal-400 hover:text-teal-300 flex items-center gap-1 bg-teal-500/10 border border-teal-500/30 px-2.5 py-1 rounded-lg"
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                            <span>Add Drop Down Item</span>
+                          </button>
+                        </div>
+
+                        {(block.collapsibles || []).map((item, itIdx) => (
+                          <div key={itIdx} className="rounded-xl border border-slate-800 bg-slate-950/80 p-4 space-y-3">
+                            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                              <span className="text-[11px] font-bold text-teal-400 bg-teal-950/60 border border-teal-500/30 px-2 py-0.5 rounded-md">
+                                Drop Down #{itIdx + 1}
+                              </span>
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    updateBlock(bIdx, b => {
+                                      const copy = [...(b.collapsibles || [])];
+                                      const cloned = JSON.parse(JSON.stringify(copy[itIdx]));
+                                      copy.splice(itIdx + 1, 0, cloned);
+                                      return { ...b, collapsibles: copy };
+                                    });
+                                  }}
+                                  title="Duplicate Drop Down"
+                                  className="p-1 text-slate-400 hover:text-white"
+                                >
+                                  <Copy className="h-3 w-3" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    updateBlock(bIdx, b => ({
+                                      ...b,
+                                      collapsibles: (b.collapsibles || []).filter((_, idx) => idx !== itIdx)
+                                    }));
+                                  }}
+                                  title="Delete Drop Down"
+                                  className="p-1 text-slate-500 hover:text-red-400"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                              <div className="sm:col-span-2">
+                                <label className="text-[10px] font-bold text-slate-400 block mb-1 uppercase tracking-wider">
+                                  Drop Down Header / Question
+                                </label>
+                                <input
+                                  type="text"
+                                  value={item.title || ''}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    updateBlock(bIdx, b => {
+                                      const copy = [...(b.collapsibles || [])];
+                                      copy[itIdx] = { ...copy[itIdx], title: val };
+                                      return { ...b, collapsibles: copy };
+                                    });
+                                  }}
+                                  placeholder="e.g. 1. What documents are needed?"
+                                  className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs font-bold text-white focus:border-teal-500 focus:outline-none"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-[10px] font-bold text-slate-400 block mb-1 uppercase tracking-wider">
+                                  Badge / Tag (Optional)
+                                </label>
+                                <input
+                                  type="text"
+                                  value={item.badge || ''}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    updateBlock(bIdx, b => {
+                                      const copy = [...(b.collapsibles || [])];
+                                      copy[itIdx] = { ...copy[itIdx], badge: val };
+                                      return { ...b, collapsibles: copy };
+                                    });
+                                  }}
+                                  placeholder="e.g. STEP 1 or FAQ"
+                                  className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-white"
+                                />
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="text-[10px] font-bold text-slate-400 block mb-1 uppercase tracking-wider">
+                                Expanded Body Content (HTML enabled)
+                              </label>
+                              <textarea
+                                rows={2}
+                                value={item.content || ''}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  updateBlock(bIdx, b => {
+                                    const copy = [...(b.collapsibles || [])];
+                                    copy[itIdx] = { ...copy[itIdx], content: val };
+                                    return { ...b, collapsibles: copy };
+                                  });
+                                }}
+                                placeholder="Detailed explanation revealed when opened..."
+                                className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-slate-200"
+                              />
+                            </div>
+
+                            {/* Bullets List */}
+                            <div className="space-y-1.5">
+                              <label className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">
+                                Bullet Points inside Drop Down:
+                              </label>
+                              {(item.bullets || []).map((bullet, buIdx) => (
+                                <div key={buIdx} className="flex items-center gap-2">
+                                  <input
+                                    type="text"
+                                    value={bullet}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      updateBlock(bIdx, b => {
+                                        const copy = [...(b.collapsibles || [])];
+                                        const bCopy = [...(copy[itIdx].bullets || [])];
+                                        bCopy[buIdx] = val;
+                                        copy[itIdx] = { ...copy[itIdx], bullets: bCopy };
+                                        return { ...b, collapsibles: copy };
+                                      });
+                                    }}
+                                    className="flex-1 rounded-lg border border-slate-800 bg-slate-900 px-3 py-1 text-xs text-slate-200"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      updateBlock(bIdx, b => {
+                                        const copy = [...(b.collapsibles || [])];
+                                        copy[itIdx] = {
+                                          ...copy[itIdx],
+                                          bullets: (copy[itIdx].bullets || []).filter((_, idx) => idx !== buIdx)
+                                        };
+                                        return { ...b, collapsibles: copy };
+                                      });
+                                    }}
+                                    className="p-1 text-slate-500 hover:text-red-400"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              ))}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  updateBlock(bIdx, b => {
+                                    const copy = [...(b.collapsibles || [])];
+                                    copy[itIdx] = {
+                                      ...copy[itIdx],
+                                      bullets: [...(copy[itIdx].bullets || []), 'New condition or guideline']
+                                    };
+                                    return { ...b, collapsibles: copy };
+                                  });
+                                }}
+                                className="text-[11px] font-semibold text-teal-400 hover:underline pt-0.5"
+                              >
+                                + Add Bullet Point
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Live Drop Downs Preview in Course Architecture */}
+                      {(block.collapsibles || []).length > 0 && (
+                        <div className="mt-4 rounded-xl border border-teal-500/30 bg-slate-950/90 p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-xs font-bold text-teal-300 uppercase tracking-wider flex items-center gap-1.5">
+                              <Eye className="h-3.5 w-3.5" />
+                              Live In-Editor Drop Downs Preview (Tap to toggle expand/collapse!)
+                            </span>
+                            <span className="text-[11px] text-slate-400">
+                              Interactive Test
+                            </span>
+                          </div>
+
+                          <div className="space-y-2">
+                            {(block.collapsibles || []).map((item, itIdx) => {
+                              const collKey = `${bIdx}_${itIdx}`;
+                              const isOpen = Boolean(openPreviewCollapsibles[collKey]);
+                              return (
+                                <div
+                                  key={itIdx}
+                                  className="rounded-xl border border-slate-800 bg-slate-900 overflow-hidden transition-all shadow-sm"
+                                >
+                                  <button
+                                    type="button"
+                                    onClick={() => setOpenPreviewCollapsibles(prev => ({ ...prev, [collKey]: !prev[collKey] }))}
+                                    className="w-full flex items-center justify-between p-3.5 text-left hover:bg-slate-800/60 transition-colors"
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      {item.badge && (
+                                        <span className="text-[10px] font-black uppercase tracking-wider bg-teal-500/20 text-teal-300 border border-teal-500/30 px-2 py-0.5 rounded-full">
+                                          {item.badge}
+                                        </span>
+                                      )}
+                                      <span className="text-xs font-bold text-white">
+                                        {item.title || 'Untitled Drop Down'}
+                                      </span>
+                                    </div>
+                                    <ChevronDown className={`h-4 w-4 text-teal-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                                  </button>
+                                  {isOpen && (
+                                    <div className="p-3.5 pt-0 border-t border-slate-800/80 bg-slate-950/50 space-y-2 text-xs text-slate-300">
+                                      {item.content && (
+                                        <div dangerouslySetInnerHTML={{ __html: item.content }} />
+                                      )}
+                                      {item.bullets && item.bullets.length > 0 && (
+                                        <ul className="space-y-1 list-disc list-inside text-slate-300">
+                                          {item.bullets.map((b, bi) => (
+                                            <li key={bi}>{b}</li>
+                                          ))}
+                                        </ul>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* ------------------------------------------------------------- */}
+                  {/* DEDICATED VISUAL IMAGE SECTION BLOCK EDITOR */}
+                  {/* ------------------------------------------------------------- */}
+                  {block.type === 'image' && (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                        <div>
+                          <label className="text-xs font-semibold text-slate-400 block mb-1">
+                            Card Tag / Badge
+                          </label>
+                          <input
+                            type="text"
+                            value={block.tag || ''}
+                            onChange={(e) => updateBlock(bIdx, b => ({ ...b, tag: e.target.value }))}
+                            placeholder="e.g. Visual Diagram"
+                            className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-1.5 text-xs text-white"
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="text-xs font-semibold text-pink-300 block mb-1">
+                            Visual Section Title / Heading
+                          </label>
+                          <input
+                            type="text"
+                            value={block.heading || ''}
+                            onChange={(e) => updateBlock(bIdx, b => ({ ...b, heading: e.target.value }))}
+                            placeholder="e.g. Architecture Flowchart & Operational Lifecycle"
+                            className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-1.5 text-xs font-bold text-white focus:border-pink-500 focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Section Image Uploader */}
+                      <SectionImageControl
+                        imageSrc={block.src || block.imageSrc || block.imageUrl}
+                        alt={block.alt}
+                        caption={block.caption}
+                        onUpdateImage={(upd) => updateBlock(bIdx, b => ({ ...b, ...upd }))}
+                        onUploadFile={(file) => handleUploadImageForBlock(bIdx, file)}
+                        isUploading={uploadingImageBlockIdx === bIdx}
+                        title="Primary Section Image / Diagram"
+                      />
                     </div>
                   )}
 

@@ -1,57 +1,108 @@
 import React, { useState } from 'react';
-import { X, Download, FileCode, Package, Check, ShieldCheck, Sparkles, BookOpen, FileCheck } from 'lucide-react';
-import { CourseData } from '../types/course';
+import { X, Download, FileCode, Package, Check, ShieldCheck, Sparkles, BookOpen, FileCheck, Loader2 } from 'lucide-react';
+import { CourseData, RichCourseData } from '../types/course';
 import { UploadedCourseInfo } from './FileUpload';
+import { getApiUrl, getAuthHeaders } from '../utils/apiConfig';
 
 interface ExportModalProps {
   course: CourseData;
   uploadedCourse?: UploadedCourseInfo | null;
+  richCourse?: RichCourseData;
   onClose: () => void;
   onUpdateCourse: (updated: CourseData) => void;
 }
 
 export const ExportModal: React.FC<ExportModalProps> = ({
   uploadedCourse,
+  richCourse,
   onClose
 }) => {
   const [selectedCourse, setSelectedCourse] = useState<'uploaded' | 'day2' | 'day3'>(
-    uploadedCourse ? 'uploaded' : 'day2'
+    uploadedCourse || (richCourse && richCourse.chapters && richCourse.chapters.length > 0) ? 'uploaded' : 'day2'
   );
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isExportingScorm, setIsExportingScorm] = useState(false);
+  const [isExportingHtml, setIsExportingHtml] = useState(false);
 
   const getFiles = () => {
-      if (selectedCourse === 'uploaded' && uploadedCourse) {
-        return {
-        scormZip: uploadedCourse.scormZipUrl,
-          zipName: `${uploadedCourse.title.replace(/[^a-zA-Z0-9_-]/g, '_')}_SCORM2004.zip`,
-          htmlFile: uploadedCourse.htmlUrl,
-          htmlName: `${uploadedCourse.title.replace(/[^a-zA-Z0-9_-]/g, '_')}.html`,
-          title: uploadedCourse.title,
-          meta: `${uploadedCourse.totalChapters} Chapters · Interactive Mobile Micro-Learning · SCORM 2004 4th Edition`
-        };
-      } else if (selectedCourse === 'day3') {
-        return {
-          scormZip: '/Sample_Day3_Bank_Sales_Excellence_SCORM2004.zip',
-          zipName: 'Sample_Day3_Bank_Sales_Excellence_SCORM2004.zip',
-          htmlFile: '/Sample_Day3_Bank_Sales_Excellence.html',
-          htmlName: 'Sample_Day3_Bank_Sales_Excellence.html',
-          title: 'HDFC Academy · Day 3: Know Your Product — CASA & Savings Mastery (49 Slides · 9 Modules)',
-          meta: '9 Modules · 49 Slides · CASA Ratios · Speciale Activ & Women\'s Gold · Interactive Sorters & Flashcards'
-        };
-      } else {
-        return {
-          scormZip: '/HDFC_Academy_BSE_Day2_Animated_SCORM2004.zip',
-          zipName: 'HDFC_Academy_BSE_Day2_Mobile_SCORM2004_Rich.zip',
-          htmlFile: '/HDFC_Academy_BSE_Day2_Animated.html',
-          htmlName: 'HDFC_Academy_BSE_Day2_Mobile_Learning.html',
-          title: 'HDFC Academy · Day 2: KYC, Products & Sales Mastery (129 Slides · 10 Modules)',
-          meta: '10 Modules · 129 Slides · 14 Visual Infographics · 4 Video Slots · Full Quizzes & Sorters'
-        };
-      }
-    };
+    if (selectedCourse === 'uploaded') {
+      const title = (richCourse && richCourse.title) || (uploadedCourse && uploadedCourse.title) || 'Course';
+      const cleanTitle = title.replace(/[^a-zA-Z0-9_-]/g, '_');
+      const numChapters = (richCourse && richCourse.chapters ? richCourse.chapters.length : 0) || (uploadedCourse ? uploadedCourse.totalChapters : 0);
+      return {
+        scormZip: (uploadedCourse && uploadedCourse.scormZipUrl) || `/${cleanTitle}_SCORM2004.zip`,
+        zipName: `${cleanTitle}_SCORM2004.zip`,
+        htmlFile: (uploadedCourse && uploadedCourse.htmlUrl) || `/${cleanTitle}.html`,
+        htmlName: `${cleanTitle}.html`,
+        title: title,
+        meta: `${numChapters} Chapters · Interactive Mobile Micro-Learning · SCORM 2004 4th Edition`
+      };
+    } else if (selectedCourse === 'day3') {
+      return {
+        scormZip: '/Sample_Day3_Bank_Sales_Excellence_SCORM2004.zip',
+        zipName: 'Sample_Day3_Bank_Sales_Excellence_SCORM2004.zip',
+        htmlFile: '/Sample_Day3_Bank_Sales_Excellence.html',
+        htmlName: 'Sample_Day3_Bank_Sales_Excellence.html',
+        title: 'HDFC Academy · Day 3: Know Your Product — CASA & Savings Mastery (49 Slides · 9 Modules)',
+        meta: '9 Modules · 49 Slides · CASA Ratios · Speciale Activ & Women\'s Gold · Interactive Sorters & Flashcards'
+      };
+    } else {
+      return {
+        scormZip: '/HDFC_Academy_BSE_Day2_Animated_SCORM2004.zip',
+        zipName: 'HDFC_Academy_BSE_Day2_Mobile_SCORM2004_Rich.zip',
+        htmlFile: '/HDFC_Academy_BSE_Day2_Animated.html',
+        htmlName: 'HDFC_Academy_BSE_Day2_Mobile_Learning.html',
+        title: 'HDFC Academy · Day 2: KYC, Products & Sales Mastery (129 Slides · 10 Modules)',
+        meta: '10 Modules · 129 Slides · 14 Visual Infographics · 4 Video Slots · Full Quizzes & Sorters'
+      };
+    }
+  };
 
-    const handleExportScorm = () => {
-      const info = getFiles();
+  const triggerBlobDownload = (blob: Blob, filename: string) => {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    }, 1000);
+  };
+
+  const handleExportScorm = async () => {
+    const info = getFiles();
+    setErrorMsg(null);
+    setSuccessMsg(null);
+    setIsExportingScorm(true);
+
+    try {
+      // If we have live richCourse data (with newly added flip cards, boxes, dropdowns, images),
+      // package it dynamically through the export endpoint so all edits are included
+      if (selectedCourse === 'uploaded' && richCourse && richCourse.chapters && richCourse.chapters.length > 0) {
+        const payload = {
+          course_name: richCourse.name || richCourse.title || (uploadedCourse ? (uploadedCourse.filename || uploadedCourse.title) : 'Course'),
+          course_data: richCourse
+        };
+
+        const res = await fetch(getApiUrl('/api/course/export_scorm'), {
+          method: 'POST',
+          headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+          const blob = await res.blob();
+          triggerBlobDownload(blob, info.zipName);
+          setSuccessMsg(`✓ Certified SCORM 2004 4th Edition Package downloaded: ${info.zipName}`);
+          return;
+        }
+      }
+
+      // Fallback or static selection: trigger download from URL
       const a = document.createElement('a');
       a.href = info.scormZip;
       a.download = info.zipName;
@@ -59,10 +110,47 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       a.click();
       document.body.removeChild(a);
       setSuccessMsg(`✓ SCORM 2004 4th Edition Package downloaded: ${info.zipName}`);
-    };
+    } catch (err: any) {
+      console.warn('Backend dynamic SCORM export fallback:', err);
+      const a = document.createElement('a');
+      a.href = info.scormZip;
+      a.download = info.zipName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setSuccessMsg(`✓ SCORM 2004 4th Edition Package downloaded: ${info.zipName}`);
+    } finally {
+      setIsExportingScorm(false);
+    }
+  };
 
-    const handleExportHtml = () => {
-      const info = getFiles();
+  const handleExportHtml = async () => {
+    const info = getFiles();
+    setErrorMsg(null);
+    setSuccessMsg(null);
+    setIsExportingHtml(true);
+
+    try {
+      if (selectedCourse === 'uploaded' && richCourse && richCourse.chapters && richCourse.chapters.length > 0) {
+        const payload = {
+          course_name: richCourse.name || richCourse.title || (uploadedCourse ? (uploadedCourse.filename || uploadedCourse.title) : 'Course'),
+          course_data: richCourse
+        };
+
+        const res = await fetch(getApiUrl('/api/course/export_html'), {
+          method: 'POST',
+          headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+          const blob = await res.blob();
+          triggerBlobDownload(blob, info.htmlName);
+          setSuccessMsg(`✓ Standalone Single-File HTML downloaded: ${info.htmlName}`);
+          return;
+        }
+      }
+
       const a = document.createElement('a');
       a.href = info.htmlFile;
       a.download = info.htmlName;
@@ -70,9 +158,21 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       a.click();
       document.body.removeChild(a);
       setSuccessMsg(`✓ Standalone Single-File HTML downloaded: ${info.htmlName}`);
-    };
+    } catch (err: any) {
+      console.warn('Backend dynamic HTML export fallback:', err);
+      const a = document.createElement('a');
+      a.href = info.htmlFile;
+      a.download = info.htmlName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setSuccessMsg(`✓ Standalone Single-File HTML downloaded: ${info.htmlName}`);
+    } finally {
+      setIsExportingHtml(false);
+    }
+  };
 
-    const currentInfo = getFiles();
+  const currentInfo = getFiles();
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fadeIn">
@@ -188,10 +288,20 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
                   <button
                     onClick={handleExportScorm}
-                    className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-blue-600/30 hover:bg-blue-500 transition-all"
+                    disabled={isExportingScorm || isExportingHtml}
+                    className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-blue-600/30 hover:bg-blue-500 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
                   >
-                    <Download className="h-4 w-4" />
-                    <span>Download SCORM 2004 ZIP</span>
+                    {isExportingScorm ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>Packaging SCORM 2004 ZIP...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Download className="h-4 w-4" />
+                        <span>Download SCORM 2004 ZIP</span>
+                      </>
+                    )}
                   </button>
                 </div>
 
@@ -217,10 +327,20 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
                   <button
                     onClick={handleExportHtml}
-                    className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-emerald-600/30 hover:bg-emerald-500 transition-all"
+                    disabled={isExportingScorm || isExportingHtml}
+                    className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-emerald-600/30 hover:bg-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
                   >
-                    <Download className="h-4 w-4" />
-                    <span>Download Standalone HTML</span>
+                    {isExportingHtml ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>Generating Standalone HTML...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Download className="h-4 w-4" />
+                        <span>Download Standalone HTML</span>
+                      </>
+                    )}
                   </button>
                 </div>
               </div>

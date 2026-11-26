@@ -9,7 +9,7 @@ import urllib.parse
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, PlainTextResponse
+from fastapi.responses import FileResponse, PlainTextResponse, Response, JSONResponse, HTMLResponse
 from converter import convert_pptx_to_b2b, generate_standalone_html, build_scorm2004_zip
 
 app = FastAPI(title="B2B PPTX to Rich Mobile SCORM Converter")
@@ -44,9 +44,34 @@ PUBLIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "public")
 os.makedirs(PUBLIC_DIR, exist_ok=True)
 MEDIA_DIR = os.path.join(PUBLIC_DIR, "media")
 os.makedirs(MEDIA_DIR, exist_ok=True)
+DIST_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dist")
 
-# Mount media directory so FastAPI can also serve media files directly
-app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
+# Robust media serving endpoint that cleanly decodes percent-encoded URLs (%20, etc.),
+# handles case-insensitivity, and matches both spaces and underscores.
+@app.get("/media/{media_path:path}")
+async def serve_media_file(media_path: str):
+    unquoted = urllib.parse.unquote(media_path).lstrip("/")
+    
+    # 1. Exact unquoted match in PUBLIC_DIR/media
+    p1 = os.path.join(MEDIA_DIR, unquoted)
+    if os.path.isfile(p1):
+        return FileResponse(p1)
+
+    # 2. Exact unquoted match in DIST_DIR/media
+    if os.path.exists(DIST_DIR):
+        p2 = os.path.join(DIST_DIR, "media", unquoted)
+        if os.path.isfile(p2):
+            return FileResponse(p2)
+
+    # 3. Normalized matching (matches space vs underscore differences)
+    norm = re.sub(r'[\s_]+', '_', unquoted).lower()
+    for d in [MEDIA_DIR, os.path.join(DIST_DIR, "media") if os.path.exists(DIST_DIR) else None]:
+        if d and os.path.exists(d):
+            for f in os.listdir(d):
+                if re.sub(r'[\s_]+', '_', f).lower() == norm:
+                    return FileResponse(os.path.join(d, f))
+
+    return PlainTextResponse("Media Not Found", status_code=404)
 
 @app.get("/api/health")
 def health():
@@ -174,6 +199,13 @@ async def update_course_endpoint(payload: dict):
     media_dir = os.path.join(PUBLIC_DIR, "media")
     build_scorm2004_zip(course_data, pub_zip_path, media_dir=media_dir)
 
+    if os.path.exists(DIST_DIR):
+        dist_zip_path = os.path.join(DIST_DIR, f"{clean_name}_SCORM2004.zip")
+        try:
+            shutil.copy2(pub_zip_path, dist_zip_path)
+        except Exception:
+            pass
+
     ts = int(time.time() * 1000)
     encoded_name = urllib.parse.quote(clean_name)
     preview_url = f"/{encoded_name}.html?t={ts}"
@@ -187,6 +219,105 @@ async def update_course_endpoint(payload: dict):
         "title": course_data["title"]
     }
 
+@app.post("/api/course/export_scorm")
+async def export_scorm_endpoint(payload: dict):
+    """
+    Dynamically builds and returns a certified SCORM 2004 4th Edition Zip archive
+    for the supplied course data. Directly streamed as attachment.
+    """
+    course_name = payload.get("course_name") or payload.get("title") or "Course"
+    raw_name = os.path.basename(str(course_name)).split('?')[0]
+    raw_name = re.sub(r'\.html$', '', raw_name, flags=re.IGNORECASE)
+    clean_name = re.sub(r'[^a-zA-Z0-9_\- ]', '_', raw_name).strip() or "Course"
+
+    course_data = payload.get("course_data", {})
+    if not course_data or "chapters" not in course_data:
+        # Fallback to reading from existing HTML file in PUBLIC_DIR if course_data is omitted
+        for f in [f"{clean_name}.html", "Sample PPT for VO 1.html"]:
+            p = os.path.join(PUBLIC_DIR, f)
+            if os.path.exists(p):
+                with open(p, "r", encoding="utf-8") as hf:
+                    m = re.search(r'var COURSE_CHAPTERS = (\[.*?\]);\s*window\.COURSE_CHAPTERS', hf.read(), re.DOTALL)
+                    if m:
+                        course_data = {"title": clean_name, "chapters": json.loads(m.group(1))}
+                        break
+
+    if not course_data or "chapters" not in course_data:
+        return JSONResponse(status_code=400, content={"error": "Course data with chapters is required."})
+
+    if "title" not in course_data:
+        course_data["title"] = clean_name
+
+    zip_filename = f"{clean_name}_SCORM2004.zip"
+    pub_zip_path = os.path.join(PUBLIC_DIR, zip_filename)
+    media_dir = os.path.join(PUBLIC_DIR, "media")
+    build_scorm2004_zip(course_data, pub_zip_path, media_dir=media_dir)
+
+    if os.path.exists(DIST_DIR):
+        try:
+            shutil.copy2(pub_zip_path, os.path.join(DIST_DIR, zip_filename))
+        except Exception:
+            pass
+
+    return FileResponse(
+        pub_zip_path,
+        media_type="application/zip",
+        filename=zip_filename,
+        headers={
+            "Content-Disposition": f'attachment; filename="{zip_filename}"',
+            "Cache-Control": "no-cache"
+        }
+    )
+
+@app.post("/api/course/export_html")
+async def export_html_endpoint(payload: dict):
+    """
+    Dynamically generates and returns a standalone single-file offline HTML
+    for the supplied course data. Directly streamed as attachment.
+    """
+    course_name = payload.get("course_name") or payload.get("title") or "Course"
+    raw_name = os.path.basename(str(course_name)).split('?')[0]
+    raw_name = re.sub(r'\.html$', '', raw_name, flags=re.IGNORECASE)
+    clean_name = re.sub(r'[^a-zA-Z0-9_\- ]', '_', raw_name).strip() or "Course"
+
+    course_data = payload.get("course_data", {})
+    if not course_data or "chapters" not in course_data:
+        for f in [f"{clean_name}.html", "Sample PPT for VO 1.html"]:
+            p = os.path.join(PUBLIC_DIR, f)
+            if os.path.exists(p):
+                with open(p, "r", encoding="utf-8") as hf:
+                    m = re.search(r'var COURSE_CHAPTERS = (\[.*?\]);\s*window\.COURSE_CHAPTERS', hf.read(), re.DOTALL)
+                    if m:
+                        course_data = {"title": clean_name, "chapters": json.loads(m.group(1))}
+                        break
+
+    if not course_data or "chapters" not in course_data:
+        return JSONResponse(status_code=400, content={"error": "Course data with chapters is required."})
+
+    if "title" not in course_data:
+        course_data["title"] = clean_name
+
+    html_content = generate_standalone_html(course_data)
+    html_filename = f"{clean_name}.html"
+    pub_html_path = os.path.join(PUBLIC_DIR, html_filename)
+    with open(pub_html_path, "w", encoding="utf-8") as f:
+        f.write(html_content)
+
+    if os.path.exists(DIST_DIR):
+        try:
+            shutil.copy2(pub_html_path, os.path.join(DIST_DIR, html_filename))
+        except Exception:
+            pass
+
+    return Response(
+        content=html_content,
+        media_type="text/html",
+        headers={
+            "Content-Disposition": f'attachment; filename="{html_filename}"',
+            "Cache-Control": "no-cache"
+        }
+    )
+
 @app.post("/api/upload_audio")
 async def upload_audio_endpoint(file: UploadFile = File(...)):
     """
@@ -198,7 +329,8 @@ async def upload_audio_endpoint(file: UploadFile = File(...)):
 
     orig_name = file.filename or f"audio_{int(time.time())}.mp3"
     name, ext = os.path.splitext(orig_name)
-    clean_base = re.sub(r'[^a-zA-Z0-9_\- ]', '_', name).strip()
+    clean_base = re.sub(r'[^a-zA-Z0-9_\-]', '_', name).strip('_')
+    clean_base = re.sub(r'_+', '_', clean_base)
     if not clean_base:
         clean_base = f"audio_{int(time.time())}"
     clean_filename = f"{clean_base}{ext.lower()}"
@@ -217,6 +349,50 @@ async def upload_audio_endpoint(file: UploadFile = File(...)):
     return {
         "success": True,
         "audio_url": f"media/{clean_filename}",
+        "filename": clean_filename,
+        "size": len(content)
+    }
+
+@app.post("/api/upload_image")
+async def upload_image_endpoint(file: UploadFile = File(...)):
+    """
+    Uploads an image file (.png, .jpg, .jpeg, .gif, .webp, .svg) to public/media/
+    so it can be placed in any section or image block, and packaged into SCORM 2004 ZIP and standalone HTML.
+    """
+    media_dir = os.path.join(PUBLIC_DIR, "media")
+    os.makedirs(media_dir, exist_ok=True)
+
+    orig_name = file.filename or f"image_{int(time.time())}.png"
+    name, ext = os.path.splitext(orig_name)
+    clean_base = re.sub(r'[^a-zA-Z0-9_\-]', '_', name).strip('_')
+    clean_base = re.sub(r'_+', '_', clean_base)
+    if not clean_base:
+        clean_base = f"image_{int(time.time())}"
+    clean_filename = f"{clean_base}{ext.lower()}"
+
+    target_path = os.path.join(media_dir, clean_filename)
+    counter = 1
+    while os.path.exists(target_path):
+        clean_filename = f"{clean_base}_{counter}{ext.lower()}"
+        target_path = os.path.join(media_dir, clean_filename)
+        counter += 1
+
+    content = await file.read()
+    with open(target_path, "wb") as f:
+        f.write(content)
+
+    if os.path.exists(DIST_DIR):
+        dist_media = os.path.join(DIST_DIR, "media")
+        os.makedirs(dist_media, exist_ok=True)
+        try:
+            with open(os.path.join(dist_media, clean_filename), "wb") as f:
+                f.write(content)
+        except Exception:
+            pass
+
+    return {
+        "success": True,
+        "image_url": f"media/{clean_filename}",
         "filename": clean_filename,
         "size": len(content)
     }

@@ -172,9 +172,38 @@ export interface AccordionItem {
   content: string;
 }
 
+export interface BoxItem {
+  id?: string;
+  title: string;
+  badge?: string;
+  badgeColor?: 'gold' | 'green' | 'blue' | 'purple' | 'red' | string;
+  desc?: string;
+  content?: string;
+  bullets?: string[];
+  icon?: string;
+  highlight?: boolean;
+  gold?: boolean;
+  green?: boolean;
+  detailsLabel?: string;
+  details?: string;
+}
+
+export interface CollapsibleItem {
+  id?: string;
+  title: string;
+  badge?: string;
+  badgeColor?: 'gold' | 'green' | 'blue' | 'purple' | 'red' | string;
+  content?: string;
+  bullets?: string[];
+  isOpen?: boolean;
+  icon?: string;
+}
+
 export interface FlashcardItemEntry {
   q: string;
   a: string;
+  badge?: string;
+  img?: string;
 }
 
 export interface ChapterBlock {
@@ -190,6 +219,8 @@ export interface ChapterBlock {
     | 'quiz_match' 
     | 'action_commitment' 
     | 'flashcards' 
+    | 'boxes'
+    | 'collapsible_boxes'
     | 'image'
     | 'url_redirect';
 
@@ -245,12 +276,21 @@ export interface ChapterBlock {
   // Flashcards
   cards?: FlashcardItemEntry[];
 
+  // Boxes fields
+  boxes?: BoxItem[];
+  boxGridCols?: number;
+
+  // Collapsible Dropdown fields
+  collapsibles?: CollapsibleItem[];
+
   // Audio narration / Voiceover fields
   audioUrl?: string;
   audioTitle?: string;
 
   // Image fields
   src?: string;
+  imageSrc?: string;
+  imageUrl?: string;
   alt?: string;
   caption?: string;
 }
