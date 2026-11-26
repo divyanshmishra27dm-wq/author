@@ -825,8 +825,9 @@ def parse_pptx_into_course(pptx_path, output_dir=None):
     first_shapes = [s.text.strip() for s in prs.slides[0].shapes if s.has_text_frame and s.text.strip()]
     first_text = " ".join(first_shapes).lower()
 
-    # Check for Day 3 VO / Products & Account Opening presentation (Sample PPT for VO 1, VO2, etc.)
-    if "vo" in base_name.lower() or "day 3" in base_name.lower() or "day_3" in base_name.lower() or "day 3: products" in first_text:
+    # Check for specific original Sample PPT for VO 1 presentation
+    clean_norm_base = re.sub(r'[\s_]+', ' ', clean_base).strip().lower()
+    if clean_norm_base == "sample ppt for vo 1":
         return parse_day3_vo_course(pptx_path, media_info)
 
     # Explicit check: pre-curated Day 3 49-slide dataset

@@ -30,7 +30,7 @@ ENV/
 *.tar.gz
 *.mp4
 *.pptx
-media/
+/media/
 Day3_B2B_Exact.html
 
 # Logs

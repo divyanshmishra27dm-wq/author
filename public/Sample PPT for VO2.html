@@ -2118,17 +2118,6 @@ var COURSE_CHAPTERS = [
             ]
           }
         ]
-      },
-      {
-        "type": "image",
-        "id": "img_1795677559890",
-        "tag": "Visual Diagram",
-        "heading": "Process & Architecture Diagram",
-        "src": "media/Black_and_White_Retro_Birthday_Instagram_Post_1.png",
-        "alt": "Black and White Retro Birthday Instagram Post",
-        "caption": "Black and White Retro Birthday Instagram Post",
-        "imageSrc": "media/Black_and_White_Retro_Birthday_Instagram_Post_1.png",
-        "imageUrl": "media/Black_and_White_Retro_Birthday_Instagram_Post_1.png"
       }
     ]
   },
@@ -3096,6 +3085,23 @@ window.COURSE_STORAGE_KEY = "scorm_HDFC_Academy___Day_3__Products";
       .replace(/"/g, '&quot;');
   }
 
+  function sanitizeMediaSrc(src) {
+    if (!src) return '';
+    var s = String(src).trim();
+    if (s.startsWith('data:') || s.startsWith('blob:')) return s;
+    try {
+      return encodeURI(decodeURI(s));
+    } catch (e) {
+      return s.replace(/ /g, '%20');
+    }
+  }
+
+  function renderSectionHeroImage(rawSrc) {
+    if (!rawSrc) return '';
+    var src = sanitizeMediaSrc(rawSrc);
+    return '<div class="card-hero-image-wrap"><img src="' + escapeHtml(src) + '" alt="" class="card-hero-image" loading="lazy" onerror="if(this.src.includes(\'%20\')){this.src=this.src.replace(/%20/g,\'_\');}" /></div>';
+  }
+
   function renderAudioBar(audioUrl, audioTitle) {
     if (!audioUrl || !String(audioUrl).trim()) return '';
     const label = audioTitle || 'Audio Narration';
@@ -3275,11 +3281,12 @@ window.COURSE_STORAGE_KEY = "scorm_HDFC_Academy___Day_3__Products";
     }
 
     if (block.type === 'image') {
-      const src = block.src || block.imageSrc || block.imageUrl || '';
+      const rawSrc = block.src || block.imageSrc || block.imageUrl || '';
+      const src = sanitizeMediaSrc(rawSrc);
       return `
         <figure class="visual-card">
           ${audioHtml}
-          <img src="${escapeHtml(src)}" alt="${escapeHtml(block.alt || block.caption || '')}" loading="lazy" />
+          <img src="${escapeHtml(src)}" alt="${escapeHtml(block.alt || block.caption || '')}" loading="lazy" onerror="if(this.src.includes('%20')){this.src=this.src.replace(/%20/g,'_');}" />
           ${block.caption ? `<figcaption class="visual-caption">📊 ${escapeHtml(block.caption)}</figcaption>` : ''}
         </figure>
       `;
@@ -3301,9 +3308,7 @@ window.COURSE_STORAGE_KEY = "scorm_HDFC_Academy___Day_3__Products";
     }
 
     if (block.type === 'boxes' || block.type === 'card_grid') {
-      const imageHtml = (block.imageSrc || block.imageUrl || block.src)
-        ? `<div class="card-hero-image-wrap"><img src="${escapeHtml(block.imageSrc || block.imageUrl || block.src)}" alt="" class="card-hero-image" loading="lazy" /></div>`
-        : '';
+      const imageHtml = renderSectionHeroImage(block.imageSrc || block.imageUrl || block.src);
       const calloutHtml = block.callout
         ? `<div class="callout ${block.callout.type || ''}">${block.callout.text}</div>`
         : '';
@@ -3321,9 +3326,7 @@ window.COURSE_STORAGE_KEY = "scorm_HDFC_Academy___Day_3__Products";
     }
 
     if (block.type === 'collapsible_boxes') {
-      const imageHtml = (block.imageSrc || block.imageUrl || block.src)
-        ? `<div class="card-hero-image-wrap"><img src="${escapeHtml(block.imageSrc || block.imageUrl || block.src)}" alt="" class="card-hero-image" loading="lazy" /></div>`
-        : '';
+      const imageHtml = renderSectionHeroImage(block.imageSrc || block.imageUrl || block.src);
       const calloutHtml = block.callout
         ? `<div class="callout ${block.callout.type || ''}">${block.callout.text}</div>`
         : '';
@@ -3341,9 +3344,7 @@ window.COURSE_STORAGE_KEY = "scorm_HDFC_Academy___Day_3__Products";
     }
 
     if (block.type === 'card') {
-      const imageHtml = (block.imageSrc || block.imageUrl || block.src)
-        ? `<div class="card-hero-image-wrap"><img src="${escapeHtml(block.imageSrc || block.imageUrl || block.src)}" alt="" class="card-hero-image" loading="lazy" /></div>`
-        : '';
+      const imageHtml = renderSectionHeroImage(block.imageSrc || block.imageUrl || block.src);
       const bulletsHtml = block.bullets
         ? `<ul class="rich-list ${block.listTone || ''}">${block.bullets.map(b => `<li>${b}</li>`).join('')}</ul>`
         : '';
@@ -3370,9 +3371,7 @@ window.COURSE_STORAGE_KEY = "scorm_HDFC_Academy___Day_3__Products";
     }
 
     if (block.type === 'accordion') {
-      const imageHtml = (block.imageSrc || block.imageUrl || block.src)
-        ? `<div class="card-hero-image-wrap"><img src="${escapeHtml(block.imageSrc || block.imageUrl || block.src)}" alt="" class="card-hero-image" loading="lazy" /></div>`
-        : '';
+      const imageHtml = renderSectionHeroImage(block.imageSrc || block.imageUrl || block.src);
       return `
         <section class="card">
           ${block.tag ? `<span class="card-tag">${block.tag}</span>` : ''}
@@ -3534,9 +3533,7 @@ window.COURSE_STORAGE_KEY = "scorm_HDFC_Academy___Day_3__Products";
     }
 
     if (block.type === 'flashcards') {
-      const imageHtml = (block.imageSrc || block.imageUrl || block.src)
-        ? `<div class="card-hero-image-wrap"><img src="${escapeHtml(block.imageSrc || block.imageUrl || block.src)}" alt="" class="card-hero-image" loading="lazy" /></div>`
-        : '';
+      const imageHtml = renderSectionHeroImage(block.imageSrc || block.imageUrl || block.src);
       return `
         <section class="card">
           ${block.tag ? `<span class="card-tag green">${block.tag}</span>` : `<span class="card-tag green">Interactive Self-Test Cards</span>`}

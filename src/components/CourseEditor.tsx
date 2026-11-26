@@ -36,7 +36,7 @@ function getSafeDisplaySrc(src?: string): string {
   if (!src) return '';
   const s = String(src).trim();
   if (s.startsWith('data:') || s.startsWith('blob:')) return s;
-  const path = s.startsWith('http') || s.startsWith('/') ? s : `/${s}`;
+  const path = s.startsWith('http') ? s : getApiUrl(s.startsWith('/') ? s : `/${s}`);
   try {
     return encodeURI(decodeURI(path));
   } catch {

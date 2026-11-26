@@ -46,7 +46,7 @@ export const PlayerPreview: React.FC<PlayerPreviewProps> = ({
     : (uploadedCourse?.previewUrl || '/Sample%20PPT%20for%20VO%201.html');
   const cleanPath = safePreviewUrl.split('?')[0].replace(/^\//, '');
   const existingQuery = safePreviewUrl.includes('?') ? safePreviewUrl.split('?')[1] : '';
-  const safeFilename = encodeURIComponent(decodeURIComponent(cleanPath));
+  const safeFilename = cleanPath.split('/').map(seg => encodeURIComponent(decodeURIComponent(seg))).join('/');
   const queryParams = new URLSearchParams(existingQuery);
   queryParams.set('_t', String(reloadKey || Date.now()));
   if (reloadKey > 0) {

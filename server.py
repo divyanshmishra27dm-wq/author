@@ -47,31 +47,38 @@ os.makedirs(MEDIA_DIR, exist_ok=True)
 DIST_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dist")
 
 # Robust media serving endpoint that cleanly decodes percent-encoded URLs (%20, etc.),
-# handles case-insensitivity, and matches both spaces and underscores.
+# handles case-insensitivity, matches spaces and underscores, and searches public/media,
+# dist/media, public/slides, and dist/slides.
 @app.get("/media/{media_path:path}")
 async def serve_media_file(media_path: str):
     unquoted = urllib.parse.unquote(media_path).lstrip("/")
     
-    # 1. Exact unquoted match in PUBLIC_DIR/media
-    p1 = os.path.join(MEDIA_DIR, unquoted)
-    if os.path.isfile(p1):
-        return FileResponse(p1)
+    search_dirs = [
+        MEDIA_DIR,
+        os.path.join(PUBLIC_DIR, "slides"),
+        os.path.join(DIST_DIR, "media") if os.path.exists(DIST_DIR) else None,
+        os.path.join(DIST_DIR, "slides") if os.path.exists(DIST_DIR) else None
+    ]
+    search_dirs = [d for d in search_dirs if d and os.path.exists(d)]
 
-    # 2. Exact unquoted match in DIST_DIR/media
-    if os.path.exists(DIST_DIR):
-        p2 = os.path.join(DIST_DIR, "media", unquoted)
-        if os.path.isfile(p2):
-            return FileResponse(p2)
+    # 1. Exact unquoted match across media and slides
+    for d in search_dirs:
+        p = os.path.join(d, unquoted)
+        if os.path.isfile(p):
+            return FileResponse(p)
 
-    # 3. Normalized matching (matches space vs underscore differences)
+    # 2. Normalized matching (matches space vs underscore differences and case-insensitivity)
     norm = re.sub(r'[\s_]+', '_', unquoted).lower()
-    for d in [MEDIA_DIR, os.path.join(DIST_DIR, "media") if os.path.exists(DIST_DIR) else None]:
-        if d and os.path.exists(d):
-            for f in os.listdir(d):
-                if re.sub(r'[\s_]+', '_', f).lower() == norm:
-                    return FileResponse(os.path.join(d, f))
+    for d in search_dirs:
+        for f in os.listdir(d):
+            if re.sub(r'[\s_]+', '_', f).lower() == norm:
+                return FileResponse(os.path.join(d, f))
 
     return PlainTextResponse("Media Not Found", status_code=404)
+
+@app.get("/slides/{slide_path:path}")
+async def serve_slide_file(slide_path: str):
+    return await serve_media_file(slide_path)
 
 @app.get("/api/health")
 def health():
@@ -438,6 +445,23 @@ async def convert_pptx_endpoint(file: UploadFile = File(...)):
             except Exception:
                 pass
 
+        # Copy any extracted media and slide images from temp_dir to PUBLIC_DIR and DIST_DIR
+        for sub in ["media", "slides"]:
+            temp_sub = os.path.join(temp_dir, sub)
+            if os.path.exists(temp_sub):
+                os.makedirs(os.path.join(PUBLIC_DIR, sub), exist_ok=True)
+                if os.path.exists(DIST_DIR):
+                    os.makedirs(os.path.join(DIST_DIR, sub), exist_ok=True)
+                for f_name in os.listdir(temp_sub):
+                    src_f = os.path.join(temp_sub, f_name)
+                    if os.path.isfile(src_f):
+                        try:
+                            shutil.copy2(src_f, os.path.join(PUBLIC_DIR, sub, f_name))
+                            if os.path.exists(DIST_DIR):
+                                shutil.copy2(src_f, os.path.join(DIST_DIR, sub, f_name))
+                        except Exception:
+                            pass
+
         # Preview URL is the exact converted HTML for this uploaded presentation
         encoded_name = urllib.parse.quote(base_name)
         preview_url = f"/{encoded_name}.html"
@@ -470,15 +494,23 @@ if os.path.exists(DIST_DIR) and os.path.exists(os.path.join(DIST_DIR, "assets"))
 @app.get("/{full_path:path}")
 async def serve_static_or_spa(full_path: str):
     unquoted = urllib.parse.unquote(full_path).lstrip("/")
+    html_headers = {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0"
+    }
+
     if unquoted:
         pub_file = os.path.join(PUBLIC_DIR, unquoted)
         if os.path.isfile(pub_file):
-            return FileResponse(pub_file)
+            headers = html_headers if unquoted.lower().endswith(".html") else {}
+            return FileResponse(pub_file, headers=headers)
 
         if os.path.exists(DIST_DIR):
             dist_file = os.path.join(DIST_DIR, unquoted)
             if os.path.isfile(dist_file):
-                return FileResponse(dist_file)
+                headers = html_headers if unquoted.lower().endswith(".html") else {}
+                return FileResponse(dist_file, headers=headers)
 
         # Match case-insensitively or with normalized underscores
         norm = re.sub(r'[\s_]+', '_', unquoted).lower()
@@ -486,12 +518,14 @@ async def serve_static_or_spa(full_path: str):
             if os.path.exists(d):
                 for f in os.listdir(d):
                     if re.sub(r'[\s_]+', '_', f).lower() == norm:
-                        return FileResponse(os.path.join(d, f))
+                        matched = os.path.join(d, f)
+                        headers = html_headers if f.lower().endswith(".html") else {}
+                        return FileResponse(matched, headers=headers)
 
     if os.path.exists(DIST_DIR):
         index_file = os.path.join(DIST_DIR, "index.html")
         if os.path.isfile(index_file):
-            return FileResponse(index_file)
+            return FileResponse(index_file, headers=html_headers)
 
     return PlainTextResponse("Page Not Found", status_code=404)
 

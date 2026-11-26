@@ -54,8 +54,11 @@ COPY --from=frontend-builder /app/dist ./dist
 # Copy Nginx configuration for serving frontend on port 2927 and proxying to backend
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# Ensure media directory exists for audio/video uploads
-RUN mkdir -p /app/public/media
+# Ensure media & slides directories exist and are mirrored to dist for Nginx
+RUN mkdir -p /app/public/media /app/dist/media /app/public/slides /app/dist/slides && \
+    (cp -rn /app/public/slides/* /app/public/media/ 2>/dev/null || true) && \
+    (cp -rn /app/public/media/* /app/dist/media/ 2>/dev/null || true) && \
+    (cp -rn /app/public/slides/* /app/dist/slides/ 2>/dev/null || true)
 
 # Copy startup script
 COPY start.sh ./
