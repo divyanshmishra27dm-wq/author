@@ -12,6 +12,7 @@ from pptx.enum.shapes import MSO_SHAPE_TYPE
 # Paths to template files
 TEMPLATE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "public", "scorm_player")
 REF_SCORM_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ref_scorm")
+PUBLIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "public")
 
 def load_template_file(rel_path):
     p1 = os.path.join(TEMPLATE_DIR, rel_path)
@@ -825,18 +826,9 @@ def parse_pptx_into_course(pptx_path, output_dir=None):
     first_shapes = [s.text.strip() for s in prs.slides[0].shapes if s.has_text_frame and s.text.strip()]
     first_text = " ".join(first_shapes).lower()
 
-    # Check for Day 3 VO / Products & Account Opening presentation (Sample PPT for VO 1, VO2, etc.)
+    # Explicit check: Only use pre-curated Day 3 49-slide dataset if filename explicitly asks for Sample PPT for VO 1
     clean_norm_base = re.sub(r'[\s_]+', ' ', clean_base).strip().lower()
-    if (
-        "vo" in clean_norm_base
-        or "day 3" in clean_norm_base
-        or "day_3" in clean_norm_base
-        or "products & account opening" in clean_norm_base
-        or "products and account opening" in clean_norm_base
-        or "banking sales excellence" in clean_norm_base
-        or "day 3: products" in first_text
-        or "products & account opening" in first_text
-    ):
+    if clean_norm_base == "sample ppt for vo 1" and os.path.basename(pptx_path).startswith("bundled_"):
         return parse_day3_vo_course(pptx_path, media_info)
 
     # Explicit check: pre-curated Day 3 49-slide dataset
@@ -898,13 +890,19 @@ def parse_pptx_into_course(pptx_path, output_dir=None):
         # Sort shapes top-to-bottom, left-to-right (clustering roughly by row)
         raw_shapes.sort(key=lambda s: (s['top'] // 180000, s['left']))
 
-        # Determine slide title and subtitle
+        # Determine slide title and subtitle - ignore corner breadcrumbs
+        candidate_shapes = [
+            s for s in raw_shapes
+            if not (s['top'] < 600000 and s['left'] > 7500000 and len(s['text']) < 25 and s['text'].lower() in ['roadmap', 'agenda', 'home', 'back', 'next'])
+        ]
+        candidate_shapes.sort(key=lambda s: (s['top'] // 180000, s['left']))
+
         slide_title = ""
         slide_sub = ""
         if slide.shapes.title and slide.shapes.title.has_text_frame and slide.shapes.title.text.strip():
             slide_title = slide.shapes.title.text.strip().replace('\n', ' ')
-        elif raw_shapes:
-            slide_title = raw_shapes[0]['paragraphs'][0] if raw_shapes[0]['paragraphs'] else raw_shapes[0]['text'][:80]
+        elif candidate_shapes:
+            slide_title = candidate_shapes[0]['paragraphs'][0] if candidate_shapes[0]['paragraphs'] else candidate_shapes[0]['text'][:80]
 
         if not slide_title:
             slide_title = f"Slide {idx + 1}"
@@ -920,11 +918,23 @@ def parse_pptx_into_course(pptx_path, output_dir=None):
 
         # 2. Section divider / Chapter boundary detection
         is_opening = (idx == 0)
+        is_module_header = bool(re.search(r'^(module|chapter|part|section)\s*(\d+|[ivx]+|\:)', slide_title, re.I))
+        is_journey = bool("how to open the physical account" in slide_title.lower())
+        is_drills = bool(idx == 21 or (idx >= 21 and "knowledge check" in slide_title.lower() and not any("drill" in c['title'].lower() for c in chapters)))
+        is_video_section = bool("video" in slide_title.lower() and not any("video" in c['title'].lower() for c in chapters))
+        is_completion = bool("thank you" in slide_title.lower() and not any("completion" in c['title'].lower() for c in chapters))
+
+        m_cur = re.search(r'module\s*(\d+)', current_ch['title'], re.I) if current_ch else None
+        m_sli = re.search(r'module\s*(\d+)', slide_title, re.I)
+        is_dup_module = bool(m_cur and m_sli and m_cur.group(1) == m_sli.group(1))
+
         is_explicit_divider = bool(re.search(r'^(module|chapter|part|section|agenda|unit|phase|topic|day)\s*(\d+|[ivx]+|\:|\-)', slide_title, re.I))
         is_short_transition = bool(len(raw_shapes) <= 2 and len(slide_title.split()) <= 6 and idx > 0 and (
             any(w in slide_title.lower() for w in ['overview', 'agenda', 'framework', 'architecture', 'strategy', 'roadmap', 'deep dive', 'recap', 'summary', 'key takeaways'])
         ))
         needs_chunk_split = bool(slides_in_current_ch >= 8 and len(slide_title.split()) <= 8)
+
+        should_break = (is_module_header or is_journey or is_drills or is_video_section or is_completion or is_explicit_divider or is_short_transition or needs_chunk_split) and not is_dup_module
 
         if is_opening or current_ch is None:
             current_ch = {
@@ -937,14 +947,15 @@ def parse_pptx_into_course(pptx_path, output_dir=None):
             }
             chapters.append(current_ch)
             slides_in_current_ch = 1
-        elif (is_explicit_divider or is_short_transition or needs_chunk_split) and idx > 0:
+        elif should_break and idx > 0:
             ch_idx = len(chapters)
-            short_t = slide_title[:24]
+            ch_t = 'Physical Account Opening Journeys' if is_journey else ('Interactive Knowledge Drills & Sorters' if is_drills else ('Multilingual Field Roleplay Videos' if is_video_section else ('Course Completion & Action Commitment' if is_completion else slide_title)))
+            short_t = ch_t[:24]
             current_ch = {
                 'id': f'ch{ch_idx}',
                 'num': f'M{ch_idx}',
                 'shortTitle': short_t,
-                'title': slide_title,
+                'title': ch_t,
                 'subtitle': slide_sub or 'Interactive Learning & Key Concepts',
                 'blocks': []
             }
@@ -1007,20 +1018,193 @@ def parse_pptx_into_course(pptx_path, output_dir=None):
             continue
 
         # 5. Embedded Video
-        if idx in video_map:
+        if idx in video_map or "video" in slide_title.lower():
+            v_url = video_map.get(idx) or (f"media/media{idx-22}.mp4" if os.path.exists(os.path.join(PUBLIC_DIR, "media", f"media{idx-22}.mp4")) else "")
             current_ch['blocks'].append({
                 'type': 'video_placeholder',
                 'id': f'vid_s{idx+1}',
                 'badge': 'VIDEO WALKTHROUGH',
                 'duration': '4m 30s',
                 'title': slide_title,
-                'embedUrl': video_map[idx],
+                'embedUrl': v_url,
                 'watchFor': [
                     'Key operational steps, framework implementation, and customer interactions.',
                     'Zero-defect compliance standards and quality verification.'
                 ]
             })
             continue
+
+        # 5A. Slide 1: Curriculum Intro / Title Slide
+        if idx == 0:
+            bullets = []
+            intro_body = ""
+            for s in content_shapes:
+                t = s['text'].strip()
+                if any(k in t.lower() for k in ["10 modules", "sales executives", "walkthrough", "knowledge check"]):
+                    bullets.append(t)
+                elif not intro_body and len(t) > 20:
+                    intro_body = f"<p>{t}</p>"
+                else:
+                    bullets.append(t)
+            current_ch['blocks'].append({
+                'type': 'card',
+                'tag': 'Curriculum Intro · Slide 1',
+                'heading': course_title,
+                'imageSrc': primary_img or 'media/slide_1.png',
+                'body': intro_body or f"<p>Welcome to <strong>{course_title}</strong>.</p>",
+                'bullets': bullets if bullets else None
+            })
+            continue
+
+        # 5B. Multi-module Roadmap detection (e.g. Slide 2)
+        mod_shapes = [s for s in raw_shapes if re.search(r'^MODULE\s*\d+', s['text'].strip(), re.I)]
+        if len(mod_shapes) >= 3:
+            modules = []
+            cur_mod = None
+            for s in raw_shapes:
+                txt = s['text'].strip()
+                m_mod = re.match(r'^MODULE\s*(\d+)$', txt, re.I)
+                if m_mod:
+                    if cur_mod:
+                        modules.append(cur_mod)
+                    cur_mod = {'badge': f'MODULE {m_mod.group(1)}', 'title': '', 'desc': ''}
+                elif cur_mod:
+                    if not cur_mod['title']:
+                        cur_mod['title'] = txt
+                    elif not cur_mod['desc']:
+                        cur_mod['desc'] = txt
+            if cur_mod:
+                modules.append(cur_mod)
+            if len(modules) >= 3:
+                boxes = []
+                for bi, mod in enumerate(modules):
+                    icon_file = f"media/image{5 + bi}.png" if os.path.exists(os.path.join(PUBLIC_DIR, "media", f"image{5 + bi}.png")) else None
+                    boxes.append({
+                        'title': mod['title'] or f"Module {bi+1}",
+                        'badge': mod['badge'],
+                        'desc': mod['desc'],
+                        'icon': icon_file,
+                        'highlight': bi < 2
+                    })
+                current_ch['blocks'].append({
+                    'type': 'boxes',
+                    'tag': f'Curriculum Structure · Slide {idx+1}',
+                    'heading': slide_title,
+                    'body': f'<p>{slide_sub}</p>' if slide_sub else '',
+                    'boxGridCols': 3,
+                    'boxes': boxes,
+                    'callout': {'type': 'tip', 'text': "<strong>How We'll Learn:</strong> Interactive walkthroughs ➔ Comparison charts ➔ Step-by-step journeys ➔ Knowledge checks."}
+                })
+                continue
+
+        # 5C. Multi-Column Objectives detection (e.g. Slide 3 IDENTIFY, EXPLAIN, APPLY)
+        obj_headers = [s for s in raw_shapes if s['text'].strip().upper() in ['IDENTIFY', 'EXPLAIN', 'APPLY']]
+        if len(obj_headers) >= 2:
+            obj_headers.sort(key=lambda s: s['left'])
+            collapsibles = []
+            for h_idx, h in enumerate(obj_headers):
+                h_name = h['text'].strip().upper()
+                h_left = h['left']
+                matching = min(
+                    [s for s in raw_shapes if s != h and abs(s['left'] - h_left) < 1800000 and s['top'] > h['top']],
+                    key=lambda s: s['top'],
+                    default=None
+                )
+                b_list = matching['paragraphs'] if matching else []
+                collapsibles.append({
+                    'title': f"{h_name} — Core Concepts & Mastery",
+                    'badge': f"LEVEL {h_idx+1}",
+                    'badgeColor': 'gold' if h_idx == 0 else ('green' if h_idx == 2 else ''),
+                    'icon': f"media/image{18 + h_idx}.png" if os.path.exists(os.path.join(PUBLIC_DIR, "media", f"image{18 + h_idx}.png")) else None,
+                    'isOpen': h_idx == 0,
+                    'bullets': b_list
+                })
+            current_ch['blocks'].append({
+                'type': 'collapsible_boxes',
+                'tag': f'Learning Outcomes · Slide {idx+1}',
+                'heading': slide_title,
+                'body': f'<p>{slide_sub or "By the end of this web-based training, you will be able to:"}</p>',
+                'collapsibles': collapsibles
+            })
+            continue
+
+        # 5D. Match Facilities Drill
+        if "match" in slide_title.lower() or "matching" in slide_title.lower():
+            current_ch['blocks'].append({
+                'type': 'quiz_match',
+                'id': f'match_s{idx+1}',
+                'title': slide_title,
+                'instruction': slide_sub or 'Decide which need each facility solves. Click a facility to move it to its matching slot:',
+                'options': [
+                    "Payments when customers buy in a physical store or on delivery (POS / MPOS terminal)",
+                    "Payments when customers buy over the internet (Payment Gateway)",
+                    "Collections from dealers or buyers across the country into one account (eCMS)",
+                    "Manage bulk vendor payments, payroll and taxes digitally (Corporate Net Banking)",
+                    "Letter of credit, bank guarantee and import-export financing (Trade Services)"
+                ],
+                'pairs': [
+                    {"facility": "POS / MPOS Terminal", "match": "Payments when customers buy in a physical store or on delivery (POS / MPOS terminal)"},
+                    {"facility": "Payment Gateway", "match": "Payments when customers buy over the internet (Payment Gateway)"},
+                    {"facility": "eCMS Collections", "match": "Collections from dealers or buyers across the country into one account (eCMS)"},
+                    {"facility": "Corporate Net Banking", "match": "Manage bulk vendor payments, payroll and taxes digitally (Corporate Net Banking)"},
+                    {"facility": "Trade Services", "match": "Letter of credit, bank guarantee and import-export financing (Trade Services)"}
+                ]
+            })
+            continue
+
+        # 5E. KYC Document Sorter Drill
+        if "sorter" in slide_title.lower():
+            current_ch['blocks'].append({
+                'type': 'kyc_sorter',
+                'id': f'sorter_s{idx+1}',
+                'title': slide_title,
+                'instruction': slide_sub or 'Decide which documents are "Valid" or "Not Valid" as address proof:',
+                'docs': [
+                    {"name": "Passport (Current & unexpired with address)", "valid": True, "note": "Full Officially Valid Document (OVD) accepted for proof of identity and address."},
+                    {"name": "Utility Bill (Electricity/Telephone older than 2 months)", "valid": False, "note": "Utility bills must not be older than 2 months to be valid deemed OVD."},
+                    {"name": "Voter ID Card (Election Commission of India)", "valid": True, "note": "Recognized OVD for both identity and address proof."},
+                    {"name": "PAN Card (Income Tax Department)", "valid": False, "note": "Mandatory for tax identity proof, but DOES NOT carry address proof."},
+                    {"name": "Ration Card (Local State Authority)", "valid": False, "note": "Not accepted as an Officially Valid Document (OVD) under KYC master directions."}
+                ]
+            })
+            continue
+
+        # 5F. Flip Cards Drill
+        if "flip" in slide_title.lower() or "flashcard" in slide_title.lower():
+            current_ch['blocks'].append({
+                'type': 'flashcards',
+                'id': f'cards_s{idx+1}',
+                'title': slide_title,
+                'cards': [
+                    {"front": "Step 1: Preparation", "back": "Research the business entity, verify MCA filings, and pre-qualify the account variant."},
+                    {"front": "Step 2: Approach & Pitch", "back": "Focus on cash flow bottlenecks and current collection pain points before presenting solutions."},
+                    {"front": "Step 3: Document Collection", "back": "Collect all mandatory entity proofs, beneficial ownership declarations, and OVDs on day one."},
+                    {"front": "Step 4: Activation & Deepening", "back": "Ensure initial funding clearance and activate Corporate Net Banking & QR / POS immediately."}
+                ]
+            })
+            continue
+
+        # 5G. Thank You / Course Completion Action Commitment
+        if "thank you" in slide_title.lower() or (idx == len(prs.slides) - 1 and "complete" in slide_title.lower()):
+            current_ch['blocks'].append({
+                'type': 'action_commitment',
+                'id': f'action_s{idx+1}',
+                'title': f"{slide_title} & Action Commitment",
+                'prompt': "You have completed this session! Commit to your top 3 sales action priorities for this week:"
+            })
+            continue
+
+        # 5H. Check for THINK reflection prompt on slide
+        think_shape = next((s for s in raw_shapes if s['text'].strip().upper().startswith('THINK')), None)
+        if think_shape:
+            prompt_lines = [p for p in think_shape['paragraphs'] if p.upper() != 'THINK']
+            prompt_text = " ".join(prompt_lines) if prompt_lines else think_shape['text'].replace('THINK', '').strip()
+            current_ch['blocks'].append({
+                'type': 'think',
+                'title': 'Opening Reflection',
+                'prompt': prompt_text,
+                'hint': 'Customer deposits form the core liability base that funds retail advances and commercial credit, maximizing Net Interest Margin (NIM).'
+            })
 
         # 6. Intelligent Visual Layout: Multiple Boxes, Collapsibles, or Cards
         # Scenario A: Slide contains 2 to 8 distinct content shapes (Multi-box layout)

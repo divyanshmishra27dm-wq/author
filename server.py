@@ -441,6 +441,21 @@ async def convert_pptx_endpoint(file: UploadFile = File(...)):
         base_name = os.path.splitext(file.filename)[0]
         clean_base = re.sub(r'[^a-zA-Z0-9_\- ]', '_', base_name).strip() or "Uploaded_Course"
 
+        # Clean up older presentation media and previous converted files in PUBLIC_DIR and DIST_DIR
+        # so previous upload media and content does not linger
+        for folder in [PUBLIC_DIR, DIST_DIR]:
+            if not os.path.exists(folder):
+                continue
+            for sub in ["slides", "media"]:
+                sub_dir = os.path.join(folder, sub)
+                if os.path.exists(sub_dir):
+                    for old_f in os.listdir(sub_dir):
+                        if re.match(r'^(slide_\d+\.png|image\d+\.png|image_upload_\d+\.\w+|media\d+\.mp4)$', old_f, re.I):
+                            try:
+                                os.remove(os.path.join(sub_dir, old_f))
+                            except Exception:
+                                pass
+
         # Copy generated files to public directory for instant download and preview
         pub_html_path = os.path.join(PUBLIC_DIR, f"{base_name}.html")
         pub_zip_path = os.path.join(PUBLIC_DIR, f"{base_name}_SCORM2004.zip")

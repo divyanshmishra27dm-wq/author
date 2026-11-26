@@ -132,6 +132,12 @@ export function App() {
   const handleCourseLoaded = (newCourse: CourseData, info?: UploadedCourseInfo) => {
     setCourse(newCourse);
     if (info) {
+      // Clear out any old course data from previous uploads
+      try {
+        localStorage.removeItem('last_uploaded_course');
+        localStorage.removeItem('last_preview_url');
+      } catch (e) { }
+
       const cleanUrl = sanitizeUrl(info.previewUrl);
       const safeInfo = {
         ...info,
