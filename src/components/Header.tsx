@@ -6,6 +6,7 @@ import { UploadedCourseInfo } from './FileUpload';
 interface HeaderProps {
   course: CourseData;
   uploadedCourse?: UploadedCourseInfo | null;
+  availableCourses?: { name: string; title: string; total_chapters: number }[];
   viewportMode: ViewportMode;
   onViewportChange: (mode: ViewportMode) => void;
   onOpenExport: () => void;
@@ -19,6 +20,7 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({
   course,
   uploadedCourse,
+  availableCourses = [],
   viewportMode,
   onViewportChange,
   onOpenExport,
@@ -27,7 +29,7 @@ export const Header: React.FC<HeaderProps> = ({
   onTabChange,
   onLock
 }) => {
-  const displayTitle = uploadedCourse ? uploadedCourse.title : course.title;
+  const displayTitle = uploadedCourse ? uploadedCourse.title : (availableCourses && availableCourses.length > 0 ? availableCourses[0].title : 'No presentation loaded');
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-800 bg-slate-950/95 backdrop-blur-md">

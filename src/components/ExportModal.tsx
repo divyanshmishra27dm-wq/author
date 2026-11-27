@@ -59,47 +59,19 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       };
     }
 
-    if (selectedCourse === 'uploaded') {
-      const title = (richCourse && richCourse.title) || (uploadedCourse && uploadedCourse.title) || 'Course';
-      const cleanTitle = title.replace(/[^a-zA-Z0-9_\- ]/g, '_').trim();
-      const numChapters = (richCourse && richCourse.chapters ? richCourse.chapters.length : 0) || (uploadedCourse ? uploadedCourse.totalChapters : 0);
-      const zipUrl = (uploadedCourse && uploadedCourse.scormZipUrl) || `/${encodeURIComponent(cleanTitle)}_SCORM2004.zip`;
-      return {
-        scormZip: zipUrl,
-        zipName: `${cleanTitle}_SCORM2004.zip`,
-        htmlFile: (uploadedCourse && uploadedCourse.htmlUrl) || `/${encodeURIComponent(cleanTitle)}.html`,
-        htmlName: `${cleanTitle}.html`,
-        title: title,
-        meta: `${numChapters} Chapters · Interactive Mobile Micro-Learning · SCORM 2004 4th Edition`
-      };
-    } else if (selectedCourse === 'lesson1' || selectedCourse === 'Lesson 1' || selectedCourse === 'Lesson_1') {
-      return {
-        scormZip: '/Lesson%201_SCORM2004.zip',
-        zipName: 'Lesson_1_Importance_of_CASA_SCORM2004.zip',
-        htmlFile: '/Lesson%201.html',
-        htmlName: 'Lesson_1_Importance_of_CASA.html',
-        title: 'HDFC Academy · Lesson 1: Importance of CASA',
-        meta: '6 Chapters · CASA Foundations, NIM Economics & Employee Levers · SCORM 2004 4th Edition'
-      };
-    } else if (selectedCourse === 'day3') {
-      return {
-        scormZip: '/Sample_Day3_Bank_Sales_Excellence_SCORM2004.zip',
-        zipName: 'Sample_Day3_Bank_Sales_Excellence_SCORM2004.zip',
-        htmlFile: '/Sample_Day3_Bank_Sales_Excellence.html',
-        htmlName: 'Sample_Day3_Bank_Sales_Excellence.html',
-        title: 'HDFC Academy · Day 3: Know Your Product — CASA & Savings Mastery (49 Slides · 9 Modules)',
-        meta: '9 Modules · 49 Slides · CASA Ratios · Speciale Activ & Women\'s Gold · Interactive Sorters & Flashcards'
-      };
-    } else {
-      return {
-        scormZip: '/HDFC_Academy_BSE_Day2_Animated_SCORM2004.zip',
-        zipName: 'HDFC_Academy_BSE_Day2_Mobile_SCORM2004_Rich.zip',
-        htmlFile: '/HDFC_Academy_BSE_Day2_Animated.html',
-        htmlName: 'HDFC_Academy_BSE_Day2_Mobile_Learning.html',
-        title: 'HDFC Academy · Day 2: KYC, Products & Sales Mastery (129 Slides · 10 Modules)',
-        meta: '10 Modules · 129 Slides · 14 Visual Infographics · 4 Video Slots · Full Quizzes & Sorters'
-      };
-    }
+    const title = (richCourse && richCourse.title) || (uploadedCourse && uploadedCourse.title) || 'Course';
+    const cleanTitle = title.replace(/[^a-zA-Z0-9_\- ]/g, '_').trim() || 'Course';
+    const numChapters = (richCourse && richCourse.chapters ? richCourse.chapters.length : 0) || (uploadedCourse ? uploadedCourse.totalChapters : 0);
+    const zipUrl = (uploadedCourse && uploadedCourse.scormZipUrl) || `/${encodeURIComponent(cleanTitle)}_SCORM2004.zip`;
+    const htmlUrl = (uploadedCourse && uploadedCourse.htmlUrl) || `/${encodeURIComponent(cleanTitle)}.html`;
+    return {
+      scormZip: zipUrl,
+      zipName: `${cleanTitle}_SCORM2004.zip`,
+      htmlFile: htmlUrl,
+      htmlName: `${cleanTitle}.html`,
+      title: title,
+      meta: `${numChapters} Chapters · Interactive Mobile Micro-Learning · SCORM 2004 4th Edition`
+    };
   };
 
   const triggerBlobDownload = (blob: Blob, filename: string) => {
@@ -123,9 +95,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     setIsExportingScorm(true);
 
     try {
-      // If we have live richCourse data (with newly added flip cards, boxes, dropdowns, images),
-      // package it dynamically through the export endpoint so all edits are included
-      if (selectedCourse === 'uploaded' && richCourse && richCourse.chapters && richCourse.chapters.length > 0) {
+      if (richCourse && richCourse.chapters && richCourse.chapters.length > 0) {
         const payload = {
           course_name: richCourse.name || richCourse.title || (uploadedCourse ? (uploadedCourse.filename || uploadedCourse.title) : 'Course'),
           course_data: richCourse
@@ -176,7 +146,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     setIsExportingHtml(true);
 
     try {
-      if (selectedCourse === 'uploaded' && richCourse && richCourse.chapters && richCourse.chapters.length > 0) {
+      if (richCourse && richCourse.chapters && richCourse.chapters.length > 0) {
         const payload = {
           course_name: richCourse.name || richCourse.title || (uploadedCourse ? (uploadedCourse.filename || uploadedCourse.title) : 'Course'),
           course_data: richCourse
@@ -304,48 +274,6 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                 </button>
               )
             )}
-
-            <button
-              onClick={() => { setSelectedCourse('day2'); setSuccessMsg(null); }}
-              className={`flex items-center gap-2 p-2.5 rounded-lg border text-left text-xs font-semibold transition-all ${selectedCourse === 'day2'
-                ? 'border-blue-500 bg-blue-950/40 text-blue-200'
-                : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-white'
-              }`}
-            >
-              <BookOpen className="h-4 w-4 shrink-0 text-blue-400" />
-              <div>
-                <div className="font-bold">Day 2 Reference</div>
-                <div className="text-[10px] text-slate-400">129 Slides · 10 Modules</div>
-              </div>
-            </button>
-
-            <button
-              onClick={() => { setSelectedCourse('lesson1'); setSuccessMsg(null); }}
-              className={`flex items-center gap-2 p-2.5 rounded-lg border text-left text-xs font-semibold transition-all ${selectedCourse === 'lesson1' || selectedCourse === 'Lesson 1'
-                ? 'border-emerald-500 bg-emerald-950/40 text-emerald-200'
-                : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-white'
-              }`}
-            >
-              <BookOpen className="h-4 w-4 shrink-0 text-emerald-400" />
-              <div>
-                <div className="font-bold">Lesson 1: CASA</div>
-                <div className="text-[10px] text-slate-400">6 Slides · 6 Chapters</div>
-              </div>
-            </button>
-
-            <button
-              onClick={() => { setSelectedCourse('day3'); setSuccessMsg(null); }}
-              className={`flex items-center gap-2 p-2.5 rounded-lg border text-left text-xs font-semibold transition-all ${selectedCourse === 'day3'
-                ? 'border-blue-500 bg-blue-950/40 text-blue-200'
-                : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-white'
-              }`}
-            >
-              <BookOpen className="h-4 w-4 shrink-0 text-indigo-400" />
-              <div>
-                <div className="font-bold">Day 3 Reference</div>
-                <div className="text-[10px] text-slate-400">49 Slides · 9 Modules</div>
-              </div>
-            </button>
           </div>
         </div>
 

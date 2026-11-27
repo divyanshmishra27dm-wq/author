@@ -5,12 +5,19 @@
   const urlParams = (typeof window !== 'undefined' && window.location)
     ? new URLSearchParams(window.location.search)
     : new URLSearchParams('');
-  const isDay3 = urlParams.get('course') === 'day3';
-  
+  const courseParam = (urlParams.get('course') || '').toLowerCase();
+  const isDay3 = courseParam === 'day3';
+  const isLesson1 = courseParam === 'lesson1' || courseParam === 'lesson_1';
+
   // Resolve course chapters: specific course param > direct window.COURSE_CHAPTERS > courseData fallbacks
-  const rawChapters = (isDay3 && window.COURSE_CHAPTERS_DAY3)
-    ? window.COURSE_CHAPTERS_DAY3
-    : (window.COURSE_CHAPTERS || window.COURSE_CHAPTERS_DAY2 || window.COURSE_CHAPTERS_DAY3 || []);
+  let rawChapters = [];
+  if (isLesson1 && window.COURSE_CHAPTERS_LESSON1) {
+    rawChapters = window.COURSE_CHAPTERS_LESSON1;
+  } else if (isDay3 && window.COURSE_CHAPTERS_DAY3) {
+    rawChapters = window.COURSE_CHAPTERS_DAY3;
+  } else {
+    rawChapters = window.COURSE_CHAPTERS || window.COURSE_CHAPTERS_DAY2 || window.COURSE_CHAPTERS_DAY3 || window.COURSE_CHAPTERS_LESSON1 || [];
+  }
 
   const COURSE_CHAPTERS = Array.isArray(rawChapters) ? rawChapters : [];
 
@@ -23,7 +30,13 @@
     return;
   }
 
-  if (isDay3) {
+  if (isLesson1) {
+    document.title = "HDFC Academy · Lesson 1: Importance of CASA";
+    const kicker = document.querySelector('.drawer-kicker');
+    if (kicker) kicker.textContent = "LESSON 1 CURRICULUM";
+    const brandTitle = document.getElementById('headerTitle');
+    if (brandTitle) brandTitle.textContent = "Lesson 1: Importance of CASA";
+  } else if (isDay3) {
     document.title = "HDFC Academy · Day 3: Know Your Product — CASA & Savings Mastery";
     const kicker = document.querySelector('.drawer-kicker');
     if (kicker) kicker.textContent = "DAY 3 CURRICULUM";
@@ -32,12 +45,12 @@
   const scormApi = (typeof window !== 'undefined' && window.SCORM2004)
     ? window.SCORM2004
     : (typeof SCORM2004 !== 'undefined' ? SCORM2004 : {
-        init: () => true,
-        loadState: () => null,
-        saveState: () => {},
-        finish: () => {},
-        isConnected: () => false
-      });
+      init: () => true,
+      loadState: () => null,
+      saveState: () => { },
+      finish: () => { },
+      isConnected: () => false
+    });
 
   try {
     scormApi.init();
@@ -45,7 +58,7 @@
     console.warn('SCORM init warning:', initErr);
   }
 
-  const saved = (function() {
+  const saved = (function () {
     try {
       return scormApi.loadState() || {};
     } catch (e) {
@@ -115,28 +128,35 @@
     let total = 0;
     let correct = 0;
     COURSE_CHAPTERS.forEach(ch => {
-      ch.blocks.forEach(b => {
+      (ch.blocks || []).forEach(b => {
+        if (!b) return;
         if (b.type === 'quiz_mcq') {
-          b.questions.forEach((q, qi) => {
+          if (Array.isArray(b.questions)) {
+            b.questions.forEach((q, qi) => {
+              total++;
+              const key = `${b.id}_q${qi}`;
+              if (state.answers[key] === q.correct) correct++;
+            });
+          } else if (Array.isArray(b.options)) {
             total++;
-            const key = `${b.id}_q${qi}`;
-            if (state.answers[key] === q.correct) correct++;
-          });
+            const key = `${b.id}_q0`;
+            if (state.answers[key] === b.correct) correct++;
+          }
         } else if (b.type === 'quiz_blanks') {
-          b.items.forEach((it, bi) => {
+          (b.items || []).forEach((it, bi) => {
             total++;
             const key = `${b.id}_b${bi}`;
             const val = (state.answers[key] || '').trim().toLowerCase();
-            if (val === it.answer.trim().toLowerCase()) correct++;
+            if (val === (it.answer || '').trim().toLowerCase()) correct++;
           });
         } else if (b.type === 'quiz_match') {
-          b.pairs.forEach((p, pi) => {
+          (b.pairs || []).forEach((p, pi) => {
             total++;
             const key = `${b.id}_m${pi}`;
             if (state.answers[key] === p.answer) correct++;
           });
         } else if (b.type === 'kyc_sorter') {
-          b.docs.forEach((d, di) => {
+          (b.docs || []).forEach((d, di) => {
             total++;
             const key = `${b.id}_s${di}`;
             if (state.answers[key] === d.valid) correct++;
@@ -175,12 +195,27 @@
     const ch = COURSE_CHAPTERS[state.currentChapter] || { shortTitle: 'Module', num: '01' };
     const { pct } = computeScore();
     const visitedCount = state.visited.length;
-    const progPct = Math.round((visitedCount / COURSE_CHAPTERS.length) * 100);
+    const progPct = state.completed ? 100 : Math.round((visitedCount / COURSE_CHAPTERS.length) * 100);
 
     if (els.headerTitle) els.headerTitle.textContent = ch.shortTitle || 'Module';
     if (els.scorePill) els.scorePill.textContent = `${pct}%`;
     if (els.progressFill) els.progressFill.style.width = `${progPct}%`;
-    if (els.stepIndicator) els.stepIndicator.textContent = `Chapter ${state.currentChapter + 1} of ${COURSE_CHAPTERS.length} · ${visitedCount} Visited`;
+    if (els.stepIndicator) {
+      els.stepIndicator.textContent = state.completed
+        ? `Status: Completed ✓ · All ${COURSE_CHAPTERS.length} Chapters Visited`
+        : `Chapter ${state.currentChapter + 1} of ${COURSE_CHAPTERS.length} · ${visitedCount} Visited`;
+    }
+    if (els.lmsBadge) {
+      if (state.completed) {
+        els.lmsBadge.textContent = '✓ SCORM: Completed';
+        els.lmsBadge.style.color = '#34d399';
+        els.lmsBadge.style.borderColor = '#10b981';
+      } else {
+        els.lmsBadge.textContent = scormApi.isConnected() ? 'LMS SCORM 2004 Connected' : 'SCORM 2004 Ready';
+        els.lmsBadge.style.color = '';
+        els.lmsBadge.style.borderColor = '';
+      }
+    }
     if (els.bottomTag) els.bottomTag.textContent = `${String(state.currentChapter + 1).padStart(2, '0')} / ${COURSE_CHAPTERS.length}`;
     if (els.drawerCompleted) els.drawerCompleted.textContent = `${visitedCount}/${COURSE_CHAPTERS.length}`;
     if (els.drawerScore) els.drawerScore.textContent = `${pct}%`;
@@ -230,19 +265,20 @@
     });
   }
 
-  function renderVideoStage(url) {
+  function renderVideoStage(url, poster) {
     if (!url) {
       return `
         <div class="play-medallion">▶</div>
-        <div class="video-placeholder-text">Video Placeholder Ready to Embed</div>
-        <div class="video-placeholder-sub">Set <code>embedUrl</code> in <code>js/courseData.js</code> or paste an MP4 / embed link below to preview</div>
+        <div class="video-placeholder-text">Video Player</div>
+        <div class="video-placeholder-sub">Embedded media will display here</div>
       `;
     }
     const clean = url.trim();
-    if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(clean)) {
-      return `<video src="${escapeHtml(clean)}" controls playsinline preload="metadata"></video>`;
+    if (/\.(mp4|webm|ogg|mov|m4v)(\?.*)?$/i.test(clean)) {
+      const posterAttr = poster ? `poster="${escapeHtml(poster)}"` : '';
+      return `<video src="${escapeHtml(clean)}" ${posterAttr} controls playsinline preload="metadata" style="width:100%;max-height:480px;border-radius:12px;background:#000;display:block;margin:0 auto;box-shadow:0 6px 20px rgba(0,0,0,0.25);"></video>`;
     }
-    return `<iframe src="${escapeHtml(clean)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+    return `<iframe src="${escapeHtml(clean)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="width:100%;height:380px;border-radius:12px;border:none;"></iframe>`;
   }
 
   function escapeHtml(str) {
@@ -251,23 +287,6 @@
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
-  }
-
-  function sanitizeMediaSrc(src) {
-    if (!src) return '';
-    var s = String(src).trim();
-    if (s.startsWith('data:') || s.startsWith('blob:')) return s;
-    try {
-      return encodeURI(decodeURI(s));
-    } catch (e) {
-      return s.replace(/ /g, '%20');
-    }
-  }
-
-  function renderSectionHeroImage(rawSrc) {
-    if (!rawSrc) return '';
-    var src = sanitizeMediaSrc(rawSrc);
-    return '<div class="card-hero-image-wrap"><img src="' + escapeHtml(src) + '" alt="" class="card-hero-image" loading="lazy" onerror="if(this.src.includes(\'%20\')){this.src=this.src.replace(/%20/g,\'_\');}" /></div>';
   }
 
   function renderAudioBar(audioUrl, audioTitle) {
@@ -330,17 +349,17 @@
     return `
       <div class="${colClass}">
         ${boxes.map((bx) => {
-          const iconHtml = bx.icon ? `<div class="box-icon-wrap"><img src="${escapeHtml(bx.icon)}" alt="" loading="lazy" /></div>` : '';
-          const badgeHtml = bx.badge ? `<span class="box-badge ${bx.badgeColor || ''}">${escapeHtml(bx.badge)}</span>` : '';
-          const bulletsHtml = bx.bullets && bx.bullets.length ? `<ul class="rich-list" style="margin-top:8px;">${bx.bullets.map(b => `<li>${b}</li>`).join('')}</ul>` : '';
-          const collHtml = bx.details ? `
+      const iconHtml = bx.icon ? `<div class="box-icon-wrap"><img src="${escapeHtml(bx.icon)}" alt="" loading="lazy" /></div>` : '';
+      const badgeHtml = bx.badge ? `<span class="box-badge ${bx.badgeColor || ''}">${escapeHtml(bx.badge)}</span>` : '';
+      const bulletsHtml = bx.bullets && bx.bullets.length ? `<ul class="rich-list" style="margin-top:8px;">${bx.bullets.map(b => `<li>${b}</li>`).join('')}</ul>` : '';
+      const collHtml = bx.details ? `
             <details class="acc-item" style="margin-top:8px;">
               <summary>${bx.detailsLabel || 'View Details'}</summary>
               <div class="acc-body">${bx.details}</div>
             </details>
           ` : '';
-          const cls = `box-card ${bx.highlight ? 'highlight' : ''} ${bx.gold ? 'gold-accent' : ''} ${bx.green ? 'green-accent' : ''}`;
-          return `
+      const cls = `box-card ${bx.highlight ? 'highlight' : ''} ${bx.gold ? 'gold-accent' : ''} ${bx.green ? 'green-accent' : ''}`;
+      return `
             <div class="${cls}">
               <div class="box-header">
                 ${iconHtml}
@@ -357,7 +376,7 @@
               </div>
             </div>
           `;
-        }).join('')}
+    }).join('')}
       </div>
     `;
   }
@@ -367,10 +386,10 @@
     return `
       <div class="collapsible-group" style="margin:14px 0;">
         ${collapsibles.map((c) => {
-          const iconHtml = c.icon ? `<span class="box-summary-icon"><img src="${escapeHtml(c.icon)}" alt="" loading="lazy" /></span>` : '';
-          const badgeHtml = c.badge ? `<span class="box-badge ${c.badgeColor || ''}" style="margin-right:6px;">${escapeHtml(c.badge)}</span>` : '';
-          const isOpen = c.isOpen ? 'open' : '';
-          return `
+      const iconHtml = c.icon ? `<span class="box-summary-icon"><img src="${escapeHtml(c.icon)}" alt="" loading="lazy" /></span>` : '';
+      const badgeHtml = c.badge ? `<span class="box-badge ${c.badgeColor || ''}" style="margin-right:6px;">${escapeHtml(c.badge)}</span>` : '';
+      const isOpen = c.isOpen ? 'open' : '';
+      return `
             <details class="box-collapsible" ${isOpen}>
               <summary>
                 <div class="box-summary-left">
@@ -390,7 +409,7 @@
               </div>
             </details>
           `;
-        }).join('')}
+    }).join('')}
       </div>
     `;
   }
@@ -411,8 +430,37 @@
     `;
   }
 
+  function renderStats(stats) {
+    if (!stats || !stats.length) return '';
+    return `
+      <div class="stat-grid">
+        ${stats.map(st => `
+          <div class="stat-tile">
+            <div class="stat-tile-val">${escapeHtml(st.value || '')}</div>
+            <div class="stat-tile-lbl">${escapeHtml(st.label || '')}</div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
   function renderBlock(block) {
     const audioHtml = renderAudioBar(block.audioUrl, block.audioTitle);
+
+    if (block.type === 'section_hero') {
+      const calloutHtml = block.callout
+        ? `<div class="callout ${block.callout.type || ''}">${block.callout.text}</div>`
+        : '';
+      return `
+        <div class="section-hero-card">
+          ${block.tag ? `<div class="section-hero-eyebrow">${escapeHtml(block.tag)}</div>` : ''}
+          ${audioHtml}
+          <h2 class="section-hero-title">${block.heading || block.title || ''}</h2>
+          ${block.body ? `<div class="section-hero-sub">${block.body}</div>` : ''}
+          ${calloutHtml}
+        </div>
+      `;
+    }
 
     if (block.type === 'url_redirect') {
       const targetUrl = block.url || '#';
@@ -449,13 +497,11 @@
     }
 
     if (block.type === 'image') {
-      const rawSrc = block.src || block.imageSrc || block.imageUrl || '';
-      const src = sanitizeMediaSrc(rawSrc);
       return `
         <figure class="visual-card">
           ${audioHtml}
-          <img src="${escapeHtml(src)}" alt="${escapeHtml(block.alt || block.caption || '')}" loading="lazy" onerror="if(this.src.includes('%20')){this.src=this.src.replace(/%20/g,'_');}" />
-          ${block.caption ? `<figcaption class="visual-caption">📊 ${escapeHtml(block.caption)}</figcaption>` : ''}
+          <img src="${block.src}" alt="${escapeHtml(block.alt)}" loading="lazy" />
+          ${block.caption ? `<figcaption class="visual-caption">📊 ${block.caption}</figcaption>` : ''}
         </figure>
       `;
     }
@@ -475,8 +521,10 @@
       `;
     }
 
-    if (block.type === 'boxes' || block.type === 'card_grid') {
-      const imageHtml = renderSectionHeroImage(block.imageSrc || block.imageUrl || block.src);
+    if (block.type === 'boxes' || block.type === 'card_grid' || block.type === 'box_grid') {
+      const imageHtml = block.imageSrc
+        ? `<div class="card-hero-image-wrap"><img src="${escapeHtml(block.imageSrc)}" alt="" class="card-hero-image" loading="lazy" /></div>`
+        : '';
       const calloutHtml = block.callout
         ? `<div class="callout ${block.callout.type || ''}">${block.callout.text}</div>`
         : '';
@@ -484,7 +532,7 @@
         <section class="card">
           ${block.tag ? `<span class="card-tag">${block.tag}</span>` : ''}
           ${audioHtml}
-          <h2>${block.heading}</h2>
+          <h2>${block.heading || block.title || ''}</h2>
           ${imageHtml}
           ${block.body || ''}
           ${renderBoxes(block.boxes, block.boxGridCols)}
@@ -493,8 +541,23 @@
       `;
     }
 
+    if (block.type === 'table') {
+      return `
+        <section class="card">
+          ${block.tag ? `<span class="card-tag">${block.tag}</span>` : ''}
+          ${audioHtml}
+          <h2>${block.heading || block.title || ''}</h2>
+          ${block.body || ''}
+          ${renderTable({ headers: block.headers, rows: block.rows })}
+          ${block.callout ? `<div class="callout ${block.callout.type || ''}">${block.callout.text}</div>` : ''}
+        </section>
+      `;
+    }
+
     if (block.type === 'collapsible_boxes') {
-      const imageHtml = renderSectionHeroImage(block.imageSrc || block.imageUrl || block.src);
+      const imageHtml = block.imageSrc
+        ? `<div class="card-hero-image-wrap"><img src="${escapeHtml(block.imageSrc)}" alt="" class="card-hero-image" loading="lazy" /></div>`
+        : '';
       const calloutHtml = block.callout
         ? `<div class="callout ${block.callout.type || ''}">${block.callout.text}</div>`
         : '';
@@ -512,10 +575,13 @@
     }
 
     if (block.type === 'card') {
-      const imageHtml = renderSectionHeroImage(block.imageSrc || block.imageUrl || block.src);
+      const imageHtml = block.imageSrc
+        ? `<div class="card-hero-image-wrap"><img src="${escapeHtml(block.imageSrc)}" alt="" class="card-hero-image" loading="lazy" /></div>`
+        : '';
       const bulletsHtml = block.bullets
         ? `<ul class="rich-list ${block.listTone || ''}">${block.bullets.map(b => `<li>${b}</li>`).join('')}</ul>`
         : '';
+      const statsHtml = block.stats ? renderStats(block.stats) : '';
       const boxesHtml = block.boxes ? renderBoxes(block.boxes, block.boxGridCols) : '';
       const collapsiblesHtml = block.collapsibles ? renderCollapsibles(block.collapsibles) : '';
       const tableHtml = block.table ? renderTable(block.table) : '';
@@ -529,6 +595,7 @@
           <h2>${block.heading}</h2>
           ${imageHtml}
           ${block.body || ''}
+          ${statsHtml}
           ${bulletsHtml}
           ${boxesHtml}
           ${collapsiblesHtml}
@@ -538,17 +605,27 @@
       `;
     }
 
+    if (block.type === 'stats' || block.type === 'stat_grid') {
+      return `
+        <section class="card">
+          ${block.tag ? `<span class="card-tag gold">${block.tag}</span>` : '<span class="card-tag gold">Key Metrics</span>'}
+          ${audioHtml}
+          <h2>${block.heading || block.title || 'Key Metrics & Data'}</h2>
+          ${block.body || ''}
+          ${renderStats(block.stats || block.items)}
+          ${block.callout ? `<div class="callout ${block.callout.type || ''}">${block.callout.text}</div>` : ''}
+        </section>
+      `;
+    }
+
     if (block.type === 'accordion') {
-      const imageHtml = renderSectionHeroImage(block.imageSrc || block.imageUrl || block.src);
       return `
         <section class="card">
           ${block.tag ? `<span class="card-tag">${block.tag}</span>` : ''}
           ${audioHtml}
           <h2>${block.heading}</h2>
-          ${imageHtml}
-          ${block.body ? `<p>${block.body}</p>` : ''}
           <div class="acc-group">
-            ${(block.items || []).map((it, idx) => `
+            ${block.items.map((it, idx) => `
               <details class="acc-item" ${idx === 0 ? 'open' : ''}>
                 <summary>${it.title}</summary>
                 <div class="acc-body">${it.content}</div>
@@ -561,54 +638,65 @@
 
     if (block.type === 'video_placeholder') {
       const activeUrl = state.videoPreviews[block.id] || block.embedUrl || '';
+      const posterUrl = block.poster || block.posterUrl || block.imageSrc || '';
+      const watchForHtml = block.watchFor && block.watchFor.length
+        ? `<div class="video-watch-box">
+            <div class="video-watch-title">Key Learning Focus in This Video</div>
+            <ul>${block.watchFor.map(w => `<li>${w}</li>`).join('')}</ul>
+          </div>`
+        : '';
+      const toolsHtml = !block.embedUrl
+        ? `<div class="video-embed-tools">
+            <input type="text" class="video-url-input" id="input_${block.id}" value="${escapeHtml(activeUrl)}" placeholder="Paste .mp4 path or YouTube/Vimeo/LMS embed URL..." />
+            <button type="button" class="video-load-btn" data-vid-id="${block.id}">Embed / Preview</button>
+          </div>`
+        : '';
       return `
         <section class="video-embed-card" id="wrap_${block.id}">
           <div class="video-header">
-            <span class="video-badge">${block.badge}</span>
-            <span class="video-dur">⏱ ${block.duration}</span>
+            <span class="video-badge">${block.badge || 'VIDEO LEARNING'}</span>
+            ${block.duration ? `<span class="video-dur">⏱ ${block.duration}</span>` : ''}
           </div>
           <h2 class="video-title">${block.title}</h2>
           <div class="video-stage" id="stage_${block.id}">
-            ${renderVideoStage(activeUrl)}
+            ${renderVideoStage(activeUrl, posterUrl)}
           </div>
-          <div class="video-watch-box">
-            <div class="video-watch-title">What to Watch For in This Video</div>
-            <ul>${block.watchFor.map(w => `<li>${w}</li>`).join('')}</ul>
-          </div>
-          <div class="video-embed-tools">
-            <input type="text" class="video-url-input" id="input_${block.id}" value="${escapeHtml(activeUrl)}" placeholder="Paste .mp4 path or YouTube/Vimeo/LMS embed URL..." />
-            <button type="button" class="video-load-btn" data-vid-id="${block.id}">Embed / Preview</button>
-          </div>
+          ${watchForHtml}
+          ${toolsHtml}
         </section>
       `;
     }
 
     if (block.type === 'quiz_mcq') {
+      const qList = Array.isArray(block.questions)
+        ? block.questions
+        : (block.options ? [{ q: block.question || block.title || 'Knowledge Check', options: block.options, correct: block.correct, explanation: block.explanation }] : []);
+      const title = block.title || block.heading || 'Interactive Knowledge Check';
       return `
-        <section class="quiz-card" id="${block.id}">
+        <section class="quiz-card" id="${block.id || 'quiz'}">
           <div class="quiz-header">
             <span class="quiz-badge">INTERACTIVE CHECK</span>
           </div>
           ${audioHtml}
-          <h2 style="margin:0 0 8px;font-size:17px;color:var(--hdfc-navy);">${block.title}</h2>
-          ${block.questions.map((q, qi) => {
+          <h2 style="margin:0 0 8px;font-size:17px;color:var(--hdfc-navy);">${escapeHtml(title)}</h2>
+          ${qList.map((q, qi) => {
             const key = `${block.id}_q${qi}`;
             const chosen = state.answers[key];
             const answered = chosen !== undefined;
             return `
               <div class="q-block">
-                <div class="q-text">${q.q}</div>
+                <div class="q-text">${escapeHtml(q.q || q.question || '')}</div>
                 <div class="opt-list">
-                  ${q.options.map((opt, oi) => {
+                  ${(q.options || []).map((opt, oi) => {
                     let cls = 'opt-btn';
                     if (answered) {
                       if (oi === q.correct) cls += ' correct';
                       else if (oi === chosen) cls += ' wrong';
                     }
-                    return `<button type="button" class="${cls}" data-qid="${block.id}" data-qi="${qi}" data-oi="${oi}">${opt}</button>`;
+                    return `<button type="button" class="${cls}" data-qid="${block.id}" data-qi="${qi}" data-oi="${oi}">${escapeHtml(opt)}</button>`;
                   }).join('')}
                 </div>
-                ${answered ? `<div class="q-feedback ${chosen === q.correct ? 'ok' : 'err'}">${chosen === q.correct ? '✓ Correct! ' : '✕ Review: '}${q.explanation}</div>` : ''}
+                ${answered ? `<div class="q-feedback ${chosen === q.correct ? 'ok' : 'err'}">${chosen === q.correct ? '✓ Correct! ' : '✕ Review: '}${escapeHtml(q.explanation || '')}</div>` : ''}
               </div>
             `;
           }).join('')}
@@ -626,11 +714,11 @@
             ${block.wordBank.map(w => `<span class="word-chip">${w}</span>`).join('')}
           </div>
           ${block.items.map((it, bi) => {
-            const key = `${block.id}_b${bi}`;
-            const val = state.answers[key] || '';
-            const checked = state.answers[`${block.id}_checked`];
-            const isOk = val.trim().toLowerCase() === it.answer.trim().toLowerCase();
-            return `
+        const key = `${block.id}_b${bi}`;
+        const val = state.answers[key] || '';
+        const checked = state.answers[`${block.id}_checked`];
+        const isOk = val.trim().toLowerCase() === it.answer.trim().toLowerCase();
+        return `
               <div class="blank-row">
                 <label style="font-size:14px;font-weight:600;">${it.prompt}</label>
                 <select class="blank-input ${checked ? (isOk ? 'ok' : 'err') : ''}" data-bid="${block.id}" data-bi="${bi}">
@@ -640,7 +728,7 @@
                 ${checked && !isOk ? `<div class="q-feedback err">Correct answer: <strong>${it.answer}</strong></div>` : ''}
               </div>
             `;
-          }).join('')}
+      }).join('')}
           <button type="button" class="action-btn check-blanks-btn" data-bid="${block.id}">Check Answers</button>
         </section>
       `;
@@ -653,11 +741,11 @@
           ${audioHtml}
           <h2 style="margin:0 0 8px;font-size:17px;color:var(--hdfc-navy);">${block.title}</h2>
           ${block.pairs.map((p, pi) => {
-            const key = `${block.id}_m${pi}`;
-            const val = state.answers[key] || '';
-            const checked = state.answers[`${block.id}_checked`];
-            const isOk = val === p.answer;
-            return `
+        const key = `${block.id}_m${pi}`;
+        const val = state.answers[key] || '';
+        const checked = state.answers[`${block.id}_checked`];
+        const isOk = val === p.answer;
+        return `
               <div class="match-row">
                 <div style="font-size:14px;font-weight:700;color:var(--hdfc-navy);">${p.left}</div>
                 <select class="match-select ${checked ? (isOk ? 'ok' : 'err') : ''}" data-mid="${block.id}" data-pi="${pi}">
@@ -667,7 +755,7 @@
                 ${checked && !isOk ? `<div class="q-feedback err">Best match: <strong>${p.answer}</strong></div>` : ''}
               </div>
             `;
-          }).join('')}
+      }).join('')}
           <button type="button" class="action-btn check-match-btn" data-mid="${block.id}">Verify Matches</button>
         </section>
       `;
@@ -681,44 +769,42 @@
           <h2 style="margin:0 0 8px;font-size:17px;color:var(--hdfc-navy);">${block.title}</h2>
           <p style="font-size:14px;margin-bottom:10px;">${block.instruction}</p>
           ${block.docs.map((d, di) => {
-            const key = `${block.id}_s${di}`;
-            const chosen = state.answers[key];
-            const answered = chosen !== undefined;
-            const isCorrect = chosen === d.valid;
-            return `
+        const key = `${block.id}_s${di}`;
+        const chosen = state.answers[key];
+        const answered = chosen !== undefined;
+        const isCorrect = chosen === d.valid;
+        const trueLabel = block.trueLabel || (block.id && block.id.includes('kyc') ? '✓ Valid Address OVD' : '✓ Valid / Best Practice');
+        const falseLabel = block.falseLabel || (block.id && block.id.includes('kyc') ? '✕ Not Address OVD' : '✕ Risk / Non-Compliant');
+        return `
               <div class="sorter-item">
                 <div class="sorter-doc">${d.name}</div>
                 <div class="sorter-btns">
-                  <button type="button" class="sort-choice ${answered && chosen === true ? (isCorrect ? 'selected-ok' : 'selected-err') : ''}" data-sid="${block.id}" data-di="${di}" data-val="true">✓ Valid Address OVD</button>
-                  <button type="button" class="sort-choice ${answered && chosen === false ? (isCorrect ? 'selected-ok' : 'selected-err') : ''}" data-sid="${block.id}" data-di="${di}" data-val="false">✕ Not Address OVD</button>
+                  <button type="button" class="sort-choice ${answered && chosen === true ? (isCorrect ? 'selected-ok' : 'selected-err') : ''}" data-sid="${block.id}" data-di="${di}" data-val="true">${trueLabel}</button>
+                  <button type="button" class="sort-choice ${answered && chosen === false ? (isCorrect ? 'selected-ok' : 'selected-err') : ''}" data-sid="${block.id}" data-di="${di}" data-val="false">${falseLabel}</button>
                 </div>
                 ${answered ? `<div class="q-feedback ${isCorrect ? 'ok' : 'err'}">${isCorrect ? '✓ Spot on! ' : '✕ Note: '}${d.note}</div>` : ''}
               </div>
             `;
-          }).join('')}
+      }).join('')}
         </section>
       `;
     }
 
     if (block.type === 'flashcards') {
-      const imageHtml = renderSectionHeroImage(block.imageSrc || block.imageUrl || block.src);
       return `
         <section class="card">
-          ${block.tag ? `<span class="card-tag green">${block.tag}</span>` : `<span class="card-tag green">Interactive Self-Test Cards</span>`}
-          ${audioHtml}
-          <h2>${block.title || block.heading || 'Interactive Flip Cards'}</h2>
-          ${imageHtml}
+          <span class="card-tag green">Interactive Self-Test Cards</span>
+          <h2>${block.title}</h2>
           <p style="font-size:13.5px;color:var(--muted);">${block.instruction || 'Tap any card below to flip and reveal the key knowledge takeaway:'}</p>
           <div class="flip-grid">
-            ${(block.cards || []).map((c, ci) => `
+            ${block.cards.map((c, ci) => `
               <div class="flip-card-container" data-fc-idx="${ci}">
                 <div class="flip-card-inner">
                   <div class="flip-card-front">
                     <div>
-                      <span class="box-badge gold">${c.badge || 'Tap to Flip 🔄'}</span>
+                      <span class="box-badge gold">Tap to Flip 🔄</span>
                       <div class="flip-q-title">${c.q}</div>
                     </div>
-                    ${c.img ? `<div style="margin:8px 0;"><img src="${escapeHtml(c.img)}" alt="" style="max-height:80px;border-radius:6px;object-fit:cover;width:100%;" /></div>` : ''}
                     <div class="flip-hint"><span>💡 Tap to flip answer</span></div>
                   </div>
                   <div class="flip-card-back">
@@ -751,11 +837,12 @@
     return '';
   }
 
-  function renderChapter() {
+  function renderChapter(preserveScroll = false) {
     try {
+      const savedScrollY = (preserveScroll && typeof window !== 'undefined') ? (window.scrollY || window.pageYOffset || 0) : 0;
       // Pause any currently playing audio before rendering
       document.querySelectorAll('audio').forEach(a => {
-        try { if (!a.paused) a.pause(); } catch(e) {}
+        try { if (!a.paused) a.pause(); } catch (e) { }
       });
 
       if (state.currentChapter < 0) state.currentChapter = 0;
@@ -813,20 +900,50 @@
             </div>
           `;
         } else {
+          // If the first block of the chapter is a section_hero that matches the chapter title,
+          // render the unified chapter hero with its subtitle and callout to prevent duplicate stacked banners
+          const firstBlock = ch.blocks && ch.blocks[0];
+          const isFirstSectionHero = firstBlock && (firstBlock.type === 'section_hero' || (firstBlock.heading && firstBlock.heading.trim().toLowerCase() === (ch.title || '').trim().toLowerCase()));
+
+          let heroKicker = `CHAPTER ${state.currentChapter + 1} OF ${COURSE_CHAPTERS.length} · ${ch.num || (state.currentChapter + 1)}`;
+          if (firstBlock && firstBlock.tag) {
+            heroKicker = `${heroKicker} · ${escapeHtml(firstBlock.tag)}`;
+          }
+
+          let heroSub = ch.subtitle || (firstBlock && firstBlock.body ? firstBlock.body : '');
+          let heroCalloutHtml = '';
+          if (isFirstSectionHero && firstBlock.callout) {
+            heroCalloutHtml = `<div class="callout ${firstBlock.callout.type || ''}">${firstBlock.callout.text}</div>`;
+          }
+
+          const renderedBlocksHtml = (ch.blocks || []).slice(isFirstSectionHero ? 1 : 0).map(b => {
+            try {
+              return renderBlock(b);
+            } catch (bErr) {
+              console.warn('Block render error:', b, bErr);
+              return `<section class="card"><h2>${escapeHtml(b.heading || b.title || 'Topic Card')}</h2>${b.body || ''}</section>`;
+            }
+          }).join('');
+
           els.main.innerHTML = `
             <div class="chapter-hero">
-              <span class="hero-kicker">CHAPTER ${state.currentChapter + 1} OF ${COURSE_CHAPTERS.length} · ${ch.num || (state.currentChapter + 1)}</span>
+              <span class="hero-kicker">${heroKicker}</span>
               <h1 class="hero-title">${ch.title || ''}</h1>
-              <p class="hero-desc">${ch.subtitle || ''}</p>
+              ${heroSub ? `<p class="hero-desc">${heroSub}</p>` : ''}
+              ${heroCalloutHtml}
             </div>
-            ${blocksHtml}
+            ${renderedBlocksHtml}
           `;
         }
         bindDynamicEvents();
       }
       try {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      } catch (scrollErr) {}
+        if (preserveScroll) {
+          window.scrollTo({ top: savedScrollY, behavior: 'instant' });
+        } else {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      } catch (scrollErr) { }
     } catch (e) {
       console.error('Fatal renderChapter error:', e);
       if (els.main) {
@@ -849,17 +966,49 @@
       });
     });
 
-    // MCQ
+    // MCQ - In-place DOM update without full page re-render
     els.main.querySelectorAll('.opt-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        const key = `${btn.dataset.qid}_q${btn.dataset.qi}`;
-        state.answers[key] = Number(btn.dataset.oi);
+        const qid = btn.dataset.qid;
+        const qi = Number(btn.dataset.qi);
+        const oi = Number(btn.dataset.oi);
+        const key = `${qid}_q${qi}`;
+        state.answers[key] = oi;
         persist();
-        renderChapter();
+
+        // Update in-place without rebuilding the DOM
+        const qBlock = btn.closest('.q-block');
+        if (qBlock) {
+          const ch = COURSE_CHAPTERS[state.currentChapter];
+          const block = (ch && ch.blocks) ? ch.blocks.find(b => b.id === qid) : null;
+          let qObj = null;
+          if (block) {
+            if (Array.isArray(block.questions)) qObj = block.questions[qi];
+            else if (qi === 0 && block.options) qObj = { options: block.options, correct: block.correct, explanation: block.explanation };
+          }
+          const correctIdx = qObj ? qObj.correct : undefined;
+          const explanation = qObj ? (qObj.explanation || '') : '';
+
+          qBlock.querySelectorAll('.opt-btn').forEach(b => {
+            const bOi = Number(b.dataset.oi);
+            b.classList.remove('correct', 'wrong');
+            if (bOi === correctIdx) b.classList.add('correct');
+            else if (bOi === oi) b.classList.add('wrong');
+          });
+
+          let fb = qBlock.querySelector('.q-feedback');
+          if (!fb) {
+            fb = document.createElement('div');
+            qBlock.appendChild(fb);
+          }
+          const isCorrect = (oi === correctIdx);
+          fb.className = `q-feedback ${isCorrect ? 'ok' : 'err'}`;
+          fb.innerHTML = `${isCorrect ? '✓ Correct! ' : '✕ Review: '}${escapeHtml(explanation)}`;
+        }
       });
     });
 
-    // Blanks
+    // Blanks - In-place DOM update without full page re-render
     els.main.querySelectorAll('.blank-input').forEach(sel => {
       sel.addEventListener('change', () => {
         state.answers[`${sel.dataset.bid}_b${sel.dataset.bi}`] = sel.value;
@@ -868,13 +1017,43 @@
     });
     els.main.querySelectorAll('.check-blanks-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        state.answers[`${btn.dataset.bid}_checked`] = true;
+        const bid = btn.dataset.bid;
+        state.answers[`${bid}_checked`] = true;
         persist();
-        renderChapter();
+
+        const card = btn.closest('.quiz-card');
+        if (card) {
+          const ch = COURSE_CHAPTERS[state.currentChapter];
+          const block = (ch && ch.blocks) ? ch.blocks.find(b => b.id === bid) : null;
+          const items = (block && block.items) ? block.items : [];
+
+          card.querySelectorAll('.blank-row').forEach((row, bi) => {
+            const sel = row.querySelector('.blank-input');
+            const item = items[bi];
+            if (sel && item) {
+              const val = (sel.value || '').trim().toLowerCase();
+              const isOk = val === (item.answer || '').trim().toLowerCase();
+              sel.classList.remove('ok', 'err');
+              sel.classList.add(isOk ? 'ok' : 'err');
+
+              let fb = row.querySelector('.q-feedback');
+              if (!isOk) {
+                if (!fb) {
+                  fb = document.createElement('div');
+                  row.appendChild(fb);
+                }
+                fb.className = 'q-feedback err';
+                fb.innerHTML = `Correct answer: <strong>${escapeHtml(item.answer)}</strong>`;
+              } else if (fb) {
+                fb.remove();
+              }
+            }
+          });
+        }
       });
     });
 
-    // Match
+    // Match - In-place DOM update without full page re-render
     els.main.querySelectorAll('.match-select').forEach(sel => {
       sel.addEventListener('change', () => {
         state.answers[`${sel.dataset.mid}_m${sel.dataset.pi}`] = sel.value;
@@ -883,18 +1062,73 @@
     });
     els.main.querySelectorAll('.check-match-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        state.answers[`${btn.dataset.mid}_checked`] = true;
+        const mid = btn.dataset.mid;
+        state.answers[`${mid}_checked`] = true;
         persist();
-        renderChapter();
+
+        const card = btn.closest('.quiz-card');
+        if (card) {
+          const ch = COURSE_CHAPTERS[state.currentChapter];
+          const block = (ch && ch.blocks) ? ch.blocks.find(b => b.id === mid) : null;
+          const pairs = (block && block.pairs) ? block.pairs : [];
+
+          card.querySelectorAll('.match-row').forEach((row, pi) => {
+            const sel = row.querySelector('.match-select');
+            const pair = pairs[pi];
+            if (sel && pair) {
+              const isOk = (sel.value === pair.answer);
+              sel.classList.remove('ok', 'err');
+              sel.classList.add(isOk ? 'ok' : 'err');
+
+              let fb = row.querySelector('.q-feedback');
+              if (!isOk) {
+                if (!fb) {
+                  fb = document.createElement('div');
+                  row.appendChild(fb);
+                }
+                fb.className = 'q-feedback err';
+                fb.innerHTML = `Best match: <strong>${escapeHtml(pair.answer)}</strong>`;
+              } else if (fb) {
+                fb.remove();
+              }
+            }
+          });
+        }
       });
     });
 
-    // KYC Sorter
+    // KYC Sorter - In-place DOM update without full page re-render
     els.main.querySelectorAll('.sort-choice').forEach(btn => {
       btn.addEventListener('click', () => {
-        state.answers[`${btn.dataset.sid}_s${btn.dataset.di}`] = (btn.dataset.val === 'true');
+        const sid = btn.dataset.sid;
+        const di = Number(btn.dataset.di);
+        const val = (btn.dataset.val === 'true');
+        state.answers[`${sid}_s${di}`] = val;
         persist();
-        renderChapter();
+
+        const item = btn.closest('.sorter-item');
+        if (item) {
+          const ch = COURSE_CHAPTERS[state.currentChapter];
+          const block = (ch && ch.blocks) ? ch.blocks.find(b => b.id === sid) : null;
+          const doc = (block && block.docs) ? block.docs[di] : null;
+          const isCorrect = doc ? (val === doc.valid) : false;
+
+          item.querySelectorAll('.sort-choice').forEach(b => {
+            b.classList.remove('selected-ok', 'selected-err');
+            const bVal = (b.dataset.val === 'true');
+            if (bVal === val) {
+              b.classList.add(isCorrect ? 'selected-ok' : 'selected-err');
+            }
+          });
+
+          let fb = item.querySelector('.q-feedback');
+          if (!fb) {
+            fb = document.createElement('div');
+            item.appendChild(fb);
+          }
+          fb.className = `q-feedback ${isCorrect ? 'ok' : 'err'}`;
+          fb.textContent = `${isCorrect ? '✓ Spot on! ' : '✕ Note: '}${doc ? doc.note : ''}`;
+        }
       });
     });
 
@@ -987,26 +1221,74 @@
   els.closeDrawerBtn.addEventListener('click', closeDrawer);
   els.backdrop.addEventListener('click', closeDrawer);
 
+  function showCompletionBanner(scorePct) {
+    let banner = document.getElementById('scormCompletionBanner');
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'scormCompletionBanner';
+      banner.style.cssText = 'position:fixed;top:18px;left:50%;transform:translateX(-50%);z-index:99999;background:#064e3b;color:#ecfdf5;border:1.5px solid #10b981;border-radius:12px;padding:12px 20px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:10px;box-shadow:0 12px 30px rgba(0,0,0,0.4);font-family:sans-serif;max-width:90%;text-align:center;transition:opacity 0.3s ease;';
+      document.body.appendChild(banner);
+    }
+    banner.innerHTML = '<span style="font-size:18px;color:#34d399;">✓</span><span>Module Completed (' + scorePct + '%) — SCORM 2004 Status: COMPLETED. Returning to Home...</span>';
+    banner.style.display = 'flex';
+    banner.style.opacity = '1';
+    setTimeout(() => {
+      if (banner) {
+        banner.style.opacity = '0';
+        setTimeout(() => { banner.style.display = 'none'; }, 300);
+      }
+    }, 3500);
+  }
+
+  function handleCompleteCourse() {
+    state.completed = true;
+    for (let i = 0; i < COURSE_CHAPTERS.length; i++) {
+      if (!state.visited.includes(i)) state.visited.push(i);
+    }
+    const { pct } = computeScore();
+    scormApi.saveState({
+      currentChapter: 0,
+      visited: state.visited,
+      answers: state.answers,
+      notes: state.notes,
+      videoPreviews: state.videoPreviews,
+      completed: true,
+      progressMeasure: 1.0,
+      scoreScaled: pct / 100
+    });
+    scormApi.setValue('cmi.completion_status', 'completed');
+    scormApi.setValue('cmi.success_status', pct >= 60 ? 'passed' : 'completed');
+    scormApi.setValue('cmi.progress_measure', '1.00');
+    scormApi.setValue('cmi.location', '0');
+    scormApi.commit();
+
+    try {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({
+          type: 'SCORM_COMPLETION',
+          status: 'completed',
+          successStatus: pct >= 60 ? 'passed' : 'completed',
+          score: pct
+        }, '*');
+      }
+    } catch(e) {}
+
+    showCompletionBanner(pct);
+    closeDrawer();
+    goToChapter(0);
+  }
+
   els.prevBtn.addEventListener('click', () => goToChapter(state.currentChapter - 1));
   els.nextBtn.addEventListener('click', () => {
     if (state.currentChapter < COURSE_CHAPTERS.length - 1) {
       goToChapter(state.currentChapter + 1);
     } else {
-      state.completed = true;
-      persist();
-      scormApi.finish();
-      const { pct } = computeScore();
-      alert(`Congratulations! SCORM 2004 module submitted.\nChapters Completed: ${state.visited.length}/${COURSE_CHAPTERS.length}\nQuiz Score: ${pct}%`);
+      handleCompleteCourse();
     }
   });
 
   els.finishCourseBtn.addEventListener('click', () => {
-    state.completed = true;
-    persist();
-    scormApi.finish();
-    closeDrawer();
-    const { pct } = computeScore();
-    alert(`Course status saved as COMPLETED in SCORM 2004.\nQuiz Score: ${pct}%`);
+    handleCompleteCourse();
   });
 
   window.addEventListener('beforeunload', () => {

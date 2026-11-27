@@ -399,10 +399,16 @@ async def download_scorm_by_name(name: str):
     for f in os.listdir(PUBLIC_DIR):
         if f.endswith('_SCORM2004.zip'):
             f_base = f[:-14]
-            if re.sub(r'[\s_]+', '_', f_base).lower() == norm_req:
+            if re.sub(r'[\s_]+', '_', f_base).lower() == norm_req or norm_req in re.sub(r'[\s_]+', '_', f_base).lower():
                 return FileResponse(os.path.join(PUBLIC_DIR, f), filename=f, media_type="application/zip")
-            if norm_req in re.sub(r'[\s_]+', '_', f_base).lower():
-                return FileResponse(os.path.join(PUBLIC_DIR, f), filename=f, media_type="application/zip")
+
+    # If not yet generated, build SCORM 2004 ZIP on demand
+    course_res = get_course(clean_name)
+    if course_res and "chapters" in course_res:
+        pub_zip_path = os.path.join(PUBLIC_DIR, f"{clean_name}_SCORM2004.zip")
+        media_dir = os.path.join(PUBLIC_DIR, "media")
+        build_scorm2004_zip(course_res, pub_zip_path, media_dir=media_dir)
+        return FileResponse(pub_zip_path, filename=f"{clean_name}_SCORM2004.zip", media_type="application/zip")
 
     return PlainTextResponse(f"SCORM package for {clean_name} not found", status_code=404)
 
@@ -515,17 +521,57 @@ async def convert_pptx_endpoint(file: UploadFile = File(...)):
 
         clean_base = re.sub(r'[^a-zA-Z0-9_\- ]', '_', base_name).strip() or "Uploaded_Course"
 
-        # Copy generated files to public directory for instant download and preview
+        # Wipe old generated courses and media so only the newly uploaded presentation is retained
+        for old_file in os.listdir(PUBLIC_DIR):
+            old_path = os.path.join(PUBLIC_DIR, old_file)
+            if old_file.endswith(('.html', '.zip')) and not old_file.startswith('index'):
+                try:
+                    if os.path.isfile(old_path):
+                        os.remove(old_path)
+                except Exception:
+                    pass
+        for sub_dir in ["media", "slides"]:
+            sub_path = os.path.join(PUBLIC_DIR, sub_dir)
+            if os.path.exists(sub_path):
+                try:
+                    shutil.rmtree(sub_path, ignore_errors=True)
+                except Exception:
+                    pass
+            os.makedirs(sub_path, exist_ok=True)
+
+        if os.path.exists(DIST_DIR):
+            for old_file in os.listdir(DIST_DIR):
+                if old_file.endswith(('.html', '.zip')) and not old_file.startswith('index'):
+                    try:
+                        p = os.path.join(DIST_DIR, old_file)
+                        if os.path.isfile(p):
+                            os.remove(p)
+                    except Exception:
+                        pass
+            for sub_dir in ["media", "slides"]:
+                sub_path = os.path.join(DIST_DIR, sub_dir)
+                if os.path.exists(sub_path):
+                    try:
+                        shutil.rmtree(sub_path, ignore_errors=True)
+                    except Exception:
+                        pass
+                os.makedirs(sub_path, exist_ok=True)
+
+        # Copy generated preview HTML to public directory
         pub_html_path = os.path.join(PUBLIC_DIR, f"{base_name}.html")
-        pub_zip_path = os.path.join(PUBLIC_DIR, f"{base_name}_SCORM2004.zip")
         shutil.copy2(result["html_path"], pub_html_path)
-        shutil.copy2(result["scorm_zip_path"], pub_zip_path)
+
+        has_scorm_zip = os.path.exists(result.get("scorm_zip_path", ""))
+        if has_scorm_zip:
+            pub_zip_path = os.path.join(PUBLIC_DIR, f"{base_name}_SCORM2004.zip")
+            shutil.copy2(result["scorm_zip_path"], pub_zip_path)
 
         # Also copy to DIST_DIR so Nginx in container can serve immediately
         if os.path.exists(DIST_DIR):
             try:
                 shutil.copy2(result["html_path"], os.path.join(DIST_DIR, f"{base_name}.html"))
-                shutil.copy2(result["scorm_zip_path"], os.path.join(DIST_DIR, f"{base_name}_SCORM2004.zip"))
+                if has_scorm_zip:
+                    shutil.copy2(result["scorm_zip_path"], os.path.join(DIST_DIR, f"{base_name}_SCORM2004.zip"))
             except Exception as dist_err:
                 print(f"Warning copying to DIST_DIR: {dist_err}")
 
@@ -533,10 +579,12 @@ async def convert_pptx_endpoint(file: UploadFile = File(...)):
         if clean_base != base_name:
             try:
                 shutil.copy2(result["html_path"], os.path.join(PUBLIC_DIR, f"{clean_base}.html"))
-                shutil.copy2(result["scorm_zip_path"], os.path.join(PUBLIC_DIR, f"{clean_base}_SCORM2004.zip"))
+                if has_scorm_zip:
+                    shutil.copy2(result["scorm_zip_path"], os.path.join(PUBLIC_DIR, f"{clean_base}_SCORM2004.zip"))
                 if os.path.exists(DIST_DIR):
                     shutil.copy2(result["html_path"], os.path.join(DIST_DIR, f"{clean_base}.html"))
-                    shutil.copy2(result["scorm_zip_path"], os.path.join(DIST_DIR, f"{clean_base}_SCORM2004.zip"))
+                    if has_scorm_zip:
+                        shutil.copy2(result["scorm_zip_path"], os.path.join(DIST_DIR, f"{clean_base}_SCORM2004.zip"))
             except Exception:
                 pass
 
@@ -572,6 +620,11 @@ async def convert_pptx_endpoint(file: UploadFile = File(...)):
             "scorm_zip_url": f"/{encoded_name}_SCORM2004.zip",
             "course_data": result.get("course_data", {})
         }
+    except Exception as conv_err:
+        import traceback
+        traceback.print_exc()
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=500, content={"success": False, "error": str(conv_err)})
     finally:
         shutil.rmtree(temp_dir, ignore_errors=True)
 

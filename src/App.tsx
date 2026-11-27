@@ -55,7 +55,7 @@ export function App() {
         return sanitizeUrl(saved);
       }
     } catch (e) { }
-    return '/Lesson 1.html';
+    return '';
   });
 
   // Dynamic Rich Course Data (Direct 1:1 with SCORM 2004 Engine chapters & blocks)
@@ -180,6 +180,16 @@ export function App() {
       };
       setUploadedCourse(safeInfo);
       setCurrentPreviewUrl(cleanUrl);
+
+      const singleCourse: AvailableCourse = {
+        name: safeInfo.filename || safeInfo.title,
+        title: safeInfo.title,
+        total_chapters: safeInfo.totalChapters,
+        preview_url: cleanUrl,
+        scorm_zip_url: safeInfo.scormZipUrl
+      };
+      setAvailableCourses([singleCourse]);
+
       if (info.courseData && info.courseData.chapters && info.courseData.chapters.length > 0) {
         setRichCourse({
           title: info.title,
@@ -187,6 +197,11 @@ export function App() {
           chapters: info.courseData.chapters
         });
       } else {
+        setRichCourse({
+          title: info.title,
+          name: info.filename || info.title,
+          chapters: []
+        });
         fetchCourseData(info.filename || info.previewUrl || info.title);
       }
       try {
@@ -325,6 +340,7 @@ export function App() {
       <Header
         course={course}
         uploadedCourse={uploadedCourse}
+        availableCourses={availableCourses}
         viewportMode={viewportMode}
         onViewportChange={setViewportMode}
         onOpenExport={() => setShowExportModal(true)}
@@ -354,6 +370,7 @@ export function App() {
             availableCourses={availableCourses}
             viewportMode={viewportMode}
             onViewportChange={setViewportMode}
+            onOpenUpload={() => setShowUploadModal(true)}
             onOpenEditor={() => {
               setActiveTab('editor');
               if (richCourse.chapters.length === 0) {

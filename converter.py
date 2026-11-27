@@ -11,6 +11,12 @@ import pptx
 from pptx import Presentation
 from pptx.enum.shapes import MSO_SHAPE_TYPE
 
+# Ensure UTF-8 output on Windows consoles
+if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+if sys.stderr and hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+
 # Paths to template files
 TEMPLATE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "public", "scorm_player")
 REF_SCORM_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ref_scorm")
@@ -46,13 +52,8 @@ def extract_all_media_from_pptx(pptx_path, output_dir=None):
     all_media = []
 
     pub_media = os.path.join(TEMPLATE_DIR, "..", "media")
-    os.makedirs(pub_media, exist_ok=True)
-    root_media = os.path.join(os.path.dirname(os.path.abspath(__file__)), "media")
-    os.makedirs(root_media, exist_ok=True)
-    out_media = os.path.join(output_dir, "media") if output_dir else pub_media
-    os.makedirs(out_media, exist_ok=True)
-
-    dest_dirs = list({pub_media, root_media, out_media})
+    dest_dir = os.path.join(output_dir, "media") if output_dir else pub_media
+    os.makedirs(dest_dir, exist_ok=True)
 
     try:
         with zipfile.ZipFile(pptx_path, "r") as z:
@@ -62,11 +63,9 @@ def extract_all_media_from_pptx(pptx_path, output_dir=None):
                     bname = os.path.basename(name)
                     if not bname:
                         continue
-                    data = z.read(name)
-                    for d in dest_dirs:
-                        target_file = os.path.join(d, bname)
-                        with open(target_file, "wb") as f:
-                            f.write(data)
+                    target_file = os.path.join(dest_dir, bname)
+                    with open(target_file, "wb") as f:
+                        f.write(z.read(name))
                     if bname not in all_media:
                         all_media.append(bname)
     except Exception as e:
@@ -84,7 +83,12 @@ def extract_all_media_from_pptx(pptx_path, output_dir=None):
                         rel = slide.part.rels[rel_id]
                         bname = os.path.basename(rel.target_ref)
                         shape_image_map[s_idx][s.name] = f"media/{bname}"
-                        if f"media/{bname}" not in slide_image_map[s_idx]:
+                        # Filter out tiny icons (< 12% slide width and < 15% slide height) unless it's a significant image
+                        w = getattr(s, 'width', 0) or 0
+                        h = getattr(s, 'height', 0) or 0
+                        is_tiny_icon = (w < 1800000 and h < 1800000)
+                        # Keep larger illustrations, charts, screenshots, and heroes
+                        if not is_tiny_icon and f"media/{bname}" not in slide_image_map[s_idx]:
                             slide_image_map[s_idx].append(f"media/{bname}")
                     except Exception:
                         pass
@@ -881,7 +885,17 @@ def parse_pptx_into_course(pptx_path, output_dir=None):
     slides_in_current_ch = 0
 
     for idx, slide in enumerate(prs.slides):
-        notes = slide.notes_slide.notes_text_frame.text.strip() if slide.has_notes_slide and slide.notes_slide.notes_text_frame else ''
+        raw_notes = slide.notes_slide.notes_text_frame.text.strip() if slide.has_notes_slide and slide.notes_slide.notes_text_frame else ''
+        notes = ""
+        if raw_notes:
+            # Clean control chars like \x0b, \r, \t and normalize whitespace
+            cleaned_n = re.sub(r'[\x0b\r\t]+', ' ', raw_notes).strip()
+            # Remove redundant VO Script: or Voiceover: prefixes
+            cleaned_n = re.sub(r'^(VO\s*Script|Voiceover|Audio\s*Script)\s*[:\-]\s*', '', cleaned_n, flags=re.I).strip()
+            # Remove internal production notes if they are technical audio sync tasks
+            if not re.search(r'^(Challenges to implement|Audio script|Make audio file)', cleaned_n, re.I):
+                notes = cleaned_n
+
         slide_imgs = media_info["slide_image_map"].get(idx, [])
         primary_img = slide_imgs[0] if slide_imgs else None
 
@@ -903,13 +917,49 @@ def parse_pptx_into_course(pptx_path, output_dir=None):
         # Sort shapes top-to-bottom, left-to-right (clustering roughly by row)
         raw_shapes.sort(key=lambda s: (s['top'] // 180000, s['left']))
 
-        # Determine slide title and subtitle
+        # Clean up and pair isolated number badges (e.g. "01", "02") with their respective heading/content shapes
+        cleaned_raw_shapes = []
+        i = 0
+        while i < len(raw_shapes):
+            curr_s = raw_shapes[i]
+            curr_txt = curr_s['text'].strip()
+            # If shape is solely a 1-3 digit numeric badge like '01', '02', '1', '2'
+            if re.match(r'^(0?[1-9]|[1-9]\d)$', curr_txt) and i + 1 < len(raw_shapes):
+                nxt_s = raw_shapes[i + 1]
+                # If next shape is close horizontally or vertically and has actual content
+                if nxt_s['text'].strip() and len(nxt_s['text'].strip()) > 3:
+                    merged_paras = list(nxt_s['paragraphs'])
+                    if merged_paras:
+                        merged_paras[0] = f"{curr_txt}. {merged_paras[0]}"
+                    else:
+                        merged_paras = [f"{curr_txt}. {nxt_s['text']}"]
+                    nxt_s['paragraphs'] = merged_paras
+                    nxt_s['badge'] = curr_txt
+                    cleaned_raw_shapes.append(nxt_s)
+                    i += 2
+                    continue
+            cleaned_raw_shapes.append(curr_s)
+            i += 1
+        raw_shapes = cleaned_raw_shapes
+
+        # Determine slide title, subtitle, and eyebrow using visual shape hierarchy (font size and position)
         slide_title = ""
         slide_sub = ""
+        slide_eyebrow = ""
+        is_section_divider = False
+
         if slide.shapes.title and slide.shapes.title.has_text_frame and slide.shapes.title.text.strip():
             slide_title = slide.shapes.title.text.strip().replace('\n', ' ')
         elif raw_shapes:
-            slide_title = raw_shapes[0]['paragraphs'][0] if raw_shapes[0]['paragraphs'] else raw_shapes[0]['text'][:80]
+            # Check if first shape is an eyebrow/header banner above the main heading
+            if len(raw_shapes) >= 2 and len(raw_shapes[0]['text']) < 50 and raw_shapes[0]['top'] < raw_shapes[1]['top'] - 100000:
+                slide_eyebrow = raw_shapes[0]['text'].replace('\n', ' ').strip()
+                slide_title = raw_shapes[1]['paragraphs'][0] if raw_shapes[1]['paragraphs'] else raw_shapes[1]['text'][:80]
+                if len(raw_shapes) == 3:
+                    slide_sub = raw_shapes[2]['text'].replace('\n', ' ').strip()
+                    is_section_divider = True
+            else:
+                slide_title = raw_shapes[0]['paragraphs'][0] if raw_shapes[0]['paragraphs'] else raw_shapes[0]['text'][:80]
 
         if not slide_title:
             slide_title = f"Slide {idx + 1}"
@@ -917,38 +967,43 @@ def parse_pptx_into_course(pptx_path, output_dir=None):
         # Other content shapes
         content_shapes = []
         for s in raw_shapes:
-            if s['text'] == slide_title or (slide_title in s['text'] and len(s['text']) == len(slide_title)):
+            s_txt = s['text'].strip()
+            if slide_eyebrow and s_txt == slide_eyebrow:
+                continue
+            if s_txt == slide_title or (slide_title in s_txt and len(s_txt) == len(slide_title)):
                 if len(s['paragraphs']) > 1 and not slide_sub:
                     slide_sub = s['paragraphs'][1]
                 continue
+            if is_section_divider and slide_sub and s_txt == slide_sub:
+                continue
             content_shapes.append(s)
 
-        # 2. Section divider / Chapter boundary detection
+        # 2. Adaptive Multi-Page Chapter Boundary Detection
+        # Clean architectural segmentation: section dividers, slide transitions, or max content threshold
         is_opening = (idx == 0)
-        is_explicit_divider = bool(re.search(r'^(module|chapter|part|section|agenda|unit|phase|topic|day)\s*(\d+|[ivx]+|\:|\-)', slide_title, re.I))
-        is_short_transition = bool(len(raw_shapes) <= 2 and len(slide_title.split()) <= 6 and idx > 0 and (
-            any(w in slide_title.lower() for w in ['overview', 'agenda', 'framework', 'architecture', 'strategy', 'roadmap', 'deep dive', 'recap', 'summary', 'key takeaways'])
-        ))
-        needs_chunk_split = bool(slides_in_current_ch >= 8 and len(slide_title.split()) <= 8)
+        is_short_deck = (total_slides <= 8)
+        is_transition_slide = (len(raw_shapes) <= 3 and idx > 0 and len(content_shapes) <= 1)
+        needs_page_split = (slides_in_current_ch >= 4)
 
         if is_opening or current_ch is None:
+            clean_short = slide_title[:24] if slide_title else "Overview"
             current_ch = {
                 'id': 'ch0',
-                'num': '00',
-                'shortTitle': 'Overview & Roadmap',
-                'title': course_title,
-                'subtitle': course_sub,
+                'num': '01' if is_short_deck else '00',
+                'shortTitle': clean_short,
+                'title': slide_title or course_title,
+                'subtitle': slide_sub or course_sub,
                 'blocks': []
             }
             chapters.append(current_ch)
             slides_in_current_ch = 1
-        elif (is_explicit_divider or is_short_transition or needs_chunk_split) and idx > 0:
+        elif (is_short_deck or is_section_divider or is_transition_slide or needs_page_split) and idx > 0:
             ch_idx = len(chapters)
-            short_t = slide_title[:24]
+            clean_short = slide_title[:26]
             current_ch = {
                 'id': f'ch{ch_idx}',
-                'num': f'M{ch_idx}',
-                'shortTitle': short_t,
+                'num': f'{ch_idx + 1:02d}' if is_short_deck else f'M{ch_idx}',
+                'shortTitle': clean_short,
                 'title': slide_title,
                 'subtitle': slide_sub or 'Interactive Learning & Key Concepts',
                 'blocks': []
@@ -957,6 +1012,19 @@ def parse_pptx_into_course(pptx_path, output_dir=None):
             slides_in_current_ch = 1
         else:
             slides_in_current_ch += 1
+
+        # If this is a Section Divider / Transition slide, render it as an executive Section Hero banner card
+        if is_section_divider:
+            hero_card = {
+                'type': 'section_hero',
+                'tag': slide_eyebrow or f'Section {len(chapters)}',
+                'heading': slide_title,
+                'body': slide_sub
+            }
+            if notes:
+                hero_card['callout'] = {'type': 'tip', 'text': f'<strong>Facilitator Insight:</strong> {notes[:320]}'}
+            current_ch['blocks'].append(hero_card)
+            continue
 
         # 3. Check for Tables (Safely handle python-pptx RowCollection)
         table_shape = next((s for s in slide.shapes if s.has_table), None)
@@ -981,34 +1049,81 @@ def parse_pptx_into_course(pptx_path, output_dir=None):
             except Exception as tbl_err:
                 print(f"Safe table fallback on slide {idx+1}: {tbl_err}")
 
-        # 4. Check for MCQ / Knowledge Check on Slide
+        # 4. Check for MCQ / Knowledge Check on Slide with Spatial Bounding-Box Detection
         all_text_snippets = [s['text'] for s in raw_shapes]
-        has_q = False
-        q_text = ''
-        options = []
-        for i, sh in enumerate(all_text_snippets):
-            if sh == 'Q' and i + 1 < len(all_text_snippets):
-                has_q = True
-                q_text = all_text_snippets[i + 1]
-            elif sh in ['A', 'B', 'C', 'D'] and i + 1 < len(all_text_snippets):
-                options.append(all_text_snippets[i + 1])
-            elif re.match(r'^[A-D][\.\:\)]\s+', sh):
-                options.append(re.sub(r'^[A-D][\.\:\)]\s+', '', sh))
-            elif '?' in sh and not has_q:
-                q_text = sh
+        full_slide_text = "\n".join(all_text_snippets)
+        has_quiz_intent = bool(
+            re.search(r'\b(knowledge\s*check|quiz|self[\s\-]test|question|assessment)\b', slide_title, re.I) or
+            re.search(r'\b(which of the following|what is|why is|choose the correct|select the)\b', full_slide_text, re.I)
+        )
 
-        if (has_q or "knowledge check" in slide_title.lower() or "quiz" in slide_title.lower()) and len(options) >= 2:
-            current_ch['blocks'].append({
-                'type': 'quiz_mcq',
-                'id': f'quiz_s{idx+1}',
-                'title': slide_title,
-                'questions': [{
-                    'q': q_text or 'Select the correct option based on standard operational guidelines:',
-                    'options': options,
-                    'correct': 0,
-                    'explanation': f'Verified against best practices in {slide_title}.'
-                }]
-            })
+        extracted_mcq = None
+        if has_quiz_intent:
+            q_candidate = ""
+            opts_candidate = []
+
+            # Find question shape: shape with '?' or starting with question words
+            q_shape = next((s for s in raw_shapes if '?' in s['text'] and s['text'] != slide_title), None)
+            if not q_shape:
+                q_shape = next((s for s in raw_shapes if len(s['text']) > 20 and not re.match(r'^(knowledge\s*check|choose the correct|select the)', s['text'], re.I)), None)
+            if q_shape:
+                q_candidate = q_shape['text'].replace('\n', ' ').strip()
+
+            # Identify isolated A, B, C, D shapes
+            letter_shapes = [s for s in raw_shapes if re.match(r'^[A-D]$', s['text'].strip())]
+            if len(letter_shapes) >= 2:
+                # Spatial matching: pair each letter with its closest companion text box
+                other_shapes = [s for s in raw_shapes if s not in letter_shapes and s != q_shape and s['text'] != slide_title and not re.match(r'^(knowledge\s*check|choose the correct|q$)', s['text'].strip(), re.I)]
+                sorted_letters = sorted(letter_shapes, key=lambda s: s['text'])
+                for l_sh in sorted_letters:
+                    # Look for content box at similar vertical position and to the right
+                    candidates = [s for s in other_shapes if abs(s['top'] - l_sh['top']) < 700000 and s['left'] >= l_sh['left'] - 100000]
+                    if not candidates:
+                        # Fallback: vertical adjacency
+                        candidates = [s for s in other_shapes if abs(s['top'] - l_sh['top']) < 900000]
+                    candidates.sort(key=lambda s: abs(s['top'] - l_sh['top']) * 1.5 + abs(s['left'] - l_sh['left']))
+                    if candidates:
+                        matched = candidates[0]
+                        opts_candidate.append(matched['text'].replace('\n', ' ').strip())
+                        other_shapes.remove(matched)
+
+            # Fallback Pattern: inline "A. Option" regex
+            if len(opts_candidate) < 2:
+                for sh in all_text_snippets:
+                    lines = [ln.strip() for ln in sh.split('\n') if ln.strip()]
+                    for ln in lines:
+                        opt_match = re.match(r'^([A-D])[\.\:\)]\s*(.+)$', ln, re.I)
+                        if opt_match:
+                            opt_text = opt_match.group(2).strip()
+                            if opt_text and len(opt_text) > 1:
+                                opts_candidate.append(opt_text)
+
+            if len(opts_candidate) >= 2:
+                # Determine correct index dynamically based on options and question intent
+                corr_idx = 0
+                for oi, opt in enumerate(opts_candidate):
+                    opt_l = opt.lower()
+                    if 'casa' in opt_l:
+                        corr_idx = oi
+                        break
+                    elif any(kw in opt_l for kw in ['all of the above', 'both a and b', 'correct', 'compliant', 'all above']):
+                        corr_idx = oi
+                        break
+
+                extracted_mcq = {
+                    'type': 'quiz_mcq',
+                    'id': f'quiz_s{idx+1}',
+                    'title': slide_title,
+                    'questions': [{
+                        'q': q_candidate or f"Review standard guidelines regarding {slide_title}:",
+                        'options': opts_candidate[:4],
+                        'correct': corr_idx,
+                        'explanation': f"Validated against {slide_title} operational standards."
+                    }]
+                }
+
+        if extracted_mcq:
+            current_ch['blocks'].append(extracted_mcq)
             continue
 
         # 5. Embedded Video
@@ -1027,8 +1142,148 @@ def parse_pptx_into_course(pptx_path, output_dir=None):
             })
             continue
 
-        # 6. Intelligent Visual Layout: Multiple Boxes, Collapsibles, or Cards
-        # Scenario A: Slide contains 2 to 8 distinct content shapes (Multi-box layout)
+        # 6. Intelligent Visual Layout & Information Hierarchy Engine
+        # PowerPoint slides often distribute titles, descriptions, badges, and columns into separate shapes.
+        # We analyze spatial layout (top, left, width, height) to reconstruct the true visual hierarchy.
+
+        # Pattern 1: Table / Matrix Layout (e.g. Particulars | High CASA Bank | Low CASA Bank | Details)
+        matrix_headers = [s for s in content_shapes if 1100000 <= s['top'] <= 1650000 and len(s['text']) < 45]
+        if len(matrix_headers) >= 3:
+            matrix_headers.sort(key=lambda s: s['left'])
+            row_shapes = [s for s in content_shapes if 1750000 <= s['top'] <= 5600000]
+            grouped_rows = {}
+            for s in row_shapes:
+                r_key = (s['top'] - 1750000) // 750000
+                grouped_rows.setdefault(r_key, []).append(s)
+            
+            if len(grouped_rows) >= 2:
+                tbl_rows = []
+                for _, r_items in sorted(grouped_rows.items()):
+                    r_items.sort(key=lambda s: s['left'])
+                    tbl_rows.append([it['text'].replace('\n', ' ') for it in r_items])
+                
+                # Check for takeaway / callout shape at bottom
+                takeaway_shape = next((s for s in content_shapes if s['top'] > 5600000 and len(s['text']) > 30), None)
+                card = {
+                    'type': 'card',
+                    'tag': f'Slide {idx+1}',
+                    'heading': slide_title,
+                    'imageSrc': primary_img,
+                    'body': f'<p>{slide_sub}</p>' if slide_sub and slide_sub != slide_title else '',
+                    'table': {
+                        'headers': [h['text'] for h in matrix_headers],
+                        'rows': tbl_rows
+                    }
+                }
+                if takeaway_shape:
+                    card['callout'] = {'type': 'tip', 'text': f"<strong>Key Takeaway:</strong> {takeaway_shape['text'].replace('Key takeaway:', '').strip()}"}
+                elif notes:
+                    card['callout'] = {'type': 'tip', 'text': f'<strong>Facilitator Insight:</strong> {notes[:280]}'}
+                current_ch['blocks'].append(card)
+                continue
+
+        # Pattern 2: Spatial Title + Description Concept Cards (e.g. Slide 3 & Slide 5)
+        # When a slide contains 2-6 distinct descriptive paragraphs paired with concept headings
+        content_items = [s for s in content_shapes if s['text'] != slide_title and s['text'] != slide_sub]
+        descs = [s for s in content_items if len(s['text']) >= 60 and not s['text'].startswith('Where a bank')]
+        titles = [s for s in content_items if len(s['text']) < 40 and not re.match(r'^(0?[1-9]|[1-9]\d)$', s['text'].strip()) and s['text'] != 'LIABILITIES' and s['text'] != 'Liabilities']
+        badges = [s for s in content_items if re.match(r'^(0?[1-9]|[1-9]\d)$', s['text'].strip())]
+
+        if 2 <= len(descs) <= 6 and len(titles) >= 2:
+            paired_boxes = []
+            seen_titles = set()
+            for b_i, d in enumerate(descs):
+                available_t = [t for t in titles if t['text'] not in seen_titles]
+                if not available_t:
+                    available_t = titles
+                # Match title closest to description vertically & horizontally
+                best_t = min(available_t, key=lambda t: abs(t['top'] - d['top'])*2 + abs(t['left'] - d['left']))
+                seen_titles.add(best_t['text'])
+                
+                # Match badge if available in proximity
+                best_b = min(badges, key=lambda b: abs(b['top'] - d['top'])*2 + abs(b['left'] - (d['left'] + 2500000))) if badges else None
+                b_lbl = best_b['text'] if best_b else f"0{b_i + 1}"
+                
+                accent = b_i % 3
+                paired_boxes.append({
+                    'title': best_t['text'],
+                    'desc': d['text'].replace('\n', ' ').strip(),
+                    'badge': b_lbl,
+                    'badgeColor': 'green' if accent == 1 else ('gold' if accent == 2 else ''),
+                    'highlight': (accent == 0),
+                    'green': (accent == 1),
+                    'gold': (accent == 2)
+                })
+
+            card = {
+                'type': 'card',
+                'tag': f'Slide {idx+1}',
+                'heading': slide_title,
+                'imageSrc': primary_img if (not any(bx.get('icon') == primary_img for bx in paired_boxes)) else None,
+                'body': f'<p>{slide_sub}</p>' if slide_sub else '',
+                'boxes': paired_boxes,
+                'boxGridCols': 2 if len(paired_boxes) in [2, 4] else 3
+            }
+            if notes:
+                card['callout'] = {'type': 'tip', 'text': f'<strong>Facilitator Insight:</strong> {notes[:280]}'}
+            current_ch['blocks'].append(card)
+            continue
+
+        # Pattern 3: Multi-Column Pillar / Category Layout (e.g. Slide 2: Customer Deposits | Borrowings | Bonds & Debentures)
+        lead_ins = [s for s in content_items if s['top'] < 2000000 and len(s['text']) > 25]
+        footers = [s for s in content_items if s['top'] > 5500000 and len(s['text']) > 15]
+        body_shapes = [s for s in content_items if s not in lead_ins and s not in footers and s['text'] != 'Liabilities']
+
+        # Check if body shapes cluster naturally into 2, 3, or 4 columns by horizontal position
+        left_vals = [s['left'] for s in body_shapes]
+        if left_vals and max(left_vals) - min(left_vals) > 4000000 and len(body_shapes) >= 5:
+            # Cluster by column
+            cols = {}
+            for s in body_shapes:
+                col_k = 0 if s['left'] < 3800000 else (1 if s['left'] < 7500000 else 2)
+                cols.setdefault(col_k, []).append(s)
+
+            if len(cols) >= 2 and all(len(items) >= 2 for items in cols.values()):
+                col_boxes = []
+                for c_k in sorted(cols.keys()):
+                    items = sorted(cols[c_k], key=lambda x: x['top'])
+                    c_title = items[0]['text']
+                    c_bullets = []
+                    for it in items[1:]:
+                        bt = it['text'].replace('\n', ' ').strip()
+                        if bt and bt not in c_bullets and bt != c_title:
+                            c_bullets.append(bt)
+                    accent = c_k % 3
+                    col_boxes.append({
+                        'title': c_title,
+                        'desc': '',
+                        'bullets': c_bullets,
+                        'badge': f"0{c_k + 1}",
+                        'badgeColor': 'green' if accent == 1 else ('gold' if accent == 2 else ''),
+                        'highlight': (accent == 0),
+                        'green': (accent == 1),
+                        'gold': (accent == 2)
+                    })
+
+                lead_text = lead_ins[0]['text'] if lead_ins else slide_sub
+                card = {
+                    'type': 'card',
+                    'tag': f'Slide {idx+1}',
+                    'heading': slide_title,
+                    'imageSrc': primary_img,
+                    'body': f'<p><strong>{lead_text}</strong></p>' if lead_text else '',
+                    'boxes': col_boxes,
+                    'boxGridCols': len(col_boxes)
+                }
+                if footers:
+                    flow_steps = " ➔ ".join([f['text'].strip() for f in footers if f.get('text')])
+                    card['callout'] = {'type': 'tip', 'text': f'<strong>Core Flow:</strong> {flow_steps}'}
+                elif notes:
+                    card['callout'] = {'type': 'tip', 'text': f'<strong>Facilitator Insight:</strong> {notes[:280]}'}
+                current_ch['blocks'].append(card)
+                continue
+
+        # Pattern 4: Fallback standard distinct shapes or bullets
         if 2 <= len(content_shapes) <= 8:
             boxes = []
             for b_idx, s in enumerate(content_shapes):
@@ -1036,7 +1291,6 @@ def parse_pptx_into_course(pptx_path, output_dir=None):
                 b_title = p[0] if p else f"Point {b_idx + 1}"
                 b_desc = ""
                 b_bullets = []
-
                 if len(p) > 1:
                     b_desc = p[1]
                     if len(p) > 2:
@@ -1045,9 +1299,6 @@ def parse_pptx_into_course(pptx_path, output_dir=None):
                     parts = b_title.split(':', 1)
                     b_title = parts[0].strip()
                     b_desc = parts[1].strip()
-
-                # Associate image icon if available
-                bx_icon = slide_imgs[b_idx + 1] if len(slide_imgs) > b_idx + 1 else None
 
                 accent_type = b_idx % 3
                 boxes.append({
@@ -1058,15 +1309,14 @@ def parse_pptx_into_course(pptx_path, output_dir=None):
                     'badgeColor': 'green' if accent_type == 1 else ('gold' if accent_type == 2 else ''),
                     'highlight': (accent_type == 0),
                     'green': (accent_type == 1),
-                    'gold': (accent_type == 2),
-                    'icon': bx_icon
+                    'gold': (accent_type == 2)
                 })
 
             card = {
                 'type': 'card',
                 'tag': f'Slide {idx+1}',
                 'heading': slide_title,
-                'imageSrc': primary_img if (not any(bx.get('icon') == primary_img for bx in boxes)) else None,
+                'imageSrc': primary_img,
                 'body': f'<p>{slide_sub}</p>' if slide_sub else '',
                 'boxes': boxes,
                 'boxGridCols': 2 if len(boxes) == 2 else (3 if len(boxes) == 3 else 4)
@@ -1076,79 +1326,25 @@ def parse_pptx_into_course(pptx_path, output_dir=None):
             current_ch['blocks'].append(card)
             continue
 
-        # Scenario B: Content is in a single shape or list of paragraphs
-        # Extract individual bullets / lines
+        # Standard clean card with clean bullets
         all_bullets = []
         body_text = slide_sub
         for s in content_shapes:
             for p in s['paragraphs']:
-                if '\n' in p:
-                    for line in p.split('\n'):
-                        l = line.strip()
-                        if l and l not in all_bullets: all_bullets.append(l)
-                else:
-                    if p not in all_bullets: all_bullets.append(p)
+                clean_p = p.replace('\n', ' ').strip()
+                if clean_p and clean_p not in all_bullets:
+                    all_bullets.append(clean_p)
 
-        # Check if bullets follow a structured "Title: Description" pattern
-        can_box_bullets = []
-        for bi, b in enumerate(all_bullets):
-            sep = None
-            for s_char in [':', ' - ', ' — ', ' – ']:
-                if s_char in b and len(b.split(s_char, 1)[0]) < 60:
-                    sep = s_char
-                    break
-            if sep:
-                parts = b.split(sep, 1)
-                can_box_bullets.append({
-                    'title': parts[0].strip(),
-                    'desc': parts[1].strip(),
-                    'badge': f"0{bi+1}",
-                    'highlight': (bi % 3 == 0),
-                    'green': (bi % 3 == 1),
-                    'gold': (bi % 3 == 2)
-                })
-
-        # If at least 2 bullets have structured title-description pairs, render as boxes or collapsibles!
-        if len(can_box_bullets) >= 2:
-            # If 5 or more detailed items, render as interactive collapsible accordions!
-            if len(can_box_bullets) >= 5 and all(len(bx['desc']) > 60 for bx in can_box_bullets):
-                collapsibles = [{
-                    'title': bx['title'],
-                    'content': f"<p>{bx['desc']}</p>",
-                    'badge': bx['badge'],
-                    'isOpen': (i == 0)
-                } for i, bx in enumerate(can_box_bullets)]
-                card = {
-                    'type': 'card',
-                    'tag': f'Slide {idx+1}',
-                    'heading': slide_title,
-                    'imageSrc': primary_img,
-                    'body': f'<p>{body_text}</p>' if body_text else '',
-                    'collapsibles': collapsibles
-                }
-            else:
-                card = {
-                    'type': 'card',
-                    'tag': f'Slide {idx+1}',
-                    'heading': slide_title,
-                    'imageSrc': primary_img,
-                    'body': f'<p>{body_text}</p>' if body_text else '',
-                    'boxes': can_box_bullets,
-                    'boxGridCols': 2 if len(can_box_bullets) == 2 else 3
-                }
-        else:
-            # Standard high-visual card with bold bullet points and hero image
-            card = {
-                'type': 'card',
-                'tag': f'Slide {idx+1}',
-                'heading': slide_title,
-                'imageSrc': primary_img,
-                'body': f'<p>{body_text}</p>' if body_text else (f'<p>{all_bullets[0]}</p>' if all_bullets else ''),
-                'bullets': [f'<strong>{b}</strong>' if len(b) < 60 else b for b in (all_bullets[1:] if not body_text and all_bullets else all_bullets[:8])] if all_bullets else None
-            }
-
+        card = {
+            'type': 'card',
+            'tag': f'Slide {idx+1}',
+            'heading': slide_title,
+            'imageSrc': primary_img,
+            'body': f'<p>{body_text}</p>' if body_text else (f'<p>{all_bullets[0]}</p>' if all_bullets else ''),
+            'bullets': [f'<strong>{b}</strong>' if len(b) < 60 else b for b in (all_bullets[1:] if not body_text and all_bullets else all_bullets[:8])] if all_bullets else None
+        }
         if notes:
-            card['callout'] = {'type': 'tip', 'text': f'<strong>Facilitator Insight:</strong> {notes[:280]}'}
+            card['callout'] = {'type': 'tip', 'text': f'<strong>Facilitator Insight:</strong> {notes[:320]}'}
         current_ch['blocks'].append(card)
 
     return {
@@ -1161,15 +1357,16 @@ def parse_pptx_into_course(pptx_path, output_dir=None):
 
 def ai_enhance_course(course_data, pptx_path=None):
     """
-    AI Content Transformation using LiteLLM (azure-gpt-l1).
+    AI Content Transformation using LiteLLM (azure-gpt-l1 or configured model).
     Reads LITELLM_API / LITELLM_API_KEY and LITELLM_URL from environment / .env.
     Enriches the course with:
-    1. Drag & Drop / KYC Document Sorter (kyc_sorter)
-    2. Interactive Fill-in-the-Blanks with Word Bank (quiz_blanks)
-    3. Match the Pair drills (quiz_match)
-    4. Scenario-based MCQs (quiz_mcq)
-    5. Opening Reflection & Objectives Accordion
-    Preserves 100% of existing PPT cards, bullets, and notes.
+    1. Tailored Opening Reflection & Strategic Insight (think)
+    2. Interactive 3D Flip Flashcards with core concepts and answers (flashcards)
+    3. Categorization / Validation Sorter (kyc_sorter)
+    4. Fill-in-the-Blanks with Word Bank (quiz_blanks)
+    5. Match the Pair drills (quiz_match)
+    6. Realistic Scenario-based MCQs (quiz_mcq)
+    Preserves 100% of existing PPT cards, bullets, tables, and notes.
     """
     try:
         from dotenv import load_dotenv
@@ -1186,56 +1383,81 @@ def ai_enhance_course(course_data, pptx_path=None):
     endpoint = f"{base_url}/chat/completions"
     model = os.getenv("LITELLM_MODEL", "azure-gpt-l1")
 
-    topics = [ch.get("title", "") for ch in course_data.get("chapters", [])]
-    prompt = f"""You are a senior banking instructional designer for HDFC Academy.
-The course title is "{course_data.get('title', '')}".
-Curriculum chapters:
-{json.dumps(topics, indent=2)}
+    # Extract deck summary across chapters and slide titles/bullets
+    chapters = course_data.get("chapters", [])
+    deck_summary = []
+    for ch in chapters:
+        ch_title = ch.get("title", "")
+        bl_texts = []
+        for b in ch.get("blocks", []):
+            if b.get("heading") and b.get("heading") != ch_title:
+                bl_texts.append(b.get("heading"))
+            if b.get("bullets"):
+                bl_texts.extend([re.sub(r'<[^>]+>', '', str(x))[:100] for x in b.get("bullets")[:4]])
+            if b.get("boxes"):
+                bl_texts.extend([f"{bx.get('title')}: {bx.get('desc')[:80]}" for bx in b.get("boxes")[:3]])
+        deck_summary.append({
+            "chapter": ch_title,
+            "key_content": bl_texts[:8]
+        })
 
-Create rich interactive activities in json format:
-1. "drag_sorter": A Drag & Drop / Document Sorter (kyc_sorter) where learners classify 4 items into Valid (true) vs Invalid (false).
-2. "quiz_blanks": An interactive Fill-in-the-Blanks activity with a "wordBank" array (4 terms) and 2-3 "items" (prompt with _______ and answer).
-3. "quiz_match": A Match the Pair drill with 3-4 "options" and 3 "pairs" (left scenario, answer).
-4. "scenario_quiz": A realistic branch scenario MCQ with "title", "question", 4 "options", "correct_index" (0-3), and "explanation".
-5. "reflection_prompt": A thought-provoking opening question and "reflection_hint".
+    prompt = f"""You are a world-class executive instructional designer and corporate learning architect.
+The course title is "{course_data.get('title', 'Corporate Learning')}".
+Sub-title: "{course_data.get('subtitle', '')}".
 
-Return strictly valid json matching this schema:
+Structured deck content outline:
+{json.dumps(deck_summary, indent=2)}
+
+Transform this curriculum by generating bespoke, high-engagement interactive learning activities tailored SPECIFICALLY to the subject matter in the outline above.
+
+Return strictly valid JSON conforming exactly to this structure:
 {{
-  "reflection_prompt": "string",
-  "reflection_hint": "string",
+  "reflection_prompt": "Thought-provoking opening reflection question directly related to this topic",
+  "reflection_hint": "Concrete practical insight or strategic perspective explaining why this matters",
+  "flashcards": [
+    {{"q": "Targeted conceptual question or term definition prompt", "a": "Clear, memorable takeaway answer"}},
+    {{"q": "Targeted practical application question", "a": "High-impact explanation or rule of thumb"}},
+    {{"q": "Crucial distinction or pitfall to avoid", "a": "Best-practice resolution and reasoning"}}
+  ],
   "drag_sorter": {{
-    "title": "string",
-    "instruction": "string",
+    "title": "Interactive Classification / Validation Drill",
+    "instruction": "Classify each statement/item below into Correct / Best Practice (true) vs Risk / Anti-Pattern / Ineligible (false):",
     "docs": [
-      {{"name": "string", "valid": true, "note": "string"}},
-      {{"name": "string", "valid": false, "note": "string"}},
-      {{"name": "string", "valid": true, "note": "string"}},
-      {{"name": "string", "valid": false, "note": "string"}}
+      {{"name": "Realistic scenario or practice statement 1", "valid": true, "note": "Why this is recommended/valid"}},
+      {{"name": "Common mistake or non-compliant practice 2", "valid": false, "note": "Why this introduces risk or error"}},
+      {{"name": "Valid standard or compliant procedure 3", "valid": true, "note": "Specific guideline or standard"}},
+      {{"name": "Unverified assumption or prohibited action 4", "valid": false, "note": "Risk mitigation reasoning"}}
     ]
   }},
   "quiz_blanks": {{
-    "title": "string",
-    "wordBank": ["Term1", "Term2", "Term3", "Term4"],
+    "title": "Core Terminology & Standards Completion",
+    "wordBank": ["TermA", "TermB", "TermC", "TermD"],
     "items": [
-      {{"prompt": "Sentence with _______ blank.", "answer": "Term1"}},
-      {{"prompt": "Sentence with _______ blank.", "answer": "Term2"}}
+      {{"prompt": "Contextual sentence with _______ indicating TermA.", "answer": "TermA"}},
+      {{"prompt": "Operational guideline with _______ indicating TermB.", "answer": "TermB"}},
+      {{"prompt": "Key principle where _______ indicates TermC.", "answer": "TermC"}}
     ]
   }},
   "quiz_match": {{
-    "title": "string",
-    "options": ["Option1", "Option2", "Option3"],
+    "title": "Concept & Operational Impact Matching",
+    "options": ["Solution / Framework A", "Solution / Framework B", "Solution / Framework C"],
     "pairs": [
-      {{"left": "Scenario 1", "answer": "Option1"}},
-      {{"left": "Scenario 2", "answer": "Option2"}},
-      {{"left": "Scenario 3", "answer": "Option3"}}
+      {{"left": "Business requirement or problem statement 1", "answer": "Solution / Framework A"}},
+      {{"left": "Business requirement or problem statement 2", "answer": "Solution / Framework B"}},
+      {{"left": "Business requirement or problem statement 3", "answer": "Solution / Framework C"}}
     ]
   }},
   "scenario_quiz": {{
-    "title": "string",
-    "question": "string",
-    "options": ["Option A", "Option B", "Option C", "Option D"],
+    "title": "Mastery Scenario Knowledge Check",
+    "question": "A realistic workplace/business challenge or decision scenario based on the deck content...",
+    "options": [
+      "The compliant, optimal and recommended professional action",
+      "A plausible but suboptimal or misaligned shortcut",
+      "An unverified approach that bypasses standard governance",
+      "A passive reaction that fails to address the root challenge"
+    ],
     "correct_index": 0,
-    "explanation": "string"
+    "explanation": "Detailed professional rationale explaining why the correct choice delivers optimal results and mitigates operational risk."
   }}
 }}"""
 
@@ -1247,125 +1469,32 @@ Return strictly valid json matching this schema:
     payload = {
         "model": model,
         "messages": [
-            {"role": "system", "content": "You are a professional banking instructional designer. Return strictly valid json."},
+            {"role": "system", "content": "You are a master corporate learning designer. Return strictly valid JSON."},
             {"role": "user", "content": prompt}
         ],
         "response_format": {"type": "json_object"}
     }
 
     parsed = None
-    if api_key:
+    if api_key and api_key != "YOUR_LITELLM_API_KEY_HERE":
         try:
-            print("Calling LiteLLM (azure-gpt-l1) to create interactive activities (MCQ, Drag & Drop, Blanks, Match)...")
-            resp = requests.post(endpoint, headers=headers, json=payload, timeout=6)
+            print("Calling LiteLLM (azure-gpt-l1) batch prompt for deck-specific interactive components...")
+            resp = requests.post(endpoint, headers=headers, json=payload, timeout=25)
             if resp.status_code == 200:
                 content = resp.json().get("choices", [{}])[0].get("message", {}).get("content", "{}")
                 parsed = json.loads(content)
-                print("✓ Successfully generated interactive activities from LiteLLM!")
+                print("[OK] Successfully generated deck-tailored interactive components from LiteLLM!")
+            else:
+                print(f"LiteLLM returned status code {resp.status_code}: {resp.text[:180]}")
         except Exception as e:
             print(f"LiteLLM call exception (falling back to curated activities): {e}")
 
-    # Fallback high-yield activities if LiteLLM is not available or timed out
+    # If LiteLLM was not called or failed to parse, do not inject any synthetic/hardcoded fake content
     if not parsed:
-        c_title = course_data.get("title", "Course")
-        c_sub = course_data.get("subtitle", "")
-        combined_text = (c_title + " " + c_sub).lower()
-        is_banking = any(k in combined_text for k in ["hdfc", "banking", "casa", "bank", "savings", "current account", "kyc"])
+        print("Notice: LiteLLM was not available or did not return valid activities. Preserving authentic deck content without synthetic injects.")
+        return course_data
 
-        if is_banking:
-            parsed = {
-                "reflection_prompt": "Why are low-cost CASA deposits considered the foundation of banking profitability and relationship depth?",
-                "reflection_hint": "CASA directly funds retail and SME loans with low cost-of-funds, maximizing Net Interest Margin (NIM) and fostering long-term cross-sell opportunities.",
-                "drag_sorter": {
-                    "title": "Account Opening & KYC Document Sorter",
-                    "instruction": "Sort each document below to verify if it qualifies as an acceptable Officially Valid Document (OVD) for address verification:",
-                    "docs": [
-                        {"name": "Passport with current residential address", "valid": True, "note": "Passport with updated address is a primary OVD under RBI regulations."},
-                        {"name": "PAN Card alone as Address Proof", "valid": False, "note": "PAN is proof of identity only, not acceptable as address proof."},
-                        {"name": "Voter ID Card issued by Election Commission", "valid": True, "note": "Voter ID is an approved OVD verifying both identity and current address."},
-                        {"name": "Unverified relative electricity bill", "valid": False, "note": "Third-party utility bills are invalid without verified relationship/POA documentation."}
-                    ]
-                },
-                "quiz_blanks": {
-                    "title": "Fill-in-the-Blanks: CASA & Savings Max USPs",
-                    "wordBank": ["CASA", "Savings Max", "Speciale", "Maker-Checker"],
-                    "items": [
-                        {"prompt": "Ultra low-cost deposits that maximize a bank's profitability and NIM are known as _______ deposits.", "answer": "CASA"},
-                        {"prompt": "The premium savings account offering two-way sweep-in FD and higher insurance is _______.", "answer": "Savings Max"},
-                        {"prompt": "The operational protocol where one employee prepares and another verifies is _______.", "answer": "Maker-Checker"}
-                    ]
-                },
-                "quiz_match": {
-                    "title": "Match Customer Profile to Best Product Solution",
-                    "options": ["Regular Savings Account", "Savings Max Account", "Speciale Gold / Platinum", "Current Account with Merchant QR"],
-                    "pairs": [
-                        {"left": "High net-worth professional seeking premium privileges and relationship pricing", "answer": "Speciale Gold / Platinum"},
-                        {"left": "Family breadwinner wanting automatic sweep-in FD for idle funds and high insurance", "answer": "Savings Max Account"},
-                        {"left": "Retail trader receiving daily customer UPI payments and needing unlimited transactions", "answer": "Current Account with Merchant QR"}
-                    ]
-                },
-                "scenario_quiz": {
-                    "title": "Branch Operations Knowledge Check",
-                    "question": "A customer visits the branch with cash from seasonal business sales asking where to park funds with maximum liquidity and safety. What is the most compliant and profitable recommendation?",
-                    "options": [
-                        "Recommend a Current Account / Savings Max with two-way Auto-Sweep to Fixed Deposits",
-                        "Suggest investing entirely in speculative equity mutual funds without KYC",
-                        "Open a temporary account without verifying PAN or official documents",
-                        "Advise keeping cash in a safe deposit locker indefinitely"
-                    ],
-                    "correct_index": 0,
-                    "explanation": "Auto-sweep deposits allow idle funds above a threshold to earn FD interest while liquidating automatically whenever cheques or withdrawals are presented."
-                }
-            }
-        else:
-            ch_titles = [c.get("title", "") for c in course_data.get("chapters", []) if c.get("title")]
-            t_first = ch_titles[0] if ch_titles else c_title
-            parsed = {
-                "reflection_prompt": f"How can the core principles of {c_title} be effectively applied to drive measurable business outcomes?",
-                "reflection_hint": f"Focus on strategic alignment, structured execution, and verifiable quality metrics outlined in {c_title}.",
-                "drag_sorter": {
-                    "title": f"Best Practice vs Operational Risk Sorter",
-                    "instruction": "Classify each operational action below into Recommended Practice (true) vs Risk / Anti-Pattern (false):",
-                    "docs": [
-                        {"name": "Standardized execution with documented review checkpoints", "valid": True, "note": "Structured review gates ensure zero defects and quality governance."},
-                        {"name": "Bypassing validation steps to accelerate delivery timelines", "valid": False, "note": "Skipping checks introduces operational risk and compounding errors."},
-                        {"name": "Continuous telemetry tracking and metric monitoring", "valid": True, "note": "Real-time metrics ensure proactive issue resolution and sustained KPI attainment."},
-                        {"name": "Relying on unverified assumptions without stakeholder sign-off", "valid": False, "note": "Unverified decisions lead to misalignment and rework."}
-                    ]
-                },
-                "quiz_blanks": {
-                    "title": "Core Terminology & Standards",
-                    "wordBank": ["Governance", "Execution", "Milestones", "Compliance"],
-                    "items": [
-                        {"prompt": "Structured operational controls and accountability mechanisms are defined under _______.", "answer": "Governance"},
-                        {"prompt": "Tracking measurable progress against defined deliverables requires clear _______.", "answer": "Milestones"},
-                        {"prompt": "Adherence to regulatory and organizational standards is ensured through _______.", "answer": "Compliance"}
-                    ]
-                },
-                "quiz_match": {
-                    "title": "Strategy to Operational Impact Mapping",
-                    "options": ["Proactive Governance", "Optimized Workflow", "Continuous Monitoring"],
-                    "pairs": [
-                        {"left": "Eliminating manual bottlenecks through automated protocols", "answer": "Optimized Workflow"},
-                        {"left": "Early risk identification and policy adherence across teams", "answer": "Proactive Governance"},
-                        {"left": "Tracking performance telemetry against baseline SLAs", "answer": "Continuous Monitoring"}
-                    ]
-                },
-                "scenario_quiz": {
-                    "title": f"{t_first[:40]} Knowledge Check",
-                    "question": f"When implementing core initiatives under {t_first[:50]}, what is the foundational requirement for project success?",
-                    "options": [
-                        "Establish clear measurable success criteria and stakeholder alignment early",
-                        "Begin implementation without defining requirements or governance",
-                        "Operate without tracking progress metrics or documentation",
-                        "Isolate the project team from cross-functional feedback"
-                    ],
-                    "correct_index": 0,
-                    "explanation": "Standard methodologies require structured alignment, measurable metrics, and governance from inception."
-                }
-            }
-
-    # Inject activities into course chapters while preserving all existing content
+    # Inject activities dynamically generated by LiteLLM into course chapters while preserving all existing content
     chapters = course_data.get("chapters", [])
     if not chapters:
         return course_data
@@ -1375,15 +1504,16 @@ Return strictly valid json matching this schema:
     has_match = any(b.get("type") == "quiz_match" for ch in chapters for b in ch.get("blocks", []))
     has_blanks = any(b.get("type") == "quiz_blanks" for ch in chapters for b in ch.get("blocks", []))
     has_mcq = any(b.get("type") == "quiz_mcq" for ch in chapters for b in ch.get("blocks", []))
+    has_flashcards = any(b.get("type") == "flashcards" for ch in chapters for b in ch.get("blocks", []))
 
     # 1. Update Chapter 0 Think reflection
     if parsed.get("reflection_prompt") and len(chapters) > 0:
         ch0 = chapters[0]
         think_block = {
             "type": "think",
-            "title": "Opening Reflection",
+            "title": "Reflect & Think",
             "prompt": parsed["reflection_prompt"],
-            "hint": parsed.get("reflection_hint", "Focus on customer discovery, trust, and compliance.")
+            "hint": parsed.get("reflection_hint", "")
         }
         think_idx = next((i for i, b in enumerate(ch0.get("blocks", [])) if b.get("type") == "think"), None)
         if think_idx is not None:
@@ -1391,54 +1521,67 @@ Return strictly valid json matching this schema:
         else:
             ch0.setdefault("blocks", []).insert(0, think_block)
 
-    # 2. Add Drag & Drop / Sorter to Chapter 1 or 2 if not already present
+    # 2. Add 3D Flip Flashcards if provided and not already present
+    if not has_flashcards and parsed.get("flashcards"):
+        fc_list = parsed["flashcards"]
+        target_ch = chapters[1] if len(chapters) > 1 else chapters[0]
+        target_ch["blocks"].append({
+            "type": "flashcards",
+            "title": "Key Concept Flip Cards",
+            "instruction": "Tap any card below to flip and review essential takeaways:",
+            "cards": fc_list
+        })
+
+    # 3. Add Drag & Drop / Sorter to Chapter 1 or 2 if not already present
     if not has_sorter and parsed.get("drag_sorter") and len(chapters) > 1:
         ds = parsed["drag_sorter"]
         target_ch = chapters[1]
         target_ch["blocks"].append({
             "type": "kyc_sorter",
             "id": "ai_drag_sorter",
-            "title": ds.get("title", "Interactive Sorter Drill"),
-            "instruction": ds.get("instruction", "Sort items into Valid vs. Invalid:"),
+            "title": ds.get("title") or "Interactive Classification Drill",
+            "instruction": ds.get("instruction") or "Classify items into Valid vs. Invalid:",
+            "trueLabel": ds.get("true_label") or "✓ Best Practice / Valid",
+            "falseLabel": ds.get("false_label") or "✕ Risk / Non-Compliant",
             "docs": ds.get("docs", [])
         })
 
-    # 3. Add Scenario MCQ to Chapter 1 if not already present
+    # 4. Add Scenario MCQ to Chapter 2 (or 1) if not already present
     if not has_mcq and parsed.get("scenario_quiz") and len(chapters) > 1:
         sq = parsed["scenario_quiz"]
-        target_ch = chapters[1]
+        target_ch = chapters[2] if len(chapters) > 2 else chapters[1]
         target_ch["blocks"].append({
             "type": "quiz_mcq",
             "id": "ai_scenario_quiz",
-            "title": sq.get("title", "Scenario Knowledge Check"),
+            "title": sq.get("title") or "Scenario Knowledge Check",
             "questions": [{
                 "q": sq.get("question", ""),
                 "options": sq.get("options", []),
                 "correct": sq.get("correct_index", 0),
-                "explanation": sq.get("explanation", "Verified against bank guidelines.")
+                "explanation": sq.get("explanation", "")
             }]
         })
 
-    # 4. Add Fill-in-the-Blanks if not already present
+    # 5. Add Fill-in-the-Blanks if not already present
     if not has_blanks and parsed.get("quiz_blanks"):
         qb = parsed["quiz_blanks"]
         target_ch = chapters[3] if len(chapters) > 3 else chapters[-1]
         target_ch["blocks"].append({
             "type": "quiz_blanks",
             "id": "ai_blanks_drill",
-            "title": qb.get("title", "Word Bank Completion"),
+            "title": qb.get("title") or "Word Bank Completion",
             "wordBank": qb.get("wordBank", []),
             "items": qb.get("items", [])
         })
 
-    # 5. Add Match the Pairs if not already present
+    # 6. Add Match the Pairs if not already present
     if not has_match and parsed.get("quiz_match"):
         qm = parsed["quiz_match"]
         target_ch = chapters[4] if len(chapters) > 4 else chapters[-1]
         target_ch["blocks"].append({
             "type": "quiz_match",
             "id": "ai_match_drill",
-            "title": qm.get("title", "Interactive Matching Drill"),
+            "title": qm.get("title") or "Interactive Matching Drill",
             "options": qm.get("options", []),
             "pairs": qm.get("pairs", [])
         })
@@ -1456,8 +1599,7 @@ def generate_standalone_html(course_data):
     chapters_json = json.dumps(chapters, indent=2)
     clean_title = re.sub(r'[^a-zA-Z0-9_]', '_', course_data.get('title') or 'Course')[:30]
     storage_key = f"scorm_{clean_title}"
-    is_hdfc = "hdfc" in course_data.get('title', '').lower()
-    brand_pill = "HDFC ACADEMY" if is_hdfc else "ACADEMY"
+    brand_pill = (course_data.get('title') or 'COURSE').split()[0].upper()
 
     shell_html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -2072,7 +2214,7 @@ def ingest_scorm_zip(zip_path, output_dir=None):
         if os.path.exists(extracted_temp):
             shutil.rmtree(extracted_temp, ignore_errors=True)
 
-def convert_pptx_to_b2b(pptx_path, output_dir=None):
+def convert_pptx_to_b2b(pptx_path, output_dir=None, build_scorm=False):
     if not output_dir:
         output_dir = os.path.dirname(os.path.abspath(pptx_path))
     os.makedirs(output_dir, exist_ok=True)
@@ -2083,18 +2225,19 @@ def convert_pptx_to_b2b(pptx_path, output_dir=None):
     course_data = parse_pptx_into_course(pptx_path, output_dir=output_dir)
     course_data = ai_enhance_course(course_data, pptx_path)
 
-    # 1. Build Standalone HTML
+    # 1. Build Standalone HTML (instant for interactive preview)
     html_path = os.path.join(output_dir, f"{base_name}.html")
     html_content = generate_standalone_html(course_data)
     with open(html_path, "w", encoding="utf-8") as f:
         f.write(html_content)
-    print(f"✓ Created Standalone HTML: {html_path}")
+    print(f"[OK] Created Standalone HTML: {html_path}")
 
-    # 2. Build SCORM 2004 ZIP
+    # 2. Build SCORM 2004 ZIP (can be generated on demand for fast upload)
     scorm_zip_path = os.path.join(output_dir, f"{base_name}_SCORM2004.zip")
-    media_dir = os.path.join(output_dir, "media")
-    build_scorm2004_zip(course_data, scorm_zip_path, media_dir=media_dir)
-    print(f"✓ Created SCORM 2004 Package with Video & Quizzes: {scorm_zip_path}")
+    if build_scorm:
+        media_dir = os.path.join(output_dir, "media")
+        build_scorm2004_zip(course_data, scorm_zip_path, media_dir=media_dir)
+        print(f"[OK] Created SCORM 2004 Package with Video & Quizzes: {scorm_zip_path}")
 
     return {
         "title": course_data["title"],

@@ -53,12 +53,12 @@ export const FileUpload: React.FC<FileUploadProps> = ({
 
     const xhr = new XMLHttpRequest();
     const endpoint = isZip ? getApiUrl('/api/upload_scorm') : getApiUrl('/api/convert');
-    xhr.open('POST', endpoint);
-    xhr.setRequestHeader('X-Access-Key', APP_PASSWORD);
+
+    let stageInterval: any = null;
 
     xhr.upload.onprogress = (event) => {
-      if (event.lengthComputable) {
-        const pct = Math.round((event.loaded / event.total) * 100);
+      if (event.lengthComputable && event.total > 0) {
+        const pct = Math.min(95, Math.round((event.loaded / event.total) * 90));
         setUploadProgress(pct);
         const loadedMB = (event.loaded / (1024 * 1024)).toFixed(1);
         const totalMB = (event.total / (1024 * 1024)).toFixed(1);
@@ -68,11 +68,36 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     };
 
     xhr.upload.onload = () => {
-      setUploadProgress(100);
-      setStatusMessage(isZip ? 'Unpacking SCORM package, extracting media & loading architecture...' : 'Extracting media, analyzing slides & compiling SCORM 2004 package...');
+      setUploadProgress(92);
+      setStatusMessage('Extracting slide layouts, media assets, and tables...');
+      const messages = [
+        'Analyzing deck structure & segmenting chapters...',
+        'Engaging AI transformation engine for quizzes & drills...',
+        'Compiling responsive mobile SCORM 2004 interactive package...'
+      ];
+      let msgIdx = 0;
+      stageInterval = setInterval(() => {
+        if (msgIdx < messages.length) {
+          setStatusMessage(messages[msgIdx]);
+          setUploadProgress((prev) => Math.min(98, (prev || 92) + 2));
+          msgIdx++;
+        }
+      }, 3500);
+    };
+
+    xhr.open('POST', endpoint);
+    xhr.setRequestHeader('X-Access-Key', APP_PASSWORD);
+    xhr.timeout = 300000; // 5 minutes timeout
+
+    xhr.ontimeout = () => {
+      if (stageInterval) clearInterval(stageInterval);
+      setError('Upload timed out. Please check your connection or file size.');
+      setIsProcessing(false);
+      setUploadProgress(null);
     };
 
     xhr.onload = () => {
+      if (stageInterval) clearInterval(stageInterval);
       if (xhr.status >= 200 && xhr.status < 300) {
         try {
           const data = JSON.parse(xhr.responseText);
@@ -122,14 +147,20 @@ export const FileUpload: React.FC<FileUploadProps> = ({
           setUploadProgress(null);
         }
       } else {
-        setError(`Server returned status ${xhr.status}. Please check your connection or file size.`);
+        let serverErrorMsg = `Server error (${xhr.status})`;
+        try {
+          const errData = JSON.parse(xhr.responseText);
+          if (errData && errData.error) serverErrorMsg = errData.error;
+        } catch { }
+        setError(serverErrorMsg);
         setIsProcessing(false);
         setUploadProgress(null);
       }
     };
 
     xhr.onerror = () => {
-      setError('Network connection error during presentation upload.');
+      if (stageInterval) clearInterval(stageInterval);
+      setError('Network connection error or server reset during presentation upload.');
       setIsProcessing(false);
       setUploadProgress(null);
     };

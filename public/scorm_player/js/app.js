@@ -430,8 +430,37 @@
     `;
   }
 
+  function renderStats(stats) {
+    if (!stats || !stats.length) return '';
+    return `
+      <div class="stat-grid">
+        ${stats.map(st => `
+          <div class="stat-tile">
+            <div class="stat-tile-val">${escapeHtml(st.value || '')}</div>
+            <div class="stat-tile-lbl">${escapeHtml(st.label || '')}</div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
   function renderBlock(block) {
     const audioHtml = renderAudioBar(block.audioUrl, block.audioTitle);
+
+    if (block.type === 'section_hero') {
+      const calloutHtml = block.callout
+        ? `<div class="callout ${block.callout.type || ''}">${block.callout.text}</div>`
+        : '';
+      return `
+        <div class="section-hero-card">
+          ${block.tag ? `<div class="section-hero-eyebrow">${escapeHtml(block.tag)}</div>` : ''}
+          ${audioHtml}
+          <h2 class="section-hero-title">${block.heading || block.title || ''}</h2>
+          ${block.body ? `<div class="section-hero-sub">${block.body}</div>` : ''}
+          ${calloutHtml}
+        </div>
+      `;
+    }
 
     if (block.type === 'url_redirect') {
       const targetUrl = block.url || '#';
@@ -552,6 +581,7 @@
       const bulletsHtml = block.bullets
         ? `<ul class="rich-list ${block.listTone || ''}">${block.bullets.map(b => `<li>${b}</li>`).join('')}</ul>`
         : '';
+      const statsHtml = block.stats ? renderStats(block.stats) : '';
       const boxesHtml = block.boxes ? renderBoxes(block.boxes, block.boxGridCols) : '';
       const collapsiblesHtml = block.collapsibles ? renderCollapsibles(block.collapsibles) : '';
       const tableHtml = block.table ? renderTable(block.table) : '';
@@ -565,11 +595,25 @@
           <h2>${block.heading}</h2>
           ${imageHtml}
           ${block.body || ''}
+          ${statsHtml}
           ${bulletsHtml}
           ${boxesHtml}
           ${collapsiblesHtml}
           ${tableHtml}
           ${calloutHtml}
+        </section>
+      `;
+    }
+
+    if (block.type === 'stats' || block.type === 'stat_grid') {
+      return `
+        <section class="card">
+          ${block.tag ? `<span class="card-tag gold">${block.tag}</span>` : '<span class="card-tag gold">Key Metrics</span>'}
+          ${audioHtml}
+          <h2>${block.heading || block.title || 'Key Metrics & Data'}</h2>
+          ${block.body || ''}
+          ${renderStats(block.stats || block.items)}
+          ${block.callout ? `<div class="callout ${block.callout.type || ''}">${block.callout.text}</div>` : ''}
         </section>
       `;
     }
@@ -729,12 +773,14 @@
         const chosen = state.answers[key];
         const answered = chosen !== undefined;
         const isCorrect = chosen === d.valid;
+        const trueLabel = block.trueLabel || (block.id && block.id.includes('kyc') ? '✓ Valid Address OVD' : '✓ Valid / Best Practice');
+        const falseLabel = block.falseLabel || (block.id && block.id.includes('kyc') ? '✕ Not Address OVD' : '✕ Risk / Non-Compliant');
         return `
               <div class="sorter-item">
                 <div class="sorter-doc">${d.name}</div>
                 <div class="sorter-btns">
-                  <button type="button" class="sort-choice ${answered && chosen === true ? (isCorrect ? 'selected-ok' : 'selected-err') : ''}" data-sid="${block.id}" data-di="${di}" data-val="true">✓ Valid Address OVD</button>
-                  <button type="button" class="sort-choice ${answered && chosen === false ? (isCorrect ? 'selected-ok' : 'selected-err') : ''}" data-sid="${block.id}" data-di="${di}" data-val="false">✕ Not Address OVD</button>
+                  <button type="button" class="sort-choice ${answered && chosen === true ? (isCorrect ? 'selected-ok' : 'selected-err') : ''}" data-sid="${block.id}" data-di="${di}" data-val="true">${trueLabel}</button>
+                  <button type="button" class="sort-choice ${answered && chosen === false ? (isCorrect ? 'selected-ok' : 'selected-err') : ''}" data-sid="${block.id}" data-di="${di}" data-val="false">${falseLabel}</button>
                 </div>
                 ${answered ? `<div class="q-feedback ${isCorrect ? 'ok' : 'err'}">${isCorrect ? '✓ Spot on! ' : '✕ Note: '}${d.note}</div>` : ''}
               </div>
@@ -791,8 +837,9 @@
     return '';
   }
 
-  function renderChapter() {
+  function renderChapter(preserveScroll = false) {
     try {
+      const savedScrollY = (preserveScroll && typeof window !== 'undefined') ? (window.scrollY || window.pageYOffset || 0) : 0;
       // Pause any currently playing audio before rendering
       document.querySelectorAll('audio').forEach(a => {
         try { if (!a.paused) a.pause(); } catch (e) { }
@@ -853,19 +900,49 @@
             </div>
           `;
         } else {
+          // If the first block of the chapter is a section_hero that matches the chapter title,
+          // render the unified chapter hero with its subtitle and callout to prevent duplicate stacked banners
+          const firstBlock = ch.blocks && ch.blocks[0];
+          const isFirstSectionHero = firstBlock && (firstBlock.type === 'section_hero' || (firstBlock.heading && firstBlock.heading.trim().toLowerCase() === (ch.title || '').trim().toLowerCase()));
+
+          let heroKicker = `CHAPTER ${state.currentChapter + 1} OF ${COURSE_CHAPTERS.length} · ${ch.num || (state.currentChapter + 1)}`;
+          if (firstBlock && firstBlock.tag) {
+            heroKicker = `${heroKicker} · ${escapeHtml(firstBlock.tag)}`;
+          }
+
+          let heroSub = ch.subtitle || (firstBlock && firstBlock.body ? firstBlock.body : '');
+          let heroCalloutHtml = '';
+          if (isFirstSectionHero && firstBlock.callout) {
+            heroCalloutHtml = `<div class="callout ${firstBlock.callout.type || ''}">${firstBlock.callout.text}</div>`;
+          }
+
+          const renderedBlocksHtml = (ch.blocks || []).slice(isFirstSectionHero ? 1 : 0).map(b => {
+            try {
+              return renderBlock(b);
+            } catch (bErr) {
+              console.warn('Block render error:', b, bErr);
+              return `<section class="card"><h2>${escapeHtml(b.heading || b.title || 'Topic Card')}</h2>${b.body || ''}</section>`;
+            }
+          }).join('');
+
           els.main.innerHTML = `
             <div class="chapter-hero">
-              <span class="hero-kicker">CHAPTER ${state.currentChapter + 1} OF ${COURSE_CHAPTERS.length} · ${ch.num || (state.currentChapter + 1)}</span>
+              <span class="hero-kicker">${heroKicker}</span>
               <h1 class="hero-title">${ch.title || ''}</h1>
-              <p class="hero-desc">${ch.subtitle || ''}</p>
+              ${heroSub ? `<p class="hero-desc">${heroSub}</p>` : ''}
+              ${heroCalloutHtml}
             </div>
-            ${blocksHtml}
+            ${renderedBlocksHtml}
           `;
         }
         bindDynamicEvents();
       }
       try {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        if (preserveScroll) {
+          window.scrollTo({ top: savedScrollY, behavior: 'instant' });
+        } else {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
       } catch (scrollErr) { }
     } catch (e) {
       console.error('Fatal renderChapter error:', e);
@@ -889,17 +966,49 @@
       });
     });
 
-    // MCQ
+    // MCQ - In-place DOM update without full page re-render
     els.main.querySelectorAll('.opt-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        const key = `${btn.dataset.qid}_q${btn.dataset.qi}`;
-        state.answers[key] = Number(btn.dataset.oi);
+        const qid = btn.dataset.qid;
+        const qi = Number(btn.dataset.qi);
+        const oi = Number(btn.dataset.oi);
+        const key = `${qid}_q${qi}`;
+        state.answers[key] = oi;
         persist();
-        renderChapter();
+
+        // Update in-place without rebuilding the DOM
+        const qBlock = btn.closest('.q-block');
+        if (qBlock) {
+          const ch = COURSE_CHAPTERS[state.currentChapter];
+          const block = (ch && ch.blocks) ? ch.blocks.find(b => b.id === qid) : null;
+          let qObj = null;
+          if (block) {
+            if (Array.isArray(block.questions)) qObj = block.questions[qi];
+            else if (qi === 0 && block.options) qObj = { options: block.options, correct: block.correct, explanation: block.explanation };
+          }
+          const correctIdx = qObj ? qObj.correct : undefined;
+          const explanation = qObj ? (qObj.explanation || '') : '';
+
+          qBlock.querySelectorAll('.opt-btn').forEach(b => {
+            const bOi = Number(b.dataset.oi);
+            b.classList.remove('correct', 'wrong');
+            if (bOi === correctIdx) b.classList.add('correct');
+            else if (bOi === oi) b.classList.add('wrong');
+          });
+
+          let fb = qBlock.querySelector('.q-feedback');
+          if (!fb) {
+            fb = document.createElement('div');
+            qBlock.appendChild(fb);
+          }
+          const isCorrect = (oi === correctIdx);
+          fb.className = `q-feedback ${isCorrect ? 'ok' : 'err'}`;
+          fb.innerHTML = `${isCorrect ? '✓ Correct! ' : '✕ Review: '}${escapeHtml(explanation)}`;
+        }
       });
     });
 
-    // Blanks
+    // Blanks - In-place DOM update without full page re-render
     els.main.querySelectorAll('.blank-input').forEach(sel => {
       sel.addEventListener('change', () => {
         state.answers[`${sel.dataset.bid}_b${sel.dataset.bi}`] = sel.value;
@@ -908,13 +1017,43 @@
     });
     els.main.querySelectorAll('.check-blanks-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        state.answers[`${btn.dataset.bid}_checked`] = true;
+        const bid = btn.dataset.bid;
+        state.answers[`${bid}_checked`] = true;
         persist();
-        renderChapter();
+
+        const card = btn.closest('.quiz-card');
+        if (card) {
+          const ch = COURSE_CHAPTERS[state.currentChapter];
+          const block = (ch && ch.blocks) ? ch.blocks.find(b => b.id === bid) : null;
+          const items = (block && block.items) ? block.items : [];
+
+          card.querySelectorAll('.blank-row').forEach((row, bi) => {
+            const sel = row.querySelector('.blank-input');
+            const item = items[bi];
+            if (sel && item) {
+              const val = (sel.value || '').trim().toLowerCase();
+              const isOk = val === (item.answer || '').trim().toLowerCase();
+              sel.classList.remove('ok', 'err');
+              sel.classList.add(isOk ? 'ok' : 'err');
+
+              let fb = row.querySelector('.q-feedback');
+              if (!isOk) {
+                if (!fb) {
+                  fb = document.createElement('div');
+                  row.appendChild(fb);
+                }
+                fb.className = 'q-feedback err';
+                fb.innerHTML = `Correct answer: <strong>${escapeHtml(item.answer)}</strong>`;
+              } else if (fb) {
+                fb.remove();
+              }
+            }
+          });
+        }
       });
     });
 
-    // Match
+    // Match - In-place DOM update without full page re-render
     els.main.querySelectorAll('.match-select').forEach(sel => {
       sel.addEventListener('change', () => {
         state.answers[`${sel.dataset.mid}_m${sel.dataset.pi}`] = sel.value;
@@ -923,18 +1062,73 @@
     });
     els.main.querySelectorAll('.check-match-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        state.answers[`${btn.dataset.mid}_checked`] = true;
+        const mid = btn.dataset.mid;
+        state.answers[`${mid}_checked`] = true;
         persist();
-        renderChapter();
+
+        const card = btn.closest('.quiz-card');
+        if (card) {
+          const ch = COURSE_CHAPTERS[state.currentChapter];
+          const block = (ch && ch.blocks) ? ch.blocks.find(b => b.id === mid) : null;
+          const pairs = (block && block.pairs) ? block.pairs : [];
+
+          card.querySelectorAll('.match-row').forEach((row, pi) => {
+            const sel = row.querySelector('.match-select');
+            const pair = pairs[pi];
+            if (sel && pair) {
+              const isOk = (sel.value === pair.answer);
+              sel.classList.remove('ok', 'err');
+              sel.classList.add(isOk ? 'ok' : 'err');
+
+              let fb = row.querySelector('.q-feedback');
+              if (!isOk) {
+                if (!fb) {
+                  fb = document.createElement('div');
+                  row.appendChild(fb);
+                }
+                fb.className = 'q-feedback err';
+                fb.innerHTML = `Best match: <strong>${escapeHtml(pair.answer)}</strong>`;
+              } else if (fb) {
+                fb.remove();
+              }
+            }
+          });
+        }
       });
     });
 
-    // KYC Sorter
+    // KYC Sorter - In-place DOM update without full page re-render
     els.main.querySelectorAll('.sort-choice').forEach(btn => {
       btn.addEventListener('click', () => {
-        state.answers[`${btn.dataset.sid}_s${btn.dataset.di}`] = (btn.dataset.val === 'true');
+        const sid = btn.dataset.sid;
+        const di = Number(btn.dataset.di);
+        const val = (btn.dataset.val === 'true');
+        state.answers[`${sid}_s${di}`] = val;
         persist();
-        renderChapter();
+
+        const item = btn.closest('.sorter-item');
+        if (item) {
+          const ch = COURSE_CHAPTERS[state.currentChapter];
+          const block = (ch && ch.blocks) ? ch.blocks.find(b => b.id === sid) : null;
+          const doc = (block && block.docs) ? block.docs[di] : null;
+          const isCorrect = doc ? (val === doc.valid) : false;
+
+          item.querySelectorAll('.sort-choice').forEach(b => {
+            b.classList.remove('selected-ok', 'selected-err');
+            const bVal = (b.dataset.val === 'true');
+            if (bVal === val) {
+              b.classList.add(isCorrect ? 'selected-ok' : 'selected-err');
+            }
+          });
+
+          let fb = item.querySelector('.q-feedback');
+          if (!fb) {
+            fb = document.createElement('div');
+            item.appendChild(fb);
+          }
+          fb.className = `q-feedback ${isCorrect ? 'ok' : 'err'}`;
+          fb.textContent = `${isCorrect ? '✓ Spot on! ' : '✕ Note: '}${doc ? doc.note : ''}`;
+        }
       });
     });
 

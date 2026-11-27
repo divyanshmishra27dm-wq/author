@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Smartphone, Monitor, RotateCcw, Activity, ChevronDown, ChevronUp, Sparkles, BookOpen, FileCheck, Download, FileCode, Check } from 'lucide-react';
+import { Smartphone, Monitor, RotateCcw, Activity, ChevronDown, ChevronUp, Sparkles, BookOpen, FileCheck, Download, FileCode, Check, Upload } from 'lucide-react';
 import { CourseData, ViewportMode } from '../types/course';
 import { UploadedCourseInfo } from './FileUpload';
 import { BACKEND_URL, getApiUrl } from '../utils/apiConfig';
@@ -21,6 +21,7 @@ interface PlayerPreviewProps {
   viewportMode: ViewportMode;
   onViewportChange: (mode: ViewportMode) => void;
   onOpenEditor: () => void;
+  onOpenUpload?: () => void;
   availableCourses?: AvailableCourse[];
 }
 
@@ -38,6 +39,7 @@ export const PlayerPreview: React.FC<PlayerPreviewProps> = ({
   onSelectPreviewUrl,
   viewportMode,
   onViewportChange,
+  onOpenUpload,
   availableCourses = []
 }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -58,7 +60,7 @@ export const PlayerPreview: React.FC<PlayerPreviewProps> = ({
     : (uploadedCourse?.previewUrl || '');
   const cleanPath = safePreviewUrl.split('?')[0].replace(/^\//, '');
   const existingQuery = safePreviewUrl.includes('?') ? safePreviewUrl.split('?')[1] : '';
-  const effectivePath = cleanPath || (availableCourses?.[0]?.preview_url?.replace(/^\//, '') || 'Lesson 1.html');
+  const effectivePath = cleanPath || (availableCourses?.[0]?.preview_url?.replace(/^\//, '') || '');
   const safeFilename = effectivePath
     .split('/')
     .map(segment => encodeURIComponent(decodeURIComponent(segment)))
@@ -392,7 +394,26 @@ export const PlayerPreview: React.FC<PlayerPreviewProps> = ({
       )}
 
       {/* Main Preview Container */}
-      {viewportMode === 'mobile' ? (
+      {!effectivePath ? (
+        <div className="w-full max-w-4xl h-[620px] rounded-2xl border-2 border-dashed border-slate-800 bg-slate-900/40 p-8 flex flex-col items-center justify-center text-center">
+          <div className="h-16 w-16 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center mb-4 shadow-lg shadow-blue-500/10">
+            <Upload className="h-8 w-8" />
+          </div>
+          <h3 className="text-xl font-bold text-white mb-2">No Presentation Loaded</h3>
+          <p className="text-sm text-slate-400 max-w-md mb-6 leading-relaxed">
+            Upload any PowerPoint presentation (.pptx) or SCORM package (.zip) to automatically convert it into an interactive, mobile-first course with full SCORM 2004 telemetry.
+          </p>
+          {onOpenUpload && (
+            <button
+              onClick={onOpenUpload}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-500 hover:to-emerald-500 text-white font-bold text-sm shadow-lg shadow-blue-600/25 transition-all"
+            >
+              <Upload className="h-4 w-4" />
+              <span>Upload PPTX / SCORM</span>
+            </button>
+          )}
+        </div>
+      ) : viewportMode === 'mobile' ? (
         <div className="flex flex-col items-center">
           <div className="mobile-device-frame relative shadow-2xl">
             <div className="mobile-notch">
