@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
-  <title>Lesson 3: Products & Account Opening</title>
+  <title>Lesson 2: Savings Accounts</title>
   <style>
 /* HDFC Academy Day 2 — Mobile-First SCORM 2004 Stylesheet */
 :root {
@@ -355,46 +355,62 @@ body {
   background: linear-gradient(135deg, var(--hdfc-navy) 0%, var(--hdfc-blue) 100%);
   color: #fff;
   border-radius: 18px;
-  padding: 18px;
-  box-shadow: var(--shadow);
+  padding: 24px 26px;
+  box-shadow: 0 10px 30px -4px rgba(0, 45, 90, 0.22);
   position: relative;
   overflow: hidden;
+  margin-bottom: 20px;
 }
 
 .chapter-hero::after {
   content: "";
   position: absolute;
-  top: -30px;
-  right: -30px;
-  width: 110px;
-  height: 110px;
+  top: -40px;
+  right: -40px;
+  width: 150px;
+  height: 150px;
   border-radius: 50%;
-  background: rgba(237, 35, 42, 0.25);
+  background: radial-gradient(circle, rgba(237, 35, 42, 0.25) 0%, rgba(237, 35, 42, 0) 70%);
+  pointer-events: none;
 }
 
 .hero-kicker {
   display: inline-block;
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  background: rgba(255, 255, 255, 0.16);
-  padding: 3px 9px;
-  border-radius: 6px;
-  margin-bottom: 8px;
+  background: rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(8px);
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  margin-bottom: 12px;
+  color: #BAE6FD;
 }
 
 .hero-title {
-  margin: 0 0 6px;
-  font-size: 21px;
+  margin: 0 0 8px;
+  font-size: 24px;
   font-weight: 800;
-  line-height: 1.25;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+  color: #FFFFFF;
 }
 
 .hero-desc {
   margin: 0;
-  font-size: 14px;
-  color: #DCEBFF;
+  font-size: 14.5px;
+  color: #E2E8F0;
+  line-height: 1.55;
+  max-width: 650px;
+}
+
+.chapter-hero .callout {
+  margin-top: 18px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.12);
 }
 
 /* Visual Infographic Card */
@@ -1564,14 +1580,21 @@ table.data-table tr:nth-child(even) td {
 
 .box-card {
   background: #ffffff;
-  border: 1.5px solid #E2E8F0;
-  border-radius: 14px;
-  padding: 16px 18px;
+  border: 1px solid #E2E8F0;
+  border-radius: 16px;
+  padding: 20px 22px;
   display: flex;
   flex-direction: column;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 45, 90, 0.04);
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.22s ease;
+}
+
+.box-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px -4px rgba(0, 45, 90, 0.12), 0 4px 10px -2px rgba(0, 45, 90, 0.04);
+  border-color: #CBD5E1;
 }
 
 .box-card::before {
@@ -1580,40 +1603,127 @@ table.data-table tr:nth-child(even) td {
   top: 0;
   left: 0;
   right: 0;
-  height: 3.5px;
-  background: linear-gradient(90deg, #002D5A, #004C8F);
-  opacity: 0.9;
+  height: 4px;
+  background: linear-gradient(90deg, #002D5A 0%, #005696 100%);
+  opacity: 0.95;
+  border-radius: 16px 16px 0 0;
 }
 
 .box-card.highlight {
-  border-color: #004C8F;
-  background: linear-gradient(180deg, #F0F7FF 0%, #FFFFFF 100%);
-  box-shadow: 0 4px 16px rgba(0, 76, 143, 0.08);
+  border-color: #B9D5F2;
+  background: linear-gradient(180deg, #F8FAFD 0%, #FFFFFF 100%);
+  box-shadow: 0 4px 20px -2px rgba(0, 76, 143, 0.08);
 }
 
 .box-card.highlight::before {
-  background: linear-gradient(90deg, #004C8F, #ED232A);
-  height: 4px;
+  background: linear-gradient(90deg, #004C8F 0%, #ED232A 100%);
+  height: 4.5px;
 }
 
 .box-card.gold-accent {
-  border-color: #D4AF37;
-  background: linear-gradient(180deg, #FFFDF5 0%, #FFFFFF 100%);
+  border-color: #FDE68A;
+  background: linear-gradient(180deg, #FFFDF8 0%, #FFFFFF 100%);
 }
 
 .box-card.gold-accent::before {
-  background: linear-gradient(90deg, #D4AF37, #B8860B);
-  height: 4px;
+  background: linear-gradient(90deg, #D97706 0%, #F59E0B 100%);
+  height: 4.5px;
 }
 
 .box-card.green-accent {
-  border-color: #0E8A4E;
-  background: linear-gradient(180deg, #F0FDF4 0%, #FFFFFF 100%);
+  border-color: #A7F3D0;
+  background: linear-gradient(180deg, #F9FDFB 0%, #FFFFFF 100%);
 }
 
 .box-card.green-accent::before {
-  background: linear-gradient(90deg, #0E8A4E, #38D9A9);
-  height: 4px;
+  background: linear-gradient(90deg, #059669 0%, #10B981 100%);
+  height: 4.5px;
+}
+
+/* =========================================================================
+   CALLOUTS & FACILITATOR INSIGHT BOXES (Modern Glassmorphic Enterprise Design)
+   ========================================================================= */
+.callout {
+  position: relative;
+  margin-top: 18px;
+  padding: 16px 20px 16px 22px;
+  border-radius: 14px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-left: 4px solid #004C8F;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: #334155;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.callout strong:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #004C8F;
+  margin-bottom: 2px;
+}
+
+.callout.tip {
+  background: linear-gradient(135deg, #F0FDF4 0%, #F8FCF9 100%);
+  border-color: #D1FAE5;
+  border-left: 4px solid #059669;
+  color: #1E293B;
+}
+
+.callout.tip strong:first-child {
+  color: #065F46;
+}
+
+.callout.tip strong:first-child::before {
+  content: "💡";
+  font-size: 14px;
+}
+
+.callout.info {
+  background: linear-gradient(135deg, #EFF6FF 0%, #F8FAFF 100%);
+  border-color: #DBEAFE;
+  border-left: 4px solid #2563EB;
+  color: #1E293B;
+}
+
+.callout.info strong:first-child {
+  color: #1E40AF;
+}
+
+.callout.info strong:first-child::before {
+  content: "ℹ️";
+  font-size: 14px;
+}
+
+.callout.warn {
+  background: linear-gradient(135deg, #FEF2F2 0%, #FFF8F8 100%);
+  border-color: #FEE2E2;
+  border-left: 4px solid #DC2626;
+  color: #1E293B;
+}
+
+.callout.warn strong:first-child {
+  color: #991B1B;
+}
+
+.callout.think {
+  background: linear-gradient(135deg, #FFFBEB 0%, #FEFDF5 100%);
+  border-color: #FEF3C7;
+  border-left: 4px solid #D97706;
+  color: #1E293B;
+}
+
+.callout.think strong:first-child {
+  color: #92400E;
 }
 
 .box-header {
@@ -1628,17 +1738,19 @@ table.data-table tr:nth-child(even) td {
   margin: 14px 0 18px;
   border-radius: 14px;
   overflow: hidden;
-  box-shadow: 0 4px 18px rgba(0, 45, 90, 0.12);
+  box-shadow: 0 4px 18px rgba(0, 45, 90, 0.08);
   border: 1px solid #DCE5F0;
-  background: #002D5A;
+  background: #F8FAFC;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .card-hero-image {
-  width: 100%;
-  max-height: 440px;
+  max-width: 100%;
+  max-height: 280px;
   object-fit: contain;
   display: block;
-  background: #002D5A;
 }
 
 .box-icon-wrap {
@@ -1663,46 +1775,56 @@ table.data-table tr:nth-child(even) td {
 }
 
 .box-badge {
-  font-size: 10.5px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #004C8F;
-  background: #EBF3FA;
-  padding: 3px 8px;
-  border-radius: 6px;
-  display: inline-block;
-  margin-bottom: 4px;
+  background: #EFF6FF;
+  border: 1px solid #DBEAFE;
+  padding: 3px 9px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 6px;
 }
 
 .box-badge.red {
-  color: #ED232A;
-  background: #FFF5F5;
+  color: #DC2626;
+  background: #FEF2F2;
+  border-color: #FEE2E2;
 }
 
 .box-badge.green {
-  color: #0E8A4E;
-  background: #E7F7EF;
+  color: #059669;
+  background: #ECFDF5;
+  border-color: #D1FAE5;
 }
 
 .box-badge.gold {
-  color: #854D0E;
-  background: #FEF3C7;
+  color: #D97706;
+  background: #FFFBEB;
+  border-color: #FEF3C7;
 }
 
 .box-title {
-  font-size: 16px;
-  font-weight: 800;
-  color: #002D5A;
+  font-size: 16.5px;
+  font-weight: 700;
+  color: #0F172A;
   margin: 0;
-  line-height: 1.35;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
 }
 
 .box-body {
   font-size: 14px;
   color: #334155;
-  line-height: 1.5;
+  line-height: 1.55;
   flex: 1;
+}
+
+.box-body:empty {
+  display: none;
 }
 
 .box-body p {
@@ -1711,6 +1833,66 @@ table.data-table tr:nth-child(even) td {
 
 .box-body p:last-child {
   margin-bottom: 0;
+}
+
+/* =========================================================================
+   SECTION HERO / MODULE DIVIDER CARD (Sleek Banner Presentation)
+   ========================================================================= */
+.section-hero-card {
+  background: linear-gradient(135deg, #002D5A 0%, #004C8F 60%, #0066B3 100%);
+  color: #FFFFFF;
+  border-radius: 20px;
+  padding: 32px 36px;
+  margin: 20px 0 28px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 30px -4px rgba(0, 45, 90, 0.22);
+}
+
+.section-hero-card::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -10%;
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.section-hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #93C5FD;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  margin-bottom: 14px;
+}
+
+.section-hero-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: #FFFFFF;
+  margin: 0 0 10px 0;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.section-hero-sub {
+  font-size: 15px;
+  color: #E2E8F0;
+  margin: 0;
+  line-height: 1.5;
+  max-width: 650px;
 }
 
 /* =========================================================================
@@ -1833,27 +2015,57 @@ details.box-collapsible[open] .box-chevron svg {
 /* =========================================================================
    STAT TILES & HERO ROADMAP TILES
    ========================================================================= */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin: 16px 0;
+}
+
 .stat-tile {
   background: #FFFFFF;
   border: 1.5px solid #E2E8F0;
   border-radius: 14px;
-  padding: 14px 16px;
+  padding: 16px 18px;
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 45, 90, 0.04);
+  transition: all 0.2s ease;
+}
+
+.stat-tile::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, #004C8F, #ED232A);
+}
+
+.stat-tile:hover {
+  transform: translateY(-2px);
+  border-color: #004C8F;
+  box-shadow: 0 6px 18px rgba(0, 76, 143, 0.10);
 }
 
 .stat-tile-val {
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 900;
   color: #004C8F;
   line-height: 1;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
 }
 
 .stat-tile-lbl {
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 700;
   color: #475569;
+  line-height: 1.35;
 }
 
 .roadmap-card {
@@ -2034,8 +2246,8 @@ details.box-collapsible[open] .box-chevron svg {
           </svg>
         </button>
         <div class="brand-lockup">
-          <span class="brand-pill">ACADEMY</span>
-          <h1 id="headerTitle" class="header-title">Overview & Roadmap</h1>
+          <span class="brand-pill">LESSON</span>
+          <h1 id="headerTitle" class="header-title">Know Your Product – Savi</h1>
         </div>
         <div class="score-pill" id="scorePill" title="Quiz Mastery Score">0%</div>
       </div>
@@ -2043,7 +2255,7 @@ details.box-collapsible[open] .box-chevron svg {
         <div class="progress-fill" id="progressFill" style="width: 0%"></div>
       </div>
       <div class="sub-bar">
-        <span id="stepIndicator" class="step-label">Chapter 1 of 11</span>
+        <span id="stepIndicator" class="step-label">Chapter 1 of 13</span>
         <span id="lmsBadge" class="lms-status">Offline &amp; SCORM Ready</span>
       </div>
     </header>
@@ -2054,13 +2266,13 @@ details.box-collapsible[open] .box-chevron svg {
       <div class="drawer-header">
         <div>
           <div class="drawer-kicker">CURRICULUM</div>
-          <div class="drawer-title">All 11 Chapters</div>
+          <div class="drawer-title">All 13 Chapters</div>
         </div>
         <button id="closeDrawerBtn" class="icon-btn dark" aria-label="Close Menu">✕</button>
       </div>
       <div class="drawer-stats">
         <div class="stat-box">
-          <span class="stat-val" id="drawerCompleted">0/11</span>
+          <span class="stat-val" id="drawerCompleted">0/13</span>
           <span class="stat-lbl">Chapters</span>
         </div>
         <div class="stat-box">
@@ -2087,7 +2299,7 @@ details.box-collapsible[open] .box-chevron svg {
         <span>← Prev</span>
       </button>
       <button id="quickIndexBtn" class="nav-btn center-pill">
-        <span id="bottomChapterTag">01 / 11</span>
+        <span id="bottomChapterTag">01 / 13</span>
       </button>
       <button id="nextBtn" class="nav-btn primary">
         <span id="nextBtnLabel">Next →</span>
@@ -2247,9 +2459,6 @@ var SCORM2004 = (function () {
       if (stateObj.currentChapter !== undefined) {
         setValue('cmi.location', String(stateObj.currentChapter));
       }
-      if (typeof stateObj.progressMeasure === 'number') {
-        setValue('cmi.progress_measure', stateObj.progressMeasure.toFixed(2));
-      }
       if (typeof stateObj.scoreScaled === 'number') {
         setValue('cmi.score.scaled', stateObj.scoreScaled.toFixed(2));
         setValue('cmi.score.raw', String(Math.round(stateObj.scoreScaled * 100)));
@@ -2258,8 +2467,15 @@ var SCORM2004 = (function () {
       }
       if (stateObj.completed) {
         setValue('cmi.completion_status', 'completed');
-        setValue('cmi.success_status', stateObj.scoreScaled >= 0.6 ? 'passed' : 'completed');
+        setValue('cmi.success_status', (stateObj.scoreScaled || 0) >= 0.6 ? 'passed' : 'completed');
+        setValue('cmi.progress_measure', '1.00');
         setValue('cmi.exit', 'normal');
+      } else {
+        setValue('cmi.completion_status', 'incomplete');
+        if (typeof stateObj.progressMeasure === 'number') {
+          setValue('cmi.progress_measure', stateObj.progressMeasure.toFixed(2));
+        }
+        setValue('cmi.exit', 'suspend');
       }
       commit();
     } catch (e) {
@@ -2290,603 +2506,392 @@ var COURSE_CHAPTERS = [
   {
     "id": "ch0",
     "num": "00",
-    "shortTitle": "Overview & Roadmap",
-    "title": "Lesson 3: Products & Account Opening",
-    "subtitle": "CASA \u2022 Savings & Current Accounts \u2022 CA Allied Products \u2022 Cards & Account Opening",
+    "shortTitle": "Know Your Product \u2013 Savi",
+    "title": "Know Your Product \u2013 Saving Bank Account (SB)",
+    "subtitle": "Know Your Product \u2013 Saving Bank Account (SB)",
     "blocks": [
       {
         "type": "think",
-        "title": "Opening Reflection",
-        "prompt": "Why are low-cost CASA deposits considered the foundation of banking profitability and relationship depth?",
-        "hint": "CASA directly funds retail and SME loans with low cost-of-funds, maximizing Net Interest Margin (NIM) and fostering long-term cross-sell opportunities."
+        "title": "Reflect & Think",
+        "prompt": "When a customer asks for a savings account, how would you uncover whether they need everyday access, a higher-balance relationship with added benefits, or a product aligned to a specific profile?",
+        "hint": "Start with the customer\u2019s transaction habits, likely balance, location, and relevant needs before recommending an account. Explain applicable balance requirements and benefits accurately, and verify current terms rather than assuming every feature applies to every customer."
       },
       {
         "type": "card",
-        "tag": "",
-        "heading": "",
-        "imageSrc": "media/Slide_1.png",
+        "tag": "Slide 1",
+        "heading": "Know Your Product \u2013 Saving Bank Account (SB)",
+        "imageSrc": null,
         "body": "",
-        "bullets": [],
-        "src": "media/Slide_1.png",
-        "imageUrl": "media/Slide_1.png",
-        "alt": "Slide_1.png",
-        "caption": "Slide 1",
-        "audioUrl": "media/Slide_1.mp3",
-        "audioTitle": "Audio Voiceover"
-      },
-      {
-        "type": "image",
-        "id": "img_1795693759107",
-        "tag": "Visual Diagram",
-        "heading": "Introduction",
-        "src": "media/Neha.png",
-        "alt": "",
-        "caption": "",
-        "imageSrc": "media/Neha.png",
-        "imageUrl": "media/Neha.png",
-        "audioUrl": "media/Slide_2.mp3",
-        "audioTitle": "Listen: Introduction"
-      },
-      {
-        "type": "boxes",
-        "tag": "Curriculum Structure \u00b7 Slide 2",
-        "heading": "Our Roadmap for Today",
-        "body": "<p>Ten structured modules designed to build deep product expertise before transitioning into documentation and account opening workflows:</p>",
-        "boxGridCols": 3,
-        "boxes": [
-          {
-            "title": "Module 1: Importance of CASA",
-            "badge": "MODULE 1",
-            "desc": "Liabilities, NIM economics, and the four employee growth levers.",
-            "icon": "media/image5.png",
-            "highlight": true
-          },
-          {
-            "title": "Module 2: Savings Accounts",
-            "badge": "MODULE 2",
-            "desc": "Regular Savings, Savings Max, Speciale range, and Kids accounts.",
-            "icon": "media/image6.png",
-            "highlight": true
-          },
-          {
-            "title": "Module 3: Current Accounts",
-            "badge": "MODULE 3",
-            "desc": "Account variants, fee schedules, and daily cash deposit limits.",
-            "icon": "media/image7.png"
-          },
-          {
-            "title": "Module 4: CA Allied Products",
-            "badge": "MODULE 4",
-            "desc": "CBX corporate net banking, eCMS collections, POS/MPOS, and Vyapar app.",
-            "icon": "media/image8.png"
-          },
-          {
-            "title": "Module 5: Debit Cards",
-            "badge": "MODULE 5",
-            "desc": "EasyShop portfolio, lounge privileges, insurance, and need-based selling.",
-            "icon": "media/image9.png"
-          },
-          {
-            "title": "Module 6: Credit Cards",
-            "badge": "MODULE 6",
-            "desc": "Eligibility thresholds, flagship cards, and sales pitch checklist.",
-            "icon": "media/image10.png"
-          },
-          {
-            "title": "Module 7: Non-Individual Docs",
-            "badge": "MODULE 7",
-            "desc": "Sole proprietorship, partnership, and corporate documentation guidelines.",
-            "icon": "media/image11.png"
-          },
-          {
-            "title": "Module 8: Physical Account Opening",
-            "badge": "MODULE 8",
-            "desc": "Physical Account Opening Form (AOF), Maker-Checker protocols, and dispatch.",
-            "icon": "media/image12.png",
-            "highlight": true
-          },
-          {
-            "title": "Module 9: Insta Account & SmartApp",
-            "badge": "MODULE 9",
-            "desc": "End-to-end digital onboarding, CRM lead integration, and instant activation.",
-            "icon": "media/image13.png"
-          },
-          {
-            "title": "Module 10: Video KYC",
-            "badge": "MODULE 10",
-            "desc": "Paperless zero-contact customer verification via secure video interaction.",
-            "icon": "media/image14.png"
-          }
-        ],
+        "bullets": null,
         "callout": {
           "type": "tip",
-          "text": "<strong>How We'll Learn:</strong> Interactive walkthroughs \u2794 Comparison charts \u2794 Step-by-step journeys \u2794 Knowledge checks."
-        },
-        "audioUrl": "media/Slide_3.mp3",
-        "audioTitle": "Listen: Our Roadmap for Today"
-      },
-      {
-        "type": "collapsible_boxes",
-        "tag": "Learning Outcomes \u00b7 Slide 3",
-        "heading": "Learning Objectives",
-        "body": "<p>By the end of this web-based training, learners will achieve three pillars of operational mastery:</p>",
-        "collapsibles": [
-          {
-            "title": "IDENTIFY \u2014 Core Drivers & Variant Matching",
-            "badge": "LEVEL 1",
-            "badgeColor": "gold",
-            "icon": "media/image18.png",
-            "isOpen": true,
-            "bullets": [
-              "Explain why CASA deposits drive the bank's profitability and Net Interest Margin.",
-              "Identify the right Savings or Current Account variant and debit card for every customer profile.",
-              "Recognize the distinct documentation needs for individual vs non-individual business entities."
-            ]
-          },
-          {
-            "title": "EXPLAIN \u2014 Features, Pricing & Value Propositions",
-            "badge": "LEVEL 2",
-            "icon": "media/image19.png",
-            "bullets": [
-              "Clearly articulate eligibility, minimum balance requirements, and fee waivers for Regular, Savings Max, and Speciale.",
-              "Highlight Debit Card privileges including up to \u20b93.29 Cr complimentary insurance cover and cashback.",
-              "Explain how CA allied products (POS, QR, Payment Gateway, eCMS) solve business cash flow pain points."
-            ]
-          },
-          {
-            "title": "APPLY \u2014 Need Discovery & Compliant Account Opening",
-            "badge": "LEVEL 3",
-            "badgeColor": "green",
-            "icon": "media/image20.png",
-            "bullets": [
-              "Conduct consultative need-discovery probing to recommend tailored financial solutions.",
-              "Collect complete, verified KYC documents and execute zero-defect AOF submissions.",
-              "Guide customers through frictionless digital account opening on Insta Account and Video KYC."
-            ]
-          }
-        ],
-        "audioUrl": "media/Slide_4.mp3",
-        "audioTitle": "Listen: Learning Objectives"
+          "text": "<strong>Facilitator Insight:</strong> Welcome to Lesson\u00a02: Savings Accounts. In this Lesson, you'll get to know our Savings Bank account range: the Regular Savings Account, Savings Max, and the Speciale premium range. Before we begin, think about this: when a customer asks for \"a savings account\", what should you find out before recommending one? You need "
+        }
       }
     ]
   },
   {
     "id": "ch1",
     "num": "M1",
-    "shortTitle": "Importance of CASA",
-    "title": "Module 1: Importance of CASA",
-    "subtitle": "Why CASA deposits matter to the bank, and how every employee helps grow them",
+    "shortTitle": "Regular Savings Account",
+    "title": "Regular Savings Account",
+    "subtitle": "Everyday banking with 24x7 access to your bank",
     "blocks": [
       {
-        "type": "think",
-        "title": "Deposit Dynamics (Slide 4)",
-        "prompt": "When a customer deposits money in a savings account, what does the bank do with it?",
-        "hint": "The bank pools customer deposits into its liabilities base to fund retail advances (home, auto, personal loans) and commercial credit, earning loan interest income while paying minimal interest on CASA deposits."
-      },
-      {
-        "type": "boxes",
-        "tag": "Banking Fundamentals \u00b7 Slide 5",
-        "heading": "Types of Liabilities in Banking",
-        "body": "<p><strong>Liabilities are the primary source of funds for the bank.</strong> The bank raises capital through customer deposits, borrowings, and bond markets:</p>",
-        "boxGridCols": 3,
-        "boxes": [
-          {
-            "title": "Customer Deposits",
-            "badge": "PRIMARY SOURCE",
-            "badgeColor": "green",
-            "icon": "media/image23.png",
-            "highlight": true,
-            "desc": "The lifeblood of commercial banking:",
-            "bullets": [
-              "<strong>Savings Accounts (CASA \u2713):</strong> Low-cost demand deposits available on tap.",
-              "<strong>Current Accounts (CASA \u2713):</strong> Zero-interest transactional accounts for businesses.",
-              "<strong>Fixed Deposits (FDs):</strong> Time liabilities with predetermined tenure.",
-              "<strong>Recurring Deposits (RDs):</strong> Systematic monthly term savings."
-            ]
-          },
-          {
-            "title": "Borrowings",
-            "badge": "SECONDARY",
-            "icon": "media/image25.png",
-            "desc": "Wholesale liquidity sources:",
-            "bullets": [
-              "<strong>Interbank Borrowings:</strong> Short-term call and notice money markets.",
-              "<strong>Financial Institutions:</strong> Lines of credit from domestic and global lenders.",
-              "<strong>RBI Borrowings:</strong> Repo operations and statutory liquidity window."
-            ]
-          },
-          {
-            "title": "Bonds & Debentures",
-            "badge": "CAPITAL MARKET",
-            "icon": "media/image23.png",
-            "desc": "Long-term debt instruments:",
-            "bullets": [
-              "<strong>Bonds Issued:</strong> Infrastructure and tier-2 long-term debt capital.",
-              "<strong>Debentures:</strong> Subordinated market instruments strengthening capital adequacy."
-            ]
-          }
-        ],
+        "type": "section_hero",
+        "tag": "LESSON 2  \u2022  SAVINGS ACCOUNTS",
+        "heading": "Regular Savings Account",
+        "body": "Everyday banking with 24x7 access to your bank",
         "callout": {
           "type": "tip",
-          "text": "<strong>Core Banking Flow:</strong> Deposits collected from customers \u2794 Deployed as loans & investments \u2794 Generate income & support the bank's growth."
-        },
-        "audioUrl": "media/Slide_5.mp3",
-        "audioTitle": "Listen: Types of Liabilities in Banking"
-      },
-      {
-        "type": "boxes",
-        "tag": "Strategic Value \u00b7 Slide 6",
-        "heading": "Why Liabilities Matter",
-        "body": "<p>Four foundational reasons why a strong deposit base is critical to the bank's health, profitability, and market leadership:</p>",
-        "boxGridCols": 2,
-        "boxes": [
-          {
-            "title": "Cheap Source of Funds",
-            "badge": "LOW COST",
-            "badgeColor": "green",
-            "icon": "media/image27.png",
-            "highlight": true,
-            "desc": "Deposits, especially CASA, are the most cost-effective funding source. A lower cost of funds directly widens bank profitability."
-          },
-          {
-            "title": "Interest Spread (NIM)",
-            "badge": "PROFIT ENGINE",
-            "icon": "media/image28.png",
-            "highlight": true,
-            "desc": "The difference between interest earned on loans and interest paid on deposits is the bank's Net Interest Margin (NIM)."
-          },
-          {
-            "title": "Liquidity Management",
-            "badge": "STABILITY",
-            "icon": "media/image29.png",
-            "desc": "A healthy deposit base ensures the bank can meet customer withdrawal demands and statutory reserve requirements (CRR & SLR)."
-          },
-          {
-            "title": "Increased Lending Capacity",
-            "badge": "SCALE",
-            "icon": "media/image26.png",
-            "desc": "More low-cost deposits enable higher lending volumes, driving asset book expansion, fee income, and shareholder value."
-          }
-        ],
-        "audioUrl": "media/Slide_7.mp3",
-        "audioTitle": "Listen: Why Liabilities Matter"
+          "text": "<strong>Facilitator Insight:</strong> Let's start with the Regular Savings Account: everyday banking, with 24x7 access to your bank. This is the everyday account. The premium variants that follow build on it."
+        }
       },
       {
         "type": "card",
-        "tag": "Profitability Economics \u00b7 Slide 7",
-        "heading": "CASA & Bank Profitability",
-        "body": "<p>How the CASA ratio fundamentally transforms the economics and competitive edge of a commercial bank:</p>",
-        "table": {
-          "headers": [
-            "Particulars",
-            "High CASA Bank (e.g. HDFC Bank)",
-            "Low CASA Bank"
-          ],
-          "rows": [
-            [
-              "Cost of Funds",
-              "Lower (Ultra-cheap funding base)",
-              "Higher (Reliance on wholesale debt)"
-            ],
-            [
-              "Lending Capacity",
-              "Higher (Competitive loan pricing)",
-              "Lower (Higher hurdle rate for advances)"
-            ],
-            [
-              "Net Interest Margin (NIM)",
-              "Higher (3.5% \u2013 4.2%+ spread)",
-              "Lower (Compressed interest margins)"
-            ],
-            [
-              "Overall Profitability",
-              "Higher (Superior Return on Assets)",
-              "Lower (Vulnerable to rate hikes)"
-            ]
-          ]
-        },
-        "callout": {
-          "type": "tip",
-          "text": "<strong>Key Takeaway:</strong> A higher CASA ratio is the hallmark of a financially healthy, well-run bank. As bank employees, growing the CASA base is the single most impactful contribution you can make starting from Day 1."
-        },
-        "audioUrl": "media/Slide_8-2.mp3",
-        "audioTitle": "Listen: CASA & Bank Profitability"
-      },
-      {
-        "type": "boxes",
-        "tag": "Employee Growth Levers \u00b7 Slide 8",
-        "heading": "Every Employee Drives CASA Growth",
-        "body": "<p>Four practical levers every sales executive and branch employee can execute daily to grow and protect the CASA base:</p>",
-        "boxGridCols": 2,
+        "tag": "Slide 3",
+        "heading": "A savings account designed to meet your day to day banking needs while giving you 24X7 access to your bank.",
+        "imageSrc": null,
+        "body": "",
         "boxes": [
           {
-            "title": "01 Customer Acquisition",
-            "badge": "ACQUIRE",
+            "title": "Balance Requirement",
+            "desc": "AMB Requirement of Rs.10,000 in Metro and Urban, Rs.5,000 in Semi-Urban and AQB of Rs.2,500 or FD Cushion of Rs.25,000 in Rural",
+            "badge": "01",
+            "badgeColor": "",
+            "highlight": true,
+            "green": false,
+            "gold": false
+          },
+          {
+            "title": "Demat Benefit",
+            "desc": "Waiver on annual maintenance charges on new Demat Account for 1st year",
+            "badge": "02",
             "badgeColor": "green",
-            "icon": "media/image33.png",
-            "desc": "Open new Savings and Current Accounts through systematic catchment mapping and quality referrals from satisfied customers."
+            "highlight": false,
+            "green": true,
+            "gold": false
           },
           {
-            "title": "02 Relationship Building",
-            "badge": "ENGAGE",
-            "icon": "media/image34.png",
-            "desc": "Deliver delightful onboarding and service to drive primary account usage, payroll credits, and active debit card spending."
+            "title": "ATM Transactions Limits per Month",
+            "desc": "HDFC Bank: Financial 5 free; Non Financial \u2013 Free Non HDFC Bank: 5 free (3 free in top 6 Metros)",
+            "badge": "03",
+            "badgeColor": "gold",
+            "highlight": false,
+            "green": false,
+            "gold": true
           },
           {
-            "title": "03 Cross-Selling",
-            "badge": "DEEPEN",
-            "icon": "media/image35.png",
-            "desc": "Deepen customer share of wallet with salary accounts, merchant QR/POS solutions, credit cards, and digital wealth offerings."
-          },
-          {
-            "title": "04 Retention & Reactivation",
-            "badge": "RETAIN",
-            "badgeColor": "red",
-            "icon": "media/image36.png",
-            "desc": "Monitor account balances proactively, resolve service friction immediately, and reactivate dormant accounts before customers switch."
+            "title": "Debit Card",
+            "desc": "Metro/ Urban: Millennia Debit Card with Cashback, Insurance Cover & Lounge Access Semi-Urban and Rural: RuPay Debit Card with Personal Accident (Death / Disability) Insurance of upto Rs.10lacs",
+            "badge": "04",
+            "badgeColor": "",
+            "highlight": true,
+            "green": false,
+            "gold": false
           }
         ],
-        "audioUrl": "media/Slide_9.mp3",
-        "audioTitle": "Listen: Every Employee Drives CASA Growth"
+        "boxGridCols": 2,
+        "callout": {
+          "type": "tip",
+          "text": "<strong>Facilitator Insight:</strong> The Regular Savings Account is designed to meet the customer's day-to-day banking needs, while giving 24x7 access to the bank. Let's look at its key features. First, the balance requirement. It depends on the branch location. The Average Monthly Balance, or AMB, is Rs. 10,000 in "
+        }
       },
       {
-        "type": "quiz_mcq",
-        "id": "quiz_s9",
-        "title": "Knowledge Check: Importance of CASA (Slide 9)",
-        "questions": [
+        "type": "flashcards",
+        "title": "Key Concept Flip Cards",
+        "instruction": "Tap any card below to flip and review essential takeaways:",
+        "cards": [
           {
-            "q": "Which of these is the most cost-effective source of funds for a commercial bank?",
-            "options": [
-              "Interbank borrowings at market call rates",
-              "Bonds and subordinated debentures issued in capital markets",
-              "CASA deposits (Current and Savings Accounts)",
-              "RBI borrowings under the repo facility window"
-            ],
-            "correct": 2,
-            "explanation": "CASA deposits carry zero interest (Current Account) or low regulated interest (Savings Account), making them the cheapest source of funding and the primary driver of high Net Interest Margin (NIM)."
+            "q": "What does Average Monthly Balance (AMB) mean in the context of a savings account?",
+            "a": "AMB is the average balance maintained over a month. Treat the required amount as a product and location-specific condition, and explain it clearly before the customer chooses an account."
+          },
+          {
+            "q": "A customer wants an account for day-to-day banking and 24\u00d77 access. Which product in the outline is designed around that need?",
+            "a": "The Regular Savings Account is described as meeting day-to-day banking needs while providing 24\u00d77 access. Confirm current fees, balance requirements, and transaction limits before explaining specifics."
+          },
+          {
+            "q": "What is a common pitfall when describing Savings Max insurance or other benefits?",
+            "a": "Do not present a stated benefit as automatic or unconditional. Explain that eligibility, activation conditions, limits, and applicable terms must be checked and confirmed."
           }
-        ],
-        "audioUrl": "media/Slide_10-3.mp3",
-        "audioTitle": "Audio Voiceover"
+        ]
+      },
+      {
+        "type": "kyc_sorter",
+        "id": "ai_drag_sorter",
+        "title": "Savings Account Recommendation: Best Practice or Risk?",
+        "instruction": "Classify each statement/item below into Correct / Best Practice (true) vs Risk / Anti-Pattern / Ineligible (false):",
+        "trueLabel": "\u2713 Best Practice / Valid",
+        "falseLabel": "\u2715 Risk / Non-Compliant",
+        "docs": [
+          {
+            "name": "Before recommending Regular Savings, confirm the customer\u2019s location and explain the stated AMB requirement: Rs.10,000 in Metro and Urban, and Rs.5,000 in Semi-Urban.",
+            "valid": true,
+            "note": "The outline gives these balance requirements. Confirm the latest product terms and any applicable balance measure before quoting them."
+          },
+          {
+            "name": "Tell a customer that Savings Max\u2019s insurance cover is guaranteed immediately on account opening, without checking activation conditions.",
+            "valid": false,
+            "note": "The outline flags insurance cover and activation conditions. Do not promise cover without verifying eligibility, activation requirements, and current terms."
+          },
+          {
+            "name": "For a customer considering Savings Max, explain the stated AMB of Rs.25,000 and discuss the Money Maximiser facility as a potential account benefit.",
+            "valid": true,
+            "note": "Both the Rs.25,000 AMB and Money Maximiser facility appear in the outline. Explain how the facility works using current product information."
+          },
+          {
+            "name": "Assure a customer that all ATM transactions at every bank are free because the outline mentions free transactions.",
+            "valid": false,
+            "note": "The outline distinguishes HDFC Bank and non-HDFC Bank transactions and its transaction details are incomplete. Check the current schedule of charges and limits instead of generalizing."
+          }
+        ]
       }
     ]
   },
   {
     "id": "ch2",
     "num": "M2",
-    "shortTitle": "Regular Savings",
-    "title": "Module 2: Regular Savings Account",
-    "subtitle": "Know Your Product \u2014 Everyday Savings Bank Account (SB)",
+    "shortTitle": "Savings Max",
+    "title": "Savings Max",
+    "subtitle": "Premium benefits with an AMB of just Rs. 25,000",
     "blocks": [
       {
-        "type": "card",
-        "tag": "Product Range Overview \u00b7 Slides 10-11",
-        "heading": "Module 2: Know Your Product \u2014 Savings Bank Accounts",
-        "imageSrc": "media/slide_10.png",
-        "body": "<p>Savings Accounts are the foundational gateway product for retail banking. In this module, we examine three core offerings: the versatile <strong>Regular Savings Account</strong>, the high-yield <strong>Savings Max Account</strong>, and the profile-driven <strong>Speciale Premium Range</strong>.</p>",
-        "audioUrl": "media/Slide_11.mp3",
-        "audioTitle": "Listen: Module 2: Know Your Product \u2014 Savings Bank Accounts"
+        "type": "section_hero",
+        "tag": "LESSON 2  \u2022  SAVINGS ACCOUNTS",
+        "heading": "Savings Max",
+        "body": "Premium benefits with an AMB of just Rs. 25,000",
+        "callout": {
+          "type": "tip",
+          "text": "<strong>Facilitator Insight:</strong> Next, let's look at Savings Max: premium benefits with an AMB of just Rs. 25,000. Savings Max sits above the Regular Savings Account, with a higher balance requirement and richer debit card and insurance benefits."
+        }
       },
       {
-        "type": "boxes",
-        "tag": "Key Features \u00b7 Slide 12",
-        "heading": "Regular Savings Account: Key Features",
-        "body": "<p>A savings account designed to meet daily transactional needs while giving customers peace of mind, digital convenience, and lifestyle privileges:</p>",
-        "boxGridCols": 2,
+        "type": "card",
+        "tag": "Slide 5",
+        "heading": "AMB Requirement of Just Rs.25K | Debit card, account, other product and loan benefits",
+        "imageSrc": null,
+        "body": "",
         "boxes": [
           {
-            "title": "Balance Requirement",
-            "badge": "AMB / AQB",
+            "title": "DEBIT CARD BENEFITS",
+            "desc": "Free lifetime Platinum Debit Card for the primary account holder",
+            "badge": "01",
+            "badgeColor": "",
+            "highlight": true,
+            "green": false,
+            "gold": false
+          },
+          {
+            "title": "BENEFITS ON A/C",
+            "desc": "Money maximiser facility: Automatically convert the balance to FD once it reaches 1.25L",
+            "badge": "02",
             "badgeColor": "green",
-            "icon": "media/image5.png",
+            "highlight": false,
+            "green": true,
+            "gold": false
+          },
+          {
+            "title": "Insurance Cover of up to 3.29\u00a0Crs.",
+            "desc": "Daily cash withdrawal limit of Rs.\u00a01L & shopping limit of Rs.\u00a05L",
+            "badge": "03",
+            "badgeColor": "gold",
+            "highlight": false,
+            "green": false,
+            "gold": true
+          },
+          {
+            "title": "Free DD up to Rs.\u00a01L",
+            "desc": "Unlimited Free ATM transactions on HDFC and Non-HDFC bank ATMs",
+            "badge": "04",
+            "badgeColor": "",
             "highlight": true,
-            "desc": "<strong>Metro & Urban:</strong> Average Monthly Balance (AMB) of \u20b910,000.<br/><strong>Semi-Urban:</strong> AMB of \u20b95,000.<br/><strong>Rural:</strong> Average Quarterly Balance (AQB) of \u20b92,500 or \u20b925,000 FD for 1 year."
+            "green": false,
+            "gold": false
           },
           {
-            "title": "Demat & Investment Benefit",
-            "badge": "WEALTH PRIVILEGE",
-            "icon": "media/image37.png",
-            "desc": "100% waiver on Annual Maintenance Charges (AMC) on new Demat Accounts for the first year, making investing accessible and frictionless."
+            "title": "LOAN OFFERS",
+            "desc": "Free lifetime Woman's Advantage/International Debit Card for all account holders",
+            "badge": "05",
+            "badgeColor": "green",
+            "highlight": false,
+            "green": true,
+            "gold": false
           },
           {
-            "title": "ATM Transaction Limits",
-            "badge": "ATM WITHDRAWALS",
-            "icon": "media/image38.png",
-            "desc": "<strong>HDFC Bank ATMs:</strong> 5 free financial transactions/month; unlimited non-financial free.<br/><strong>Non-HDFC ATMs:</strong> 5 free transactions in non-metro locations; 3 free in metro locations."
-          },
-          {
-            "title": "Millennia Debit Card",
-            "badge": "CARDS & LOUNGE",
-            "icon": "media/image3.png",
-            "highlight": true,
-            "desc": "Metro & Urban accounts come with the <strong>Millennia Debit Card</strong> featuring up to 5% CashBack on shopping, complimentary domestic airport lounge access, and extensive accidental insurance cover."
+            "title": "Special Offer on TWL*",
+            "desc": "Metro / Urban: AMB Requirement 25K or FD Relationship of 1.50L      Semi Urban / Rural: AMB Requirement 25K or FD Relationship of 1 L",
+            "badge": "06",
+            "badgeColor": "gold",
+            "highlight": false,
+            "green": false,
+            "gold": true
           }
         ],
-        "audioUrl": "media/Slide_13.mp3",
-        "audioTitle": "Listen: Regular Savings Account: Key Features"
+        "boxGridCols": 3,
+        "callout": {
+          "type": "tip",
+          "text": "<strong>Facilitator Insight:</strong> Savings Max needs an AMB of just Rs. 25,000, and it offers benefits in four areas. Debit card benefits: a free lifetime Platinum Debit Card for the primary account holder, with a daily cash withdrawal limit of Rs. 1 lakh and a shopping limit of Rs. 5 lakh. Customers get up to 1% "
+        }
+      },
+      {
+        "type": "card",
+        "tag": "Slide 6",
+        "heading": "Savings Max Account (contd.): eligibility and minimum balance requirement",
+        "imageSrc": null,
+        "body": "",
+        "boxes": [
+          {
+            "title": "Hindu Undivided Families",
+            "desc": "The following people are eligible to open a SavingsMax Account:",
+            "badge": "01",
+            "badgeColor": "",
+            "highlight": true,
+            "green": false,
+            "gold": false
+          },
+          {
+            "title": "\u2265 Rs. 25,000 AMB",
+            "desc": "The Average Monthly Balance (AMB) in the SavingsMax Account should be > or = Rs. 25,000 or maintain requisite FD Relationship as per branch location",
+            "badge": "02",
+            "badgeColor": "green",
+            "highlight": false,
+            "green": true,
+            "gold": false
+          },
+          {
+            "title": "Foreign Nationals Residing in India*",
+            "desc": "Minor above the age of 10 years are eligible to open self operated minor account and an ATM/Debit card can be issued to the Minor",
+            "badge": "03",
+            "badgeColor": "gold",
+            "highlight": false,
+            "green": false,
+            "gold": true
+          },
+          {
+            "title": "ELIGIBILITY",
+            "desc": "*Foreign Nationals residing in India may open a SavingsMax Account by temporarily attaching an undertaking (QA 22 Form) stating their sources of credit with a copy of their residence permit",
+            "badge": "04",
+            "badgeColor": "",
+            "highlight": true,
+            "green": false,
+            "gold": false
+          }
+        ],
+        "boxGridCols": 2,
+        "callout": {
+          "type": "tip",
+          "text": "<strong>Facilitator Insight:</strong> Who can open a Savings Max Account? Hindu Undivided Families; foreign nationals residing in India; and minors above the age of 10 years. Minors above 10 can open a self-operated minor account, and an ATM or debit card can be issued to them. So yes, a 12-year-old can open a self-o"
+        }
+      },
+      {
+        "type": "quiz_mcq",
+        "id": "ai_scenario_quiz",
+        "title": "Mastery Scenario Knowledge Check",
+        "questions": [
+          {
+            "q": "A customer wants convenient everyday banking, is unsure what balance they can maintain, and asks whether Savings Max insurance cover starts automatically. What should you do?",
+            "options": [
+              "Explore the customer\u2019s banking habits and likely balance, compare suitable account options, explain the applicable balance requirements, and verify insurance eligibility and activation conditions before making any assurance.",
+              "Recommend Savings Max immediately and say the insurance cover applies as soon as the account is opened.",
+              "Quote the Regular Savings ATM transaction details from memory and assume the stated limits apply at every bank.",
+              "Avoid discussing the customer\u2019s needs or product conditions and ask them to choose an account on their own."
+            ],
+            "correct": 0,
+            "explanation": "A needs-based recommendation connects the customer\u2019s actual banking habits and likely balance to the right product. Clearly explaining applicable balance requirements helps prevent surprises, while checking current insurance eligibility and activation conditions avoids making an unsupported promise. ATM charges and limits should also be verified rather than inferred from incomplete information."
+          }
+        ]
       }
     ]
   },
   {
     "id": "ch3",
     "num": "M3",
-    "shortTitle": "Savings Max",
-    "title": "Module 2: Savings Max Account",
-    "subtitle": "High-Yield Sweep-in, Premium Platinum Card & Up to \u20b93.29 Cr Insurance Cover",
+    "shortTitle": "Insurance cover break-up a",
+    "title": "Insurance cover break-up and activation conditions",
+    "subtitle": "Interactive Learning & Key Concepts",
     "blocks": [
       {
-        "type": "collapsible_boxes",
-        "tag": "Value Proposition \u00b7 Slide 14",
-        "heading": "Savings Max Account: Key USPs",
-        "body": "<p>An AMB requirement of just \u20b925,000 unlocks an extraordinary bundle of debit card privileges, automatic sweep-in liquidity, locker discounts, and loan concessions:</p>",
-        "collapsibles": [
-          {
-            "title": "\ud83d\udcb3 DEBIT CARD BENEFITS \u2014 Free Lifetime Platinum Card",
-            "badge": "PREMIUM DC",
-            "badgeColor": "gold",
-            "icon": "media/image3.png",
-            "isOpen": true,
-            "bullets": [
-              "<strong>Free Lifetime Platinum Debit Card:</strong> Zero annual fee for the primary account holder.",
-              "<strong>Higher Spending Limits:</strong> Daily cash withdrawal limit of \u20b91 Lakh & shopping limit of \u20b95 Lakhs.",
-              "<strong>1% CashBack:</strong> Up to 1% CashBack on every point-of-sale and online transaction.",
-              "<strong>Unlimited Free ATM Usage:</strong> Unlimited free ATM transactions on all HDFC and Non-HDFC ATMs nationwide.",
-              "<strong>Woman's Advantage Card:</strong> Free lifetime Woman's Advantage / International Debit Card for joint account holders.",
-              "<strong>Unmatched Insurance:</strong> Personal and air accident insurance coverage up to \u20b93.29 Crores."
-            ]
-          },
-          {
-            "title": "\ud83c\udfe6 BENEFITS ON A/C \u2014 Money Maximiser Auto-Sweep",
-            "badge": "LIQUIDITY",
-            "icon": "media/image6.png",
-            "isOpen": true,
-            "bullets": [
-              "<strong>Money Maximiser Facility:</strong> Automatically sweeps surplus funds above a threshold into high-interest Fixed Deposits, earning higher FD returns.",
-              "<strong>Reverse Sweep (Sweep-In):</strong> Whenever a cheque or withdrawal exceeds the savings balance, the FD liquidates automatically with zero penalty.",
-              "<strong>50% Locker Discount:</strong> 50% discount on safe deposit locker rental fees for the 1st year (on a pro-rata basis).",
-              "<strong>FD Cushion:</strong> Flexible FD cushion facility available from \u20b91 Lakh to \u20b91.5 Lakhs."
-            ]
-          },
-          {
-            "title": "\ud83d\udcc4 OTHER PRODUCT BENEFITS \u2014 Wealth & Transactions",
-            "badge": "ALLIED",
-            "icon": "media/image41.png",
-            "bullets": [
-              "<strong>Free Demand Drafts:</strong> Free Demand Draft (DD) issuance up to \u20b91 Lakh per month.",
-              "<strong>Demat Fee Waiver:</strong> AMC charges on new Demat Account waived completely for the 1st year."
-            ]
-          },
-          {
-            "title": "\ud83d\ude97 LOAN OFFERS \u2014 Preferential Rates",
-            "badge": "LENDING",
-            "icon": "media/image42.png",
-            "bullets": [
-              "<strong>Special Rate on Two-Wheeler Loans (TWL):</strong> Preferential interest rates and processing fee concessions for Savings Max holders."
-            ]
-          }
-        ],
-        "callout": {
-          "type": "tip",
-          "text": "<strong>Balance Qualification:</strong> Metro / Urban: AMB \u20b925,000 or FD Relationship of \u20b91.50 Lakhs. Semi-Urban / Rural: AMB \u20b925,000 or FD Relationship of \u20b91 Lakh."
-        },
-        "audioUrl": "media/Slide_15.mp3",
-        "audioTitle": "Listen: Savings Max Account: Key USPs"
-      },
-      {
-        "type": "boxes",
-        "tag": "Eligibility \u00b7 Slide 15",
-        "heading": "Savings Max: Eligibility & Balance Requirements",
-        "boxGridCols": 2,
-        "boxes": [
-          {
-            "title": "Who Can Open a Savings Max?",
-            "badge": "ELIGIBILITY",
-            "icon": "media/image43.png",
-            "bullets": [
-              "<strong>Resident Individuals:</strong> Sole or joint accounts.",
-              "<strong>Hindu Undivided Families (HUF):</strong> Managed through the Karta.",
-              "<strong>Foreign Nationals Residing in India:</strong> Eligible by submitting standard visa, employment permit, and address proof.",
-              "<strong>Minors above 10 Years:</strong> Eligible for self-operated minor accounts."
-            ]
-          },
-          {
-            "title": "Minimum Balance & Maintenance",
-            "badge": "MAINTENANCE",
-            "badgeColor": "green",
-            "icon": "media/image5.png",
-            "highlight": true,
-            "bullets": [
-              "<strong>Average Monthly Balance:</strong> \u2265 \u20b925,000 across the calendar month.",
-              "<strong>Alternative FD Threshold:</strong> Fixed deposit relationship of \u20b91.5 Lakhs (Metro/Urban) or \u20b91 Lakh (Semi-Urban/Rural) waives AMB non-maintenance charges."
-            ]
-          }
-        ],
-        "audioUrl": "media/Slide_16.mp3",
-        "audioTitle": "Listen: Savings Max: Eligibility & Balance Requirements"
-      },
-      {
         "type": "card",
-        "tag": "Insurance Terms & Conditions \u00b7 Slide 16",
-        "heading": "Savings Max: Insurance Breakdown & Activation Terms",
-        "body": "<p>Detailed breakdown of the <strong>\u20b93.29 Crore comprehensive complimentary insurance coverage</strong> bundled with the Savings Max Account and Lifetime Free Platinum Debit Card:</p>",
+        "tag": "Slide 7",
+        "heading": "Insurance cover break-up and activation conditions",
+        "imageSrc": null,
+        "body": "",
         "table": {
           "headers": [
             "Cover Type",
-            "Total Cover",
-            "Account Level",
-            "Platinum DC Level",
-            "Activation Condition"
+            "Total Insurance",
+            "Account Level (Insurance)",
+            "Lifetime Free Platinum Debit Card Level (Insurance)",
+            "Condition"
           ],
           "rows": [
             [
               "Air Accidental Cover",
-              "\u20b93.00 Cr",
-              "\u2014",
-              "\u20b93.00 Cr",
-              "Air ticket must be purchased using the primary Platinum Debit Card"
+              "3 Cr.",
+              "-",
+              "3 Cr.",
+              "Air Ticket should be bought from same platinum debit card"
             ],
             [
-              "Personal Accidental Death",
-              "\u20b920 Lacs",
-              "\u20b910 Lacs",
-              "\u20b910 Lacs",
-              "Account activation: 1 POS swipe in last 90 days. Debit Card: 1 POS swipe in last 30 days"
+              "Personal Accidental Death Cover",
+              "20 Lacs",
+              "10 Lacs",
+              "Upto 10 lacs",
+              "Account Insurance Activation - POS Swipe - Last 90 days, DC Insurance Activation - POS Swipe in last 30 days"
             ],
             [
-              "Accidental Hospitalization",
-              "\u20b91 Lac",
-              "\u20b91 Lac",
-              "\u2014",
-              "At least 1 POS swipe in the last 30 days prior to incident"
+              "Accidental Hospitalization Cover",
+              "1 Lac",
+              "1 Lac",
+              "-",
+              "POS Swipe - Last 30 days"
             ],
             [
               "Zero Liability Cover",
-              "\u20b94 Lacs",
-              "\u2014",
-              "\u20b94 Lacs",
-              "At least 1 POS swipe in last 90 days. Covers fraudulent transactions upon timely reporting"
+              "4 Lacs",
+              "-",
+              "4 lacs",
+              "POS Swipe - Last 90 days"
             ],
             [
-              "Fire, Burglary & Baggage",
-              "\u20b94 Lacs",
-              "\u2014",
-              "\u20b94 Lacs",
-              "Goods purchased with DC within 90 days + 1 POS transaction in last 90 days"
+              "Fire & Burglary and Loss of Checked Baggage",
+              "4 lacs",
+              "-",
+              "4 lacs",
+              "Fire and Burglary - Items should be purchased till 90 days before by HDFC bank DC + Atleast One POS transaction 90 days prior to the incident Checked Baggage Insurance- Atleast One POS transaction 90 days prior to the incident. Applies, if the insured is travelling on tour and or on holidays in all places within India to the extent of the intrinsic value of the accompanied personal baggage belonging to the card holder is lost because of fire, theft burglary and accident to the travelling vehicle."
             ],
             [
-              "Total Combined Protection",
-              "\u20b93.29 Cr",
-              "\u20b90.11 Cr",
-              "\u20b93.18 Cr",
-              "Active debit card usage ensures uninterrupted complimentary coverage"
+              "Total",
+              "3.29 Cr",
+              "0.11 Cr",
+              "3.18 Cr",
+              ""
             ]
           ]
-        },
-        "audioUrl": "media/Slide_17.mp3",
-        "audioTitle": "Listen: Savings Max: Insurance Breakdown & Activation Terms"
+        }
       },
       {
         "type": "quiz_blanks",
         "id": "ai_blanks_drill",
-        "title": "Fill-in-the-Blanks: CASA & Savings Max USPs",
+        "title": "Core Terminology & Standards Completion",
         "wordBank": [
-          "CASA",
-          "Savings Max",
-          "Speciale",
-          "Maker-Checker"
+          "Average Monthly Balance (AMB)",
+          "Money Maximiser",
+          "Platinum Debit Card",
+          "Demat account"
         ],
         "items": [
           {
-            "prompt": "Ultra low-cost deposits that maximize a bank's profitability and NIM are known as _______ deposits.",
-            "answer": "CASA"
+            "prompt": "The balance requirement described for Savings Max is an _______ of Rs.25,000.",
+            "answer": "Average Monthly Balance (AMB)"
           },
           {
-            "prompt": "The premium savings account offering two-way sweep-in FD and higher insurance is _______.",
-            "answer": "Savings Max"
+            "prompt": "Savings Max includes a _______ facility that can automatically convert eligible balance to an FD when it reaches the applicable threshold.",
+            "answer": "Money Maximiser"
           },
           {
-            "prompt": "The operational protocol where one employee prepares and another verifies is _______.",
-            "answer": "Maker-Checker"
+            "prompt": "The outline lists a free lifetime _______ for the primary Savings Max account holder.",
+            "answer": "Platinum Debit Card"
           }
         ]
       }
@@ -2896,325 +2901,370 @@ var COURSE_CHAPTERS = [
     "id": "ch4",
     "num": "M4",
     "shortTitle": "Speciale Savings",
-    "title": "Module 2: Speciale Premium Savings",
-    "subtitle": "Profile-Based Privileges, Higher Average Ticket Size & Lifetime Relationship Value",
+    "title": "Speciale Savings",
+    "subtitle": "The premium savings range",
     "blocks": [
       {
-        "type": "boxes",
-        "tag": "Premium Portfolio \u00b7 Slide 18",
-        "heading": "New Premium Savings Offerings",
-        "body": "<p>The Speciale portfolio delivers curated relationship pricing and lifestyle privileges tailored to professional and demographic segments:</p>",
-        "boxGridCols": 2,
-        "boxes": [
-          {
-            "title": "Speciale Activ Savings Account",
-            "badge": "HOME LOAN ENABLER",
-            "badgeColor": "gold",
-            "icon": "media/image48.png",
-            "highlight": true,
-            "desc": "<strong>Pay Home Loan EMIs, Get Great Rewards:</strong> Seamlessly links to HDFC Bank Home Loans, transforming monthly EMI outflows into accelerated rewards and fee waivers."
-          },
-          {
-            "title": "Salary Speciale\u2019 Program",
-            "badge": "CORPORATE PAYROLL",
-            "icon": "media/image49.png",
-            "highlight": true,
-            "desc": "<strong>Premium Corporate Salary:</strong> Platinum & Gold salary tiers offering zero-balance convenience, family banking benefits, and elevated credit limits."
-          },
-          {
-            "title": "Savings Plus Plan (5 pe 5)",
-            "badge": "ONBOARDING",
-            "icon": "media/image33.png",
-            "desc": "<strong>0\u201330 Days Customer Onboarding:</strong> Accelerates relationship depth for newly onboarded Savings and Salary account holders within the first month."
-          },
-          {
-            "title": "Speciale Senior Citizen Account",
-            "badge": "GOLDEN YEARS",
-            "icon": "media/image50.png",
-            "desc": "<strong>Enjoy Your Golden Years:</strong> Preferential FD interest rates, healthcare privileges, priority branch queueing, and doorstep banking."
-          }
-        ],
-        "audioUrl": "media/Slide_19.mp3",
-        "audioTitle": "Listen: New Premium Savings Offerings"
+        "type": "section_hero",
+        "tag": "LESSON 2  \u2022  SAVINGS ACCOUNTS",
+        "heading": "Speciale Savings",
+        "body": "The premium savings range",
+        "callout": {
+          "type": "tip",
+          "text": "<strong>Facilitator Insight:</strong> Now, let's look at Speciale Savings, our premium savings range. The Speciale range offers premium benefits based on the customer's profile. Let's see the range, and why it's worth pitching."
+        }
       },
       {
-        "type": "boxes",
-        "tag": "Sales Pitch Justification \u00b7 Slide 19",
-        "heading": "Why Pitch a Speciale Account?",
-        "body": "<p>Compelling benefits of pitching the Speciale range for both the customer and the bank's balance sheet:</p>",
-        "boxGridCols": 3,
+        "type": "card",
+        "tag": "Slide 9",
+        "heading": "What are the new premium product Savings offerings?",
+        "imageSrc": null,
+        "body": "",
         "boxes": [
           {
-            "title": "2.5X Higher Ticket Size",
-            "badge": "BALANCE DEPTH",
-            "badgeColor": "green",
-            "icon": "media/image51.png",
+            "title": "NEW PREMIUM PRODUCTS",
+            "desc": "Speciale Activ A/c (HL Nav Enabler) Speciale Salary A/c (Platinum & Gold) Savings Plus (5 pe 5) Speciale Women\u2019s Gold A/c",
+            "badge": "01",
+            "badgeColor": "",
             "highlight": true,
-            "desc": "Speciale accounts generate <strong>2.5X higher Average Ticket Size (ATS)</strong> in deposit balances compared to regular entry-level accounts."
+            "green": false,
+            "gold": false
           },
           {
-            "title": "Profile-Tailored Benefits",
-            "badge": "CUSTOMER VALUE",
-            "icon": "media/image48.png",
-            "desc": "Customers enjoy custom privileges matching their profession, salary band, or life stage, maximizing customer delight."
+            "title": "Speciale Activ Savings Account",
+            "desc": "HDFC Bank Home Loan EMIs are now more rewarding: Pay Home Loan EMIs, Get Great Rewards",
+            "badge": "02",
+            "badgeColor": "green",
+            "highlight": false,
+            "green": true,
+            "gold": false
           },
           {
-            "title": "Higher Bundling Opportunity",
-            "badge": "CROSS-SELL",
-            "icon": "media/image35.png",
-            "desc": "Deepens relationship tenure, dramatically lowering attrition while creating natural pathways for credit cards, investments, and mortgages."
+            "title": "OTHER PREMIUM PRODUCTS",
+            "desc": "Speciale Premium Savings A/c (Platinum/Gold) Senior Citizen Speciale A/c Super Kids Speciale A/c Savings Max A/c",
+            "badge": "03",
+            "badgeColor": "gold",
+            "highlight": false,
+            "green": false,
+            "gold": true
           }
         ],
-        "audioUrl": "media/Slide_20.mp3",
-        "audioTitle": "Listen: Why Pitch a Speciale Account?"
+        "boxGridCols": 3,
+        "callout": {
+          "type": "tip",
+          "text": "<strong>Facilitator Insight:</strong> What are our premium savings offerings? The new premium products are: the Speciale Activ account, also called the Home Loan Nav Enabler; the Speciale Salary account, in Platinum and Gold; Savings Plus, also known as 5 pe 5; and the Speciale Women's Gold account. Our other premium"
+        }
+      },
+      {
+        "type": "card",
+        "tag": "Slide 10",
+        "heading": "Benefits of pitching a Speciale Savings A/c, for the customer and for the bank",
+        "imageSrc": null,
+        "body": "",
+        "boxes": [
+          {
+            "title": "Higher Average Ticket Size (ATS), in lacs",
+            "desc": "",
+            "bullets": null,
+            "badge": "01",
+            "badgeColor": "",
+            "highlight": true,
+            "green": false,
+            "gold": false
+          },
+          {
+            "title": "Exclusive benefits as per his profile/profession",
+            "desc": "",
+            "bullets": null,
+            "badge": "02",
+            "badgeColor": "green",
+            "highlight": false,
+            "green": true,
+            "gold": false
+          },
+          {
+            "title": "Higher bundling opportunity",
+            "desc": "",
+            "bullets": null,
+            "badge": "03",
+            "badgeColor": "gold",
+            "highlight": false,
+            "green": false,
+            "gold": true
+          },
+          {
+            "title": "2.5 X",
+            "desc": "",
+            "bullets": null,
+            "badge": "04",
+            "badgeColor": "",
+            "highlight": true,
+            "green": false,
+            "gold": false
+          }
+        ],
+        "boxGridCols": 4,
+        "callout": {
+          "type": "tip",
+          "text": "<strong>Facilitator Insight:</strong> Why should you pitch a Speciale account? Because it benefits both the customer and the bank. For the customer, a Speciale account offers exclusive benefits based on their profile or profession. For the bank, it brings a much higher Average Ticket Size. For example, Speciale Plati"
+        }
+      },
+      {
+        "type": "quiz_match",
+        "id": "ai_match_drill",
+        "title": "Concept & Operational Impact Matching",
+        "options": [
+          "Regular Savings Account",
+          "Savings Max",
+          "Speciale Savings"
+        ],
+        "pairs": [
+          {
+            "left": "A customer wants an account described as supporting day-to-day banking needs and 24\u00d77 access.",
+            "answer": "Regular Savings Account"
+          },
+          {
+            "left": "A customer can meet the stated Rs.25,000 AMB and is interested in account, debit card, and other product benefits.",
+            "answer": "Savings Max"
+          },
+          {
+            "left": "A customer may benefit from a premium offering aligned to their profile or profession, with potential for broader product bundling.",
+            "answer": "Speciale Savings"
+          }
+        ]
       }
     ]
   },
   {
     "id": "ch5",
     "num": "M5",
-    "shortTitle": "AOF Walkthroughs",
-    "title": "Module 3: Physical Account Opening Journeys",
-    "subtitle": "Step-by-Step Form Completion, Customer Signature Verification & Checkpoints",
+    "shortTitle": "Play the video to learn al",
+    "title": "Play the video to learn all the steps to open a physical account.",
+    "subtitle": "Interactive Learning & Key Concepts",
     "blocks": [
       {
-        "type": "video_placeholder",
-        "id": "vid_s20",
-        "badge": "AOF MASTERCLASS VIDEO",
-        "duration": "4m 30s",
-        "title": "How to Open the Physical Account (Slide 20)",
-        "embedUrl": "media/media1.mp4",
-        "watchFor": [
-          "Step-by-step physical Account Opening Form (AOF) completion across all mandatory fields.",
-          "Mandatory specimen signature verification against identity documents.",
-          "Self-attestation protocol for Officially Valid Documents (OVDs)."
-        ]
-      },
-      {
-        "type": "video_placeholder",
-        "id": "vid_s21",
-        "badge": "COMPLIANCE AUDIT VIDEO",
-        "duration": "6m 15s",
-        "title": "One Account, Four Checkpoints (Slide 21)",
-        "embedUrl": "media/media1.mp4",
-        "watchFor": [
-          "Checkpoint 1: Customer PAN and Aadhaar identity verification & biometric de-duplication.",
-          "Checkpoint 2: Address verification matching active residential OVD proof.",
-          "Checkpoint 3: Accurate initial funding cheque or digital fund transfer validation.",
-          "Checkpoint 4: Zero-defect Maker-Checker authorization workflow before dispatch."
-        ]
+        "type": "card",
+        "tag": "Slide 11",
+        "heading": "Play the video to learn all the steps to open a physical account.",
+        "imageSrc": null,
+        "body": "",
+        "bullets": null
       }
     ]
   },
   {
     "id": "ch6",
     "num": "M6",
-    "shortTitle": "Knowledge Drills",
-    "title": "Module 3: Interactive Knowledge Drills",
-    "subtitle": "Matching Drills, KYC Address Sorter & 3D Consultative Sales Flip Cards",
+    "shortTitle": "One Account Four Checkpoin",
+    "title": "One Account Four Checkpoints",
+    "subtitle": "Interactive Learning & Key Concepts",
     "blocks": [
       {
         "type": "card",
-        "tag": "Assessment Hub \u00b7 Slide 22",
-        "heading": "Module 3: Knowledge Checks & Practical Drills",
-        "imageSrc": "media/slide_22.png",
-        "body": "<p>Test your product mastery and compliance readiness with three hands-on interactive activities: link current account solutions to merchant needs, validate address OVDs, and flip cards on sales call execution.</p>"
-      },
-      {
-        "type": "quiz_match",
-        "id": "quiz_s23",
-        "title": "Knowledge Check: Match Facilities to Needs (Slide 23)",
-        "options": [
-          "Doorstep Banking",
-          "Corporate Internet Banking",
-          "POS (EDC terminal)",
-          "Payment Gateway",
-          "Merchant Mobile App"
-        ],
-        "pairs": [
-          {
-            "left": "Reduce the risk of carrying large cash sums to or from the branch",
-            "answer": "Doorstep Banking"
-          },
-          {
-            "left": "GST, statutory tax payments, bulk salary payouts, and Maker-Checker workflows",
-            "answer": "Corporate Internet Banking"
-          },
-          {
-            "left": "Card payments accepted over the counter at physical checkout",
-            "answer": "POS (EDC terminal)"
-          },
-          {
-            "left": "Payments accepted when customers purchase online over the internet",
-            "answer": "Payment Gateway"
-          },
-          {
-            "left": "Generating instant invoices and collecting by UPI/cards on home deliveries",
-            "answer": "Merchant Mobile App"
-          }
-        ]
-      },
-      {
-        "type": "kyc_sorter",
-        "id": "sorter_s24",
-        "title": "Knowledge Check: KYC Document Sorter (Slide 24)",
-        "instruction": "Decide which documents below qualify as an acceptable Officially Valid Document (OVD) for customer address verification under RBI regulations:",
-        "docs": [
-          {
-            "name": "Passport with current residential address",
-            "valid": true,
-            "note": "Passport with updated residential address is a primary OVD under RBI regulations."
-          },
-          {
-            "name": "PAN Card alone as Address Proof",
-            "valid": false,
-            "note": "PAN is valid for identity proof only; it does not contain residential address and cannot verify address."
-          },
-          {
-            "name": "Voter ID Card issued by Election Commission of India",
-            "valid": true,
-            "note": "Voter ID is an approved OVD verifying both individual identity and current address."
-          },
-          {
-            "name": "Driving Licence with current address",
-            "valid": true,
-            "note": "Driving Licence with active validity and current address qualifies as a valid OVD."
-          },
-          {
-            "name": "Utility bill of an unrelated third party",
-            "valid": false,
-            "note": "Third-party utility bills without legal proof of relationship or power of attorney are strictly rejected."
-          },
-          {
-            "name": "Aadhaar Card / e-KYC with current residential address",
-            "valid": true,
-            "note": "Aadhaar Card or validated e-KYC XML is an officially recognized primary OVD."
-          }
-        ]
-      },
-      {
-        "type": "flashcards",
-        "id": "fc_s25",
-        "title": "Knowledge Check: Consultative Sales Flip Cards (Slide 25)",
-        "instruction": "Tap any 3D card below to flip and reveal the benchmark sales execution takeaway:",
-        "cards": [
-          {
-            "q": "What are the 6 Steps to Run a High-Conversion Sales Call?",
-            "a": "1. Preparation & Prospect Research<br/>2. Professional Opening & Rapport<br/>3. Need Discovery & Open Probing<br/>4. Solution Presentation (Value over Price)<br/>5. Objection Handling (Clarify & Reassure)<br/>6. Closing & Action Next Steps"
-          },
-          {
-            "q": "What is Micro Market Catchment Mapping?",
-            "a": "Conducting a structured survey of all retail businesses, traders, commercial complexes, and housing societies within a 1\u20132 km radius of the branch to plan systematic daily outreach."
-          },
-          {
-            "q": "Why is Consultative Pitching superior to Product Pushing?",
-            "a": "Consultative pitching uncovers the customer's cash flow rhythms and operational friction points first. Matching the exact variant yields 2.5X higher ticket size, zero attrition, and long-term loyalty."
-          }
-        ]
+        "tag": "Slide 12",
+        "heading": "One Account Four Checkpoints",
+        "imageSrc": null,
+        "body": "",
+        "bullets": null
       }
     ]
   },
   {
     "id": "ch7",
     "num": "M7",
-    "shortTitle": "Video Demos",
-    "title": "Module 3: Multilingual Field Roleplay Videos",
-    "subtitle": "Customer Engagement & Objection Handling Demos in Marathi, Hindi & Telugu",
+    "shortTitle": "Click here to check your k",
+    "title": "Click here to check your knowledge.",
+    "subtitle": "Interactive Learning & Key Concepts",
     "blocks": [
       {
-        "type": "video_placeholder",
-        "id": "vid_s26",
-        "badge": "MARATHI DUB WALKTHROUGH",
-        "duration": "3m 45s",
-        "title": "Customer Complaint Handling & Deepening (Marathi Dub \u2014 Slide 26)",
-        "embedUrl": "media/media3.mp4",
-        "watchFor": [
-          "Active listening and empathetic response to customer concerns at the branch counter.",
-          "Restoring trust through transparent turnaround time commitments.",
-          "Converting service interactions into account deepening opportunities."
-        ]
+        "type": "card",
+        "tag": "Slide 13",
+        "heading": "Click here to check your knowledge.",
+        "imageSrc": null,
+        "body": "",
+        "bullets": null
       },
       {
-        "type": "video_placeholder",
-        "id": "vid_s27",
-        "badge": "HINDI WALKTHROUGH",
-        "duration": "4m 10s",
-        "title": "Why Complaint Handling & Service Depth Matters (Hindi \u2014 Slide 27)",
-        "embedUrl": "media/media4.mp4",
-        "watchFor": [
-          "De-escalation techniques for frustrated enterprise account holders.",
-          "Root-cause resolution protocols preventing repeat branch inquiries.",
-          "Building relationship advocacy that drives word-of-mouth merchant referrals."
-        ]
+        "type": "card",
+        "tag": "Slide 14",
+        "heading": "Decide which need each facility solves. Each click moves a facility to its match.",
+        "imageSrc": null,
+        "body": "",
+        "boxes": [
+          {
+            "title": "Click here to match",
+            "desc": "",
+            "bullets": null,
+            "badge": "01",
+            "badgeColor": "",
+            "highlight": true,
+            "green": false,
+            "gold": false
+          },
+          {
+            "title": "14",
+            "desc": "",
+            "bullets": null,
+            "badge": "02",
+            "badgeColor": "green",
+            "highlight": false,
+            "green": true,
+            "gold": false
+          }
+        ],
+        "boxGridCols": 2
       },
       {
-        "type": "video_placeholder",
-        "id": "vid_s28",
-        "badge": "TELUGU WALKTHROUGH",
-        "duration": "5m 05s",
-        "title": "Six Steps to Run an Outstanding Sales Call (Telugu \u2014 Slide 28)",
-        "embedUrl": "media/media5.mp4",
-        "watchFor": [
-          "In-person merchant store visit preparation and rapport building.",
-          "Uncovering payment collection pain points through consultative questioning.",
-          "Closing the Current Account with Merchant QR and POS bundle."
-        ]
-      }
-    ]
-  },
-  {
-    "id": "ch_1795699576827",
-    "num": "AIC1",
-    "shortTitle": "AI Coaching",
-    "title": "AI Coaching",
-    "subtitle": "External Resource & Web Link",
-    "blocks": [
+        "type": "card",
+        "tag": "Slide 15",
+        "heading": "Decide which documents are \"Valid\" or \"Not Valid\" as address proof",
+        "imageSrc": null,
+        "body": "",
+        "boxes": [
+          {
+            "title": "Click here to validate documents",
+            "desc": "",
+            "bullets": null,
+            "badge": "01",
+            "badgeColor": "",
+            "highlight": true,
+            "green": false,
+            "gold": false
+          },
+          {
+            "title": "15",
+            "desc": "",
+            "bullets": null,
+            "badge": "02",
+            "badgeColor": "green",
+            "highlight": false,
+            "green": true,
+            "gold": false
+          }
+        ],
+        "boxGridCols": 2
+      },
       {
-        "type": "url_redirect",
-        "tag": "Web Link",
-        "heading": "External Resource",
-        "url": "https://login-preprod.niit.com/auth/realms/niit-sso/protocol/openid-connect/auth?client_id=hdfc-dct&redirect_uri=https%3A%2F%2Fhdfcbank-preprod.niit.com&response_type=code&scope=openid&state=7273798484c94024b7277ce07c67a0d5&code_challenge=7e5p0IKUfdx4WD1xYaSak1nFhXErE5k0FUNcZ3kPxNs&code_challenge_method=S256&response_mode=query",
-        "urlText": "Click here to visit resource"
-      }
-    ]
-  },
-  {
-    "id": "ch_1795699763091",
-    "num": "SS1",
-    "shortTitle": "System Simulation",
-    "title": "System Simulation",
-    "subtitle": "External Resource & Web Link",
-    "blocks": [
-      {
-        "type": "url_redirect",
-        "tag": "Web Link",
-        "heading": "External Resource",
-        "url": "https://ilx-dev.niit.com/tool/smartapp",
-        "urlText": "Click here to visit resource"
+        "type": "card",
+        "tag": "Slide 16",
+        "heading": "Flip to get answer for Sales Call Execution steps and Micro Markets",
+        "imageSrc": null,
+        "body": "",
+        "boxes": [
+          {
+            "title": "Click here to Sales Flip Cards",
+            "desc": "",
+            "bullets": null,
+            "badge": "01",
+            "badgeColor": "",
+            "highlight": true,
+            "green": false,
+            "gold": false
+          },
+          {
+            "title": "16",
+            "desc": "",
+            "bullets": null,
+            "badge": "02",
+            "badgeColor": "green",
+            "highlight": false,
+            "green": true,
+            "gold": false
+          }
+        ],
+        "boxGridCols": 2
       }
     ]
   },
   {
     "id": "ch8",
     "num": "M8",
-    "shortTitle": "Completion",
-    "title": "Course Completion & Action Commitment",
-    "subtitle": "Action Commitment, Facilitator Takeaways & SCORM 2004 Telemetry Sync",
+    "shortTitle": "Video- For Demo purpose- M",
+    "title": "Video- For Demo purpose- Marathi",
+    "subtitle": "Interactive Learning & Key Concepts",
     "blocks": [
       {
-        "type": "action_commitment",
-        "id": "action_s29",
-        "title": "Thank You & Action Commitment (Slide 29)",
-        "prompt": "You have completed Day 3: Products & Account Opening! Commit to your top 3 sales action priorities for this week:",
-        "audioUrl": "media/Slide_23.mp3",
-        "audioTitle": "Audio Voiceover"
+        "type": "card",
+        "tag": "Slide 17",
+        "heading": "Video- For Demo purpose- Marathi",
+        "imageSrc": null,
+        "body": "",
+        "bullets": null
+      }
+    ]
+  },
+  {
+    "id": "ch9",
+    "num": "M9",
+    "shortTitle": "Video- For Demo purpose- H",
+    "title": "Video- For Demo purpose- Hindi",
+    "subtitle": "Interactive Learning & Key Concepts",
+    "blocks": [
+      {
+        "type": "card",
+        "tag": "Slide 18",
+        "heading": "Video- For Demo purpose- Hindi",
+        "imageSrc": null,
+        "body": "",
+        "bullets": null
+      }
+    ]
+  },
+  {
+    "id": "ch10",
+    "num": "M10",
+    "shortTitle": "Video- For Demo purpose - ",
+    "title": "Video- For Demo purpose - Telugu",
+    "subtitle": "Interactive Learning & Key Concepts",
+    "blocks": [
+      {
+        "type": "card",
+        "tag": "Slide 19",
+        "heading": "Video- For Demo purpose - Telugu",
+        "imageSrc": null,
+        "body": "",
+        "bullets": null
+      }
+    ]
+  },
+  {
+    "id": "ch11",
+    "num": "M11",
+    "shortTitle": "Click here to open the AI ",
+    "title": "Click here to open the AI Coaching interface.",
+    "subtitle": "Interactive Learning & Key Concepts",
+    "blocks": [
+      {
+        "type": "card",
+        "tag": "Slide 20",
+        "heading": "Click here to open the AI Coaching interface.",
+        "imageSrc": null,
+        "body": "",
+        "bullets": null
+      }
+    ]
+  },
+  {
+    "id": "ch12",
+    "num": "M12",
+    "shortTitle": "Click here to open the Sys",
+    "title": "Click here to open the System Simulation interface.",
+    "subtitle": "Interactive Learning & Key Concepts",
+    "blocks": [
+      {
+        "type": "card",
+        "tag": "Slide 21",
+        "heading": "Click here to open the System Simulation interface.",
+        "imageSrc": null,
+        "body": "",
+        "bullets": null
       }
     ]
   }
 ];
 window.COURSE_CHAPTERS = COURSE_CHAPTERS;
 window.COURSE_CHAPTERS_DAY2 = COURSE_CHAPTERS;
-window.COURSE_STORAGE_KEY = "scorm_Lesson_3__Products___Account_O";
+window.COURSE_STORAGE_KEY = "scorm_Lesson_2__Savings_Accounts";
   </script>
   <script>
 /**
@@ -3224,12 +3274,19 @@ window.COURSE_STORAGE_KEY = "scorm_Lesson_3__Products___Account_O";
   const urlParams = (typeof window !== 'undefined' && window.location)
     ? new URLSearchParams(window.location.search)
     : new URLSearchParams('');
-  const isDay3 = urlParams.get('course') === 'day3';
-  
+  const courseParam = (urlParams.get('course') || '').toLowerCase();
+  const isDay3 = courseParam === 'day3';
+  const isLesson1 = courseParam === 'lesson1' || courseParam === 'lesson_1';
+
   // Resolve course chapters: specific course param > direct window.COURSE_CHAPTERS > courseData fallbacks
-  const rawChapters = (isDay3 && window.COURSE_CHAPTERS_DAY3)
-    ? window.COURSE_CHAPTERS_DAY3
-    : (window.COURSE_CHAPTERS || window.COURSE_CHAPTERS_DAY2 || window.COURSE_CHAPTERS_DAY3 || []);
+  let rawChapters = [];
+  if (isLesson1 && window.COURSE_CHAPTERS_LESSON1) {
+    rawChapters = window.COURSE_CHAPTERS_LESSON1;
+  } else if (isDay3 && window.COURSE_CHAPTERS_DAY3) {
+    rawChapters = window.COURSE_CHAPTERS_DAY3;
+  } else {
+    rawChapters = window.COURSE_CHAPTERS || window.COURSE_CHAPTERS_DAY2 || window.COURSE_CHAPTERS_DAY3 || window.COURSE_CHAPTERS_LESSON1 || [];
+  }
 
   const COURSE_CHAPTERS = Array.isArray(rawChapters) ? rawChapters : [];
 
@@ -3242,7 +3299,13 @@ window.COURSE_STORAGE_KEY = "scorm_Lesson_3__Products___Account_O";
     return;
   }
 
-  if (isDay3) {
+  if (isLesson1) {
+    document.title = "HDFC Academy · Lesson 1: Importance of CASA";
+    const kicker = document.querySelector('.drawer-kicker');
+    if (kicker) kicker.textContent = "LESSON 1 CURRICULUM";
+    const brandTitle = document.getElementById('headerTitle');
+    if (brandTitle) brandTitle.textContent = "Lesson 1: Importance of CASA";
+  } else if (isDay3) {
     document.title = "HDFC Academy · Day 3: Know Your Product — CASA & Savings Mastery";
     const kicker = document.querySelector('.drawer-kicker');
     if (kicker) kicker.textContent = "DAY 3 CURRICULUM";
@@ -3251,12 +3314,12 @@ window.COURSE_STORAGE_KEY = "scorm_Lesson_3__Products___Account_O";
   const scormApi = (typeof window !== 'undefined' && window.SCORM2004)
     ? window.SCORM2004
     : (typeof SCORM2004 !== 'undefined' ? SCORM2004 : {
-        init: () => true,
-        loadState: () => null,
-        saveState: () => {},
-        finish: () => {},
-        isConnected: () => false
-      });
+      init: () => true,
+      loadState: () => null,
+      saveState: () => { },
+      finish: () => { },
+      isConnected: () => false
+    });
 
   try {
     scormApi.init();
@@ -3264,7 +3327,7 @@ window.COURSE_STORAGE_KEY = "scorm_Lesson_3__Products___Account_O";
     console.warn('SCORM init warning:', initErr);
   }
 
-  const saved = (function() {
+  const saved = (function () {
     try {
       return scormApi.loadState() || {};
     } catch (e) {
@@ -3334,28 +3397,35 @@ window.COURSE_STORAGE_KEY = "scorm_Lesson_3__Products___Account_O";
     let total = 0;
     let correct = 0;
     COURSE_CHAPTERS.forEach(ch => {
-      ch.blocks.forEach(b => {
+      (ch.blocks || []).forEach(b => {
+        if (!b) return;
         if (b.type === 'quiz_mcq') {
-          b.questions.forEach((q, qi) => {
+          if (Array.isArray(b.questions)) {
+            b.questions.forEach((q, qi) => {
+              total++;
+              const key = `${b.id}_q${qi}`;
+              if (state.answers[key] === q.correct) correct++;
+            });
+          } else if (Array.isArray(b.options)) {
             total++;
-            const key = `${b.id}_q${qi}`;
-            if (state.answers[key] === q.correct) correct++;
-          });
+            const key = `${b.id}_q0`;
+            if (state.answers[key] === b.correct) correct++;
+          }
         } else if (b.type === 'quiz_blanks') {
-          b.items.forEach((it, bi) => {
+          (b.items || []).forEach((it, bi) => {
             total++;
             const key = `${b.id}_b${bi}`;
             const val = (state.answers[key] || '').trim().toLowerCase();
-            if (val === it.answer.trim().toLowerCase()) correct++;
+            if (val === (it.answer || '').trim().toLowerCase()) correct++;
           });
         } else if (b.type === 'quiz_match') {
-          b.pairs.forEach((p, pi) => {
+          (b.pairs || []).forEach((p, pi) => {
             total++;
             const key = `${b.id}_m${pi}`;
             if (state.answers[key] === p.answer) correct++;
           });
         } else if (b.type === 'kyc_sorter') {
-          b.docs.forEach((d, di) => {
+          (b.docs || []).forEach((d, di) => {
             total++;
             const key = `${b.id}_s${di}`;
             if (state.answers[key] === d.valid) correct++;
@@ -3394,12 +3464,27 @@ window.COURSE_STORAGE_KEY = "scorm_Lesson_3__Products___Account_O";
     const ch = COURSE_CHAPTERS[state.currentChapter] || { shortTitle: 'Module', num: '01' };
     const { pct } = computeScore();
     const visitedCount = state.visited.length;
-    const progPct = Math.round((visitedCount / COURSE_CHAPTERS.length) * 100);
+    const progPct = state.completed ? 100 : Math.round((visitedCount / COURSE_CHAPTERS.length) * 100);
 
     if (els.headerTitle) els.headerTitle.textContent = ch.shortTitle || 'Module';
     if (els.scorePill) els.scorePill.textContent = `${pct}%`;
     if (els.progressFill) els.progressFill.style.width = `${progPct}%`;
-    if (els.stepIndicator) els.stepIndicator.textContent = `Chapter ${state.currentChapter + 1} of ${COURSE_CHAPTERS.length} · ${visitedCount} Visited`;
+    if (els.stepIndicator) {
+      els.stepIndicator.textContent = state.completed
+        ? `Status: Completed ✓ · All ${COURSE_CHAPTERS.length} Chapters Visited`
+        : `Chapter ${state.currentChapter + 1} of ${COURSE_CHAPTERS.length} · ${visitedCount} Visited`;
+    }
+    if (els.lmsBadge) {
+      if (state.completed) {
+        els.lmsBadge.textContent = '✓ SCORM: Completed';
+        els.lmsBadge.style.color = '#34d399';
+        els.lmsBadge.style.borderColor = '#10b981';
+      } else {
+        els.lmsBadge.textContent = scormApi.isConnected() ? 'LMS SCORM 2004 Connected' : 'SCORM 2004 Ready';
+        els.lmsBadge.style.color = '';
+        els.lmsBadge.style.borderColor = '';
+      }
+    }
     if (els.bottomTag) els.bottomTag.textContent = `${String(state.currentChapter + 1).padStart(2, '0')} / ${COURSE_CHAPTERS.length}`;
     if (els.drawerCompleted) els.drawerCompleted.textContent = `${visitedCount}/${COURSE_CHAPTERS.length}`;
     if (els.drawerScore) els.drawerScore.textContent = `${pct}%`;
@@ -3449,19 +3534,20 @@ window.COURSE_STORAGE_KEY = "scorm_Lesson_3__Products___Account_O";
     });
   }
 
-  function renderVideoStage(url) {
+  function renderVideoStage(url, poster) {
     if (!url) {
       return `
         <div class="play-medallion">▶</div>
-        <div class="video-placeholder-text">Video Placeholder Ready to Embed</div>
-        <div class="video-placeholder-sub">Set <code>embedUrl</code> in <code>js/courseData.js</code> or paste an MP4 / embed link below to preview</div>
+        <div class="video-placeholder-text">Video Player</div>
+        <div class="video-placeholder-sub">Embedded media will display here</div>
       `;
     }
     const clean = url.trim();
-    if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(clean)) {
-      return `<video src="${escapeHtml(clean)}" controls playsinline preload="metadata"></video>`;
+    if (/\.(mp4|webm|ogg|mov|m4v)(\?.*)?$/i.test(clean)) {
+      const posterAttr = poster ? `poster="${escapeHtml(poster)}"` : '';
+      return `<video src="${escapeHtml(clean)}" ${posterAttr} controls playsinline preload="metadata" style="width:100%;max-height:480px;border-radius:12px;background:#000;display:block;margin:0 auto;box-shadow:0 6px 20px rgba(0,0,0,0.25);"></video>`;
     }
-    return `<iframe src="${escapeHtml(clean)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+    return `<iframe src="${escapeHtml(clean)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="width:100%;height:380px;border-radius:12px;border:none;"></iframe>`;
   }
 
   function escapeHtml(str) {
@@ -3470,23 +3556,6 @@ window.COURSE_STORAGE_KEY = "scorm_Lesson_3__Products___Account_O";
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
-  }
-
-  function sanitizeMediaSrc(src) {
-    if (!src) return '';
-    var s = String(src).trim();
-    if (s.startsWith('data:') || s.startsWith('blob:')) return s;
-    try {
-      return encodeURI(decodeURI(s));
-    } catch (e) {
-      return s.replace(/ /g, '%20');
-    }
-  }
-
-  function renderSectionHeroImage(rawSrc) {
-    if (!rawSrc) return '';
-    var src = sanitizeMediaSrc(rawSrc);
-    return '<div class="card-hero-image-wrap"><img src="' + escapeHtml(src) + '" alt="" class="card-hero-image" loading="lazy" onerror="if(!this.dataset.fb){this.dataset.fb=\'1\';if(this.src.includes(\'%20\')){this.src=this.src.replace(/%20/g,\'_\');}else if(this.src.includes(\'_\')){this.src=this.src.replace(/_/g,\'%20\');}}else if(this.dataset.fb===\'1\'&&!this.src.includes(\'/media/\')){this.dataset.fb=\'2\';this.src=this.src.replace(/(\\/[^\\/]+)$/,\'/media$1\');}" /></div>';
   }
 
   function renderAudioBar(audioUrl, audioTitle) {
@@ -3549,17 +3618,17 @@ window.COURSE_STORAGE_KEY = "scorm_Lesson_3__Products___Account_O";
     return `
       <div class="${colClass}">
         ${boxes.map((bx) => {
-          const iconHtml = bx.icon ? `<div class="box-icon-wrap"><img src="${escapeHtml(bx.icon)}" alt="" loading="lazy" /></div>` : '';
-          const badgeHtml = bx.badge ? `<span class="box-badge ${bx.badgeColor || ''}">${escapeHtml(bx.badge)}</span>` : '';
-          const bulletsHtml = bx.bullets && bx.bullets.length ? `<ul class="rich-list" style="margin-top:8px;">${bx.bullets.map(b => `<li>${b}</li>`).join('')}</ul>` : '';
-          const collHtml = bx.details ? `
+      const iconHtml = bx.icon ? `<div class="box-icon-wrap"><img src="${escapeHtml(bx.icon)}" alt="" loading="lazy" /></div>` : '';
+      const badgeHtml = bx.badge ? `<span class="box-badge ${bx.badgeColor || ''}">${escapeHtml(bx.badge)}</span>` : '';
+      const bulletsHtml = bx.bullets && bx.bullets.length ? `<ul class="rich-list" style="margin-top:8px;">${bx.bullets.map(b => `<li>${b}</li>`).join('')}</ul>` : '';
+      const collHtml = bx.details ? `
             <details class="acc-item" style="margin-top:8px;">
               <summary>${bx.detailsLabel || 'View Details'}</summary>
               <div class="acc-body">${bx.details}</div>
             </details>
           ` : '';
-          const cls = `box-card ${bx.highlight ? 'highlight' : ''} ${bx.gold ? 'gold-accent' : ''} ${bx.green ? 'green-accent' : ''}`;
-          return `
+      const cls = `box-card ${bx.highlight ? 'highlight' : ''} ${bx.gold ? 'gold-accent' : ''} ${bx.green ? 'green-accent' : ''}`;
+      return `
             <div class="${cls}">
               <div class="box-header">
                 ${iconHtml}
@@ -3576,7 +3645,7 @@ window.COURSE_STORAGE_KEY = "scorm_Lesson_3__Products___Account_O";
               </div>
             </div>
           `;
-        }).join('')}
+    }).join('')}
       </div>
     `;
   }
@@ -3586,10 +3655,10 @@ window.COURSE_STORAGE_KEY = "scorm_Lesson_3__Products___Account_O";
     return `
       <div class="collapsible-group" style="margin:14px 0;">
         ${collapsibles.map((c) => {
-          const iconHtml = c.icon ? `<span class="box-summary-icon"><img src="${escapeHtml(c.icon)}" alt="" loading="lazy" /></span>` : '';
-          const badgeHtml = c.badge ? `<span class="box-badge ${c.badgeColor || ''}" style="margin-right:6px;">${escapeHtml(c.badge)}</span>` : '';
-          const isOpen = c.isOpen ? 'open' : '';
-          return `
+      const iconHtml = c.icon ? `<span class="box-summary-icon"><img src="${escapeHtml(c.icon)}" alt="" loading="lazy" /></span>` : '';
+      const badgeHtml = c.badge ? `<span class="box-badge ${c.badgeColor || ''}" style="margin-right:6px;">${escapeHtml(c.badge)}</span>` : '';
+      const isOpen = c.isOpen ? 'open' : '';
+      return `
             <details class="box-collapsible" ${isOpen}>
               <summary>
                 <div class="box-summary-left">
@@ -3609,7 +3678,7 @@ window.COURSE_STORAGE_KEY = "scorm_Lesson_3__Products___Account_O";
               </div>
             </details>
           `;
-        }).join('')}
+    }).join('')}
       </div>
     `;
   }
@@ -3630,8 +3699,37 @@ window.COURSE_STORAGE_KEY = "scorm_Lesson_3__Products___Account_O";
     `;
   }
 
+  function renderStats(stats) {
+    if (!stats || !stats.length) return '';
+    return `
+      <div class="stat-grid">
+        ${stats.map(st => `
+          <div class="stat-tile">
+            <div class="stat-tile-val">${escapeHtml(st.value || '')}</div>
+            <div class="stat-tile-lbl">${escapeHtml(st.label || '')}</div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
   function renderBlock(block) {
     const audioHtml = renderAudioBar(block.audioUrl, block.audioTitle);
+
+    if (block.type === 'section_hero') {
+      const calloutHtml = block.callout
+        ? `<div class="callout ${block.callout.type || ''}">${block.callout.text}</div>`
+        : '';
+      return `
+        <div class="section-hero-card">
+          ${block.tag ? `<div class="section-hero-eyebrow">${escapeHtml(block.tag)}</div>` : ''}
+          ${audioHtml}
+          <h2 class="section-hero-title">${block.heading || block.title || ''}</h2>
+          ${block.body ? `<div class="section-hero-sub">${block.body}</div>` : ''}
+          ${calloutHtml}
+        </div>
+      `;
+    }
 
     if (block.type === 'url_redirect') {
       const targetUrl = block.url || '#';
@@ -3668,13 +3766,11 @@ window.COURSE_STORAGE_KEY = "scorm_Lesson_3__Products___Account_O";
     }
 
     if (block.type === 'image') {
-      const rawSrc = block.src || block.imageSrc || block.imageUrl || '';
-      const src = sanitizeMediaSrc(rawSrc);
       return `
         <figure class="visual-card">
           ${audioHtml}
-          <img src="${escapeHtml(src)}" alt="${escapeHtml(block.alt || block.caption || '')}" loading="lazy" onerror="if(!this.dataset.fb){this.dataset.fb='1';if(this.src.includes('%20')){this.src=this.src.replace(/%20/g,'_');}else if(this.src.includes('_')){this.src=this.src.replace(/_/g,'%20');}}else if(this.dataset.fb==='1'&&!this.src.includes('/media/')){this.dataset.fb='2';this.src=this.src.replace(/(\\/[^\\/]+)$/,'/media$1');}" />
-          ${block.caption ? `<figcaption class="visual-caption">📊 ${escapeHtml(block.caption)}</figcaption>` : ''}
+          <img src="${block.src}" alt="${escapeHtml(block.alt)}" loading="lazy" />
+          ${block.caption ? `<figcaption class="visual-caption">📊 ${block.caption}</figcaption>` : ''}
         </figure>
       `;
     }
@@ -3694,8 +3790,10 @@ window.COURSE_STORAGE_KEY = "scorm_Lesson_3__Products___Account_O";
       `;
     }
 
-    if (block.type === 'boxes' || block.type === 'card_grid') {
-      const imageHtml = renderSectionHeroImage(block.imageSrc || block.imageUrl || block.src);
+    if (block.type === 'boxes' || block.type === 'card_grid' || block.type === 'box_grid') {
+      const imageHtml = block.imageSrc
+        ? `<div class="card-hero-image-wrap"><img src="${escapeHtml(block.imageSrc)}" alt="" class="card-hero-image" loading="lazy" /></div>`
+        : '';
       const calloutHtml = block.callout
         ? `<div class="callout ${block.callout.type || ''}">${block.callout.text}</div>`
         : '';
@@ -3703,7 +3801,7 @@ window.COURSE_STORAGE_KEY = "scorm_Lesson_3__Products___Account_O";
         <section class="card">
           ${block.tag ? `<span class="card-tag">${block.tag}</span>` : ''}
           ${audioHtml}
-          <h2>${block.heading}</h2>
+          <h2>${block.heading || block.title || ''}</h2>
           ${imageHtml}
           ${block.body || ''}
           ${renderBoxes(block.boxes, block.boxGridCols)}
@@ -3712,8 +3810,23 @@ window.COURSE_STORAGE_KEY = "scorm_Lesson_3__Products___Account_O";
       `;
     }
 
+    if (block.type === 'table') {
+      return `
+        <section class="card">
+          ${block.tag ? `<span class="card-tag">${block.tag}</span>` : ''}
+          ${audioHtml}
+          <h2>${block.heading || block.title || ''}</h2>
+          ${block.body || ''}
+          ${renderTable({ headers: block.headers, rows: block.rows })}
+          ${block.callout ? `<div class="callout ${block.callout.type || ''}">${block.callout.text}</div>` : ''}
+        </section>
+      `;
+    }
+
     if (block.type === 'collapsible_boxes') {
-      const imageHtml = renderSectionHeroImage(block.imageSrc || block.imageUrl || block.src);
+      const imageHtml = block.imageSrc
+        ? `<div class="card-hero-image-wrap"><img src="${escapeHtml(block.imageSrc)}" alt="" class="card-hero-image" loading="lazy" /></div>`
+        : '';
       const calloutHtml = block.callout
         ? `<div class="callout ${block.callout.type || ''}">${block.callout.text}</div>`
         : '';
@@ -3731,10 +3844,13 @@ window.COURSE_STORAGE_KEY = "scorm_Lesson_3__Products___Account_O";
     }
 
     if (block.type === 'card') {
-      const imageHtml = renderSectionHeroImage(block.imageSrc || block.imageUrl || block.src);
+      const imageHtml = block.imageSrc
+        ? `<div class="card-hero-image-wrap"><img src="${escapeHtml(block.imageSrc)}" alt="" class="card-hero-image" loading="lazy" /></div>`
+        : '';
       const bulletsHtml = block.bullets
         ? `<ul class="rich-list ${block.listTone || ''}">${block.bullets.map(b => `<li>${b}</li>`).join('')}</ul>`
         : '';
+      const statsHtml = block.stats ? renderStats(block.stats) : '';
       const boxesHtml = block.boxes ? renderBoxes(block.boxes, block.boxGridCols) : '';
       const collapsiblesHtml = block.collapsibles ? renderCollapsibles(block.collapsibles) : '';
       const tableHtml = block.table ? renderTable(block.table) : '';
@@ -3748,6 +3864,7 @@ window.COURSE_STORAGE_KEY = "scorm_Lesson_3__Products___Account_O";
           <h2>${block.heading}</h2>
           ${imageHtml}
           ${block.body || ''}
+          ${statsHtml}
           ${bulletsHtml}
           ${boxesHtml}
           ${collapsiblesHtml}
@@ -3757,17 +3874,27 @@ window.COURSE_STORAGE_KEY = "scorm_Lesson_3__Products___Account_O";
       `;
     }
 
+    if (block.type === 'stats' || block.type === 'stat_grid') {
+      return `
+        <section class="card">
+          ${block.tag ? `<span class="card-tag gold">${block.tag}</span>` : '<span class="card-tag gold">Key Metrics</span>'}
+          ${audioHtml}
+          <h2>${block.heading || block.title || 'Key Metrics & Data'}</h2>
+          ${block.body || ''}
+          ${renderStats(block.stats || block.items)}
+          ${block.callout ? `<div class="callout ${block.callout.type || ''}">${block.callout.text}</div>` : ''}
+        </section>
+      `;
+    }
+
     if (block.type === 'accordion') {
-      const imageHtml = renderSectionHeroImage(block.imageSrc || block.imageUrl || block.src);
       return `
         <section class="card">
           ${block.tag ? `<span class="card-tag">${block.tag}</span>` : ''}
           ${audioHtml}
           <h2>${block.heading}</h2>
-          ${imageHtml}
-          ${block.body ? `<p>${block.body}</p>` : ''}
           <div class="acc-group">
-            ${(block.items || []).map((it, idx) => `
+            ${block.items.map((it, idx) => `
               <details class="acc-item" ${idx === 0 ? 'open' : ''}>
                 <summary>${it.title}</summary>
                 <div class="acc-body">${it.content}</div>
@@ -3780,54 +3907,65 @@ window.COURSE_STORAGE_KEY = "scorm_Lesson_3__Products___Account_O";
 
     if (block.type === 'video_placeholder') {
       const activeUrl = state.videoPreviews[block.id] || block.embedUrl || '';
+      const posterUrl = block.poster || block.posterUrl || block.imageSrc || '';
+      const watchForHtml = block.watchFor && block.watchFor.length
+        ? `<div class="video-watch-box">
+            <div class="video-watch-title">Key Learning Focus in This Video</div>
+            <ul>${block.watchFor.map(w => `<li>${w}</li>`).join('')}</ul>
+          </div>`
+        : '';
+      const toolsHtml = !block.embedUrl
+        ? `<div class="video-embed-tools">
+            <input type="text" class="video-url-input" id="input_${block.id}" value="${escapeHtml(activeUrl)}" placeholder="Paste .mp4 path or YouTube/Vimeo/LMS embed URL..." />
+            <button type="button" class="video-load-btn" data-vid-id="${block.id}">Embed / Preview</button>
+          </div>`
+        : '';
       return `
         <section class="video-embed-card" id="wrap_${block.id}">
           <div class="video-header">
-            <span class="video-badge">${block.badge}</span>
-            <span class="video-dur">⏱ ${block.duration}</span>
+            <span class="video-badge">${block.badge || 'VIDEO LEARNING'}</span>
+            ${block.duration ? `<span class="video-dur">⏱ ${block.duration}</span>` : ''}
           </div>
           <h2 class="video-title">${block.title}</h2>
           <div class="video-stage" id="stage_${block.id}">
-            ${renderVideoStage(activeUrl)}
+            ${renderVideoStage(activeUrl, posterUrl)}
           </div>
-          <div class="video-watch-box">
-            <div class="video-watch-title">What to Watch For in This Video</div>
-            <ul>${block.watchFor.map(w => `<li>${w}</li>`).join('')}</ul>
-          </div>
-          <div class="video-embed-tools">
-            <input type="text" class="video-url-input" id="input_${block.id}" value="${escapeHtml(activeUrl)}" placeholder="Paste .mp4 path or YouTube/Vimeo/LMS embed URL..." />
-            <button type="button" class="video-load-btn" data-vid-id="${block.id}">Embed / Preview</button>
-          </div>
+          ${watchForHtml}
+          ${toolsHtml}
         </section>
       `;
     }
 
     if (block.type === 'quiz_mcq') {
+      const qList = Array.isArray(block.questions)
+        ? block.questions
+        : (block.options ? [{ q: block.question || block.title || 'Knowledge Check', options: block.options, correct: block.correct, explanation: block.explanation }] : []);
+      const title = block.title || block.heading || 'Interactive Knowledge Check';
       return `
-        <section class="quiz-card" id="${block.id}">
+        <section class="quiz-card" id="${block.id || 'quiz'}">
           <div class="quiz-header">
             <span class="quiz-badge">INTERACTIVE CHECK</span>
           </div>
           ${audioHtml}
-          <h2 style="margin:0 0 8px;font-size:17px;color:var(--hdfc-navy);">${block.title}</h2>
-          ${block.questions.map((q, qi) => {
+          <h2 style="margin:0 0 8px;font-size:17px;color:var(--hdfc-navy);">${escapeHtml(title)}</h2>
+          ${qList.map((q, qi) => {
             const key = `${block.id}_q${qi}`;
             const chosen = state.answers[key];
             const answered = chosen !== undefined;
             return `
               <div class="q-block">
-                <div class="q-text">${q.q}</div>
+                <div class="q-text">${escapeHtml(q.q || q.question || '')}</div>
                 <div class="opt-list">
-                  ${q.options.map((opt, oi) => {
+                  ${(q.options || []).map((opt, oi) => {
                     let cls = 'opt-btn';
                     if (answered) {
                       if (oi === q.correct) cls += ' correct';
                       else if (oi === chosen) cls += ' wrong';
                     }
-                    return `<button type="button" class="${cls}" data-qid="${block.id}" data-qi="${qi}" data-oi="${oi}">${opt}</button>`;
+                    return `<button type="button" class="${cls}" data-qid="${block.id}" data-qi="${qi}" data-oi="${oi}">${escapeHtml(opt)}</button>`;
                   }).join('')}
                 </div>
-                ${answered ? `<div class="q-feedback ${chosen === q.correct ? 'ok' : 'err'}">${chosen === q.correct ? '✓ Correct! ' : '✕ Review: '}${q.explanation}</div>` : ''}
+                ${answered ? `<div class="q-feedback ${chosen === q.correct ? 'ok' : 'err'}">${chosen === q.correct ? '✓ Correct! ' : '✕ Review: '}${escapeHtml(q.explanation || '')}</div>` : ''}
               </div>
             `;
           }).join('')}
@@ -3845,11 +3983,11 @@ window.COURSE_STORAGE_KEY = "scorm_Lesson_3__Products___Account_O";
             ${block.wordBank.map(w => `<span class="word-chip">${w}</span>`).join('')}
           </div>
           ${block.items.map((it, bi) => {
-            const key = `${block.id}_b${bi}`;
-            const val = state.answers[key] || '';
-            const checked = state.answers[`${block.id}_checked`];
-            const isOk = val.trim().toLowerCase() === it.answer.trim().toLowerCase();
-            return `
+        const key = `${block.id}_b${bi}`;
+        const val = state.answers[key] || '';
+        const checked = state.answers[`${block.id}_checked`];
+        const isOk = val.trim().toLowerCase() === it.answer.trim().toLowerCase();
+        return `
               <div class="blank-row">
                 <label style="font-size:14px;font-weight:600;">${it.prompt}</label>
                 <select class="blank-input ${checked ? (isOk ? 'ok' : 'err') : ''}" data-bid="${block.id}" data-bi="${bi}">
@@ -3859,7 +3997,7 @@ window.COURSE_STORAGE_KEY = "scorm_Lesson_3__Products___Account_O";
                 ${checked && !isOk ? `<div class="q-feedback err">Correct answer: <strong>${it.answer}</strong></div>` : ''}
               </div>
             `;
-          }).join('')}
+      }).join('')}
           <button type="button" class="action-btn check-blanks-btn" data-bid="${block.id}">Check Answers</button>
         </section>
       `;
@@ -3872,11 +4010,11 @@ window.COURSE_STORAGE_KEY = "scorm_Lesson_3__Products___Account_O";
           ${audioHtml}
           <h2 style="margin:0 0 8px;font-size:17px;color:var(--hdfc-navy);">${block.title}</h2>
           ${block.pairs.map((p, pi) => {
-            const key = `${block.id}_m${pi}`;
-            const val = state.answers[key] || '';
-            const checked = state.answers[`${block.id}_checked`];
-            const isOk = val === p.answer;
-            return `
+        const key = `${block.id}_m${pi}`;
+        const val = state.answers[key] || '';
+        const checked = state.answers[`${block.id}_checked`];
+        const isOk = val === p.answer;
+        return `
               <div class="match-row">
                 <div style="font-size:14px;font-weight:700;color:var(--hdfc-navy);">${p.left}</div>
                 <select class="match-select ${checked ? (isOk ? 'ok' : 'err') : ''}" data-mid="${block.id}" data-pi="${pi}">
@@ -3886,7 +4024,7 @@ window.COURSE_STORAGE_KEY = "scorm_Lesson_3__Products___Account_O";
                 ${checked && !isOk ? `<div class="q-feedback err">Best match: <strong>${p.answer}</strong></div>` : ''}
               </div>
             `;
-          }).join('')}
+      }).join('')}
           <button type="button" class="action-btn check-match-btn" data-mid="${block.id}">Verify Matches</button>
         </section>
       `;
@@ -3900,44 +4038,42 @@ window.COURSE_STORAGE_KEY = "scorm_Lesson_3__Products___Account_O";
           <h2 style="margin:0 0 8px;font-size:17px;color:var(--hdfc-navy);">${block.title}</h2>
           <p style="font-size:14px;margin-bottom:10px;">${block.instruction}</p>
           ${block.docs.map((d, di) => {
-            const key = `${block.id}_s${di}`;
-            const chosen = state.answers[key];
-            const answered = chosen !== undefined;
-            const isCorrect = chosen === d.valid;
-            return `
+        const key = `${block.id}_s${di}`;
+        const chosen = state.answers[key];
+        const answered = chosen !== undefined;
+        const isCorrect = chosen === d.valid;
+        const trueLabel = block.trueLabel || (block.id && block.id.includes('kyc') ? '✓ Valid Address OVD' : '✓ Valid / Best Practice');
+        const falseLabel = block.falseLabel || (block.id && block.id.includes('kyc') ? '✕ Not Address OVD' : '✕ Risk / Non-Compliant');
+        return `
               <div class="sorter-item">
                 <div class="sorter-doc">${d.name}</div>
                 <div class="sorter-btns">
-                  <button type="button" class="sort-choice ${answered && chosen === true ? (isCorrect ? 'selected-ok' : 'selected-err') : ''}" data-sid="${block.id}" data-di="${di}" data-val="true">✓ Valid Address OVD</button>
-                  <button type="button" class="sort-choice ${answered && chosen === false ? (isCorrect ? 'selected-ok' : 'selected-err') : ''}" data-sid="${block.id}" data-di="${di}" data-val="false">✕ Not Address OVD</button>
+                  <button type="button" class="sort-choice ${answered && chosen === true ? (isCorrect ? 'selected-ok' : 'selected-err') : ''}" data-sid="${block.id}" data-di="${di}" data-val="true">${trueLabel}</button>
+                  <button type="button" class="sort-choice ${answered && chosen === false ? (isCorrect ? 'selected-ok' : 'selected-err') : ''}" data-sid="${block.id}" data-di="${di}" data-val="false">${falseLabel}</button>
                 </div>
                 ${answered ? `<div class="q-feedback ${isCorrect ? 'ok' : 'err'}">${isCorrect ? '✓ Spot on! ' : '✕ Note: '}${d.note}</div>` : ''}
               </div>
             `;
-          }).join('')}
+      }).join('')}
         </section>
       `;
     }
 
     if (block.type === 'flashcards') {
-      const imageHtml = renderSectionHeroImage(block.imageSrc || block.imageUrl || block.src);
       return `
         <section class="card">
-          ${block.tag ? `<span class="card-tag green">${block.tag}</span>` : `<span class="card-tag green">Interactive Self-Test Cards</span>`}
-          ${audioHtml}
-          <h2>${block.title || block.heading || 'Interactive Flip Cards'}</h2>
-          ${imageHtml}
+          <span class="card-tag green">Interactive Self-Test Cards</span>
+          <h2>${block.title}</h2>
           <p style="font-size:13.5px;color:var(--muted);">${block.instruction || 'Tap any card below to flip and reveal the key knowledge takeaway:'}</p>
           <div class="flip-grid">
-            ${(block.cards || []).map((c, ci) => `
+            ${block.cards.map((c, ci) => `
               <div class="flip-card-container" data-fc-idx="${ci}">
                 <div class="flip-card-inner">
                   <div class="flip-card-front">
                     <div>
-                      <span class="box-badge gold">${c.badge || 'Tap to Flip 🔄'}</span>
+                      <span class="box-badge gold">Tap to Flip 🔄</span>
                       <div class="flip-q-title">${c.q}</div>
                     </div>
-                    ${c.img ? `<div style="margin:8px 0;"><img src="${escapeHtml(c.img)}" alt="" style="max-height:80px;border-radius:6px;object-fit:cover;width:100%;" /></div>` : ''}
                     <div class="flip-hint"><span>💡 Tap to flip answer</span></div>
                   </div>
                   <div class="flip-card-back">
@@ -3970,11 +4106,12 @@ window.COURSE_STORAGE_KEY = "scorm_Lesson_3__Products___Account_O";
     return '';
   }
 
-  function renderChapter() {
+  function renderChapter(preserveScroll = false) {
     try {
+      const savedScrollY = (preserveScroll && typeof window !== 'undefined') ? (window.scrollY || window.pageYOffset || 0) : 0;
       // Pause any currently playing audio before rendering
       document.querySelectorAll('audio').forEach(a => {
-        try { if (!a.paused) a.pause(); } catch(e) {}
+        try { if (!a.paused) a.pause(); } catch (e) { }
       });
 
       if (state.currentChapter < 0) state.currentChapter = 0;
@@ -4032,20 +4169,50 @@ window.COURSE_STORAGE_KEY = "scorm_Lesson_3__Products___Account_O";
             </div>
           `;
         } else {
+          // If the first block of the chapter is a section_hero that matches the chapter title,
+          // render the unified chapter hero with its subtitle and callout to prevent duplicate stacked banners
+          const firstBlock = ch.blocks && ch.blocks[0];
+          const isFirstSectionHero = firstBlock && (firstBlock.type === 'section_hero' || (firstBlock.heading && firstBlock.heading.trim().toLowerCase() === (ch.title || '').trim().toLowerCase()));
+
+          let heroKicker = `CHAPTER ${state.currentChapter + 1} OF ${COURSE_CHAPTERS.length} · ${ch.num || (state.currentChapter + 1)}`;
+          if (firstBlock && firstBlock.tag) {
+            heroKicker = `${heroKicker} · ${escapeHtml(firstBlock.tag)}`;
+          }
+
+          let heroSub = ch.subtitle || (firstBlock && firstBlock.body ? firstBlock.body : '');
+          let heroCalloutHtml = '';
+          if (isFirstSectionHero && firstBlock.callout) {
+            heroCalloutHtml = `<div class="callout ${firstBlock.callout.type || ''}">${firstBlock.callout.text}</div>`;
+          }
+
+          const renderedBlocksHtml = (ch.blocks || []).slice(isFirstSectionHero ? 1 : 0).map(b => {
+            try {
+              return renderBlock(b);
+            } catch (bErr) {
+              console.warn('Block render error:', b, bErr);
+              return `<section class="card"><h2>${escapeHtml(b.heading || b.title || 'Topic Card')}</h2>${b.body || ''}</section>`;
+            }
+          }).join('');
+
           els.main.innerHTML = `
             <div class="chapter-hero">
-              <span class="hero-kicker">CHAPTER ${state.currentChapter + 1} OF ${COURSE_CHAPTERS.length} · ${ch.num || (state.currentChapter + 1)}</span>
+              <span class="hero-kicker">${heroKicker}</span>
               <h1 class="hero-title">${ch.title || ''}</h1>
-              <p class="hero-desc">${ch.subtitle || ''}</p>
+              ${heroSub ? `<p class="hero-desc">${heroSub}</p>` : ''}
+              ${heroCalloutHtml}
             </div>
-            ${blocksHtml}
+            ${renderedBlocksHtml}
           `;
         }
         bindDynamicEvents();
       }
       try {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      } catch (scrollErr) {}
+        if (preserveScroll) {
+          window.scrollTo({ top: savedScrollY, behavior: 'instant' });
+        } else {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      } catch (scrollErr) { }
     } catch (e) {
       console.error('Fatal renderChapter error:', e);
       if (els.main) {
@@ -4068,17 +4235,49 @@ window.COURSE_STORAGE_KEY = "scorm_Lesson_3__Products___Account_O";
       });
     });
 
-    // MCQ
+    // MCQ - In-place DOM update without full page re-render
     els.main.querySelectorAll('.opt-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        const key = `${btn.dataset.qid}_q${btn.dataset.qi}`;
-        state.answers[key] = Number(btn.dataset.oi);
+        const qid = btn.dataset.qid;
+        const qi = Number(btn.dataset.qi);
+        const oi = Number(btn.dataset.oi);
+        const key = `${qid}_q${qi}`;
+        state.answers[key] = oi;
         persist();
-        renderChapter();
+
+        // Update in-place without rebuilding the DOM
+        const qBlock = btn.closest('.q-block');
+        if (qBlock) {
+          const ch = COURSE_CHAPTERS[state.currentChapter];
+          const block = (ch && ch.blocks) ? ch.blocks.find(b => b.id === qid) : null;
+          let qObj = null;
+          if (block) {
+            if (Array.isArray(block.questions)) qObj = block.questions[qi];
+            else if (qi === 0 && block.options) qObj = { options: block.options, correct: block.correct, explanation: block.explanation };
+          }
+          const correctIdx = qObj ? qObj.correct : undefined;
+          const explanation = qObj ? (qObj.explanation || '') : '';
+
+          qBlock.querySelectorAll('.opt-btn').forEach(b => {
+            const bOi = Number(b.dataset.oi);
+            b.classList.remove('correct', 'wrong');
+            if (bOi === correctIdx) b.classList.add('correct');
+            else if (bOi === oi) b.classList.add('wrong');
+          });
+
+          let fb = qBlock.querySelector('.q-feedback');
+          if (!fb) {
+            fb = document.createElement('div');
+            qBlock.appendChild(fb);
+          }
+          const isCorrect = (oi === correctIdx);
+          fb.className = `q-feedback ${isCorrect ? 'ok' : 'err'}`;
+          fb.innerHTML = `${isCorrect ? '✓ Correct! ' : '✕ Review: '}${escapeHtml(explanation)}`;
+        }
       });
     });
 
-    // Blanks
+    // Blanks - In-place DOM update without full page re-render
     els.main.querySelectorAll('.blank-input').forEach(sel => {
       sel.addEventListener('change', () => {
         state.answers[`${sel.dataset.bid}_b${sel.dataset.bi}`] = sel.value;
@@ -4087,13 +4286,43 @@ window.COURSE_STORAGE_KEY = "scorm_Lesson_3__Products___Account_O";
     });
     els.main.querySelectorAll('.check-blanks-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        state.answers[`${btn.dataset.bid}_checked`] = true;
+        const bid = btn.dataset.bid;
+        state.answers[`${bid}_checked`] = true;
         persist();
-        renderChapter();
+
+        const card = btn.closest('.quiz-card');
+        if (card) {
+          const ch = COURSE_CHAPTERS[state.currentChapter];
+          const block = (ch && ch.blocks) ? ch.blocks.find(b => b.id === bid) : null;
+          const items = (block && block.items) ? block.items : [];
+
+          card.querySelectorAll('.blank-row').forEach((row, bi) => {
+            const sel = row.querySelector('.blank-input');
+            const item = items[bi];
+            if (sel && item) {
+              const val = (sel.value || '').trim().toLowerCase();
+              const isOk = val === (item.answer || '').trim().toLowerCase();
+              sel.classList.remove('ok', 'err');
+              sel.classList.add(isOk ? 'ok' : 'err');
+
+              let fb = row.querySelector('.q-feedback');
+              if (!isOk) {
+                if (!fb) {
+                  fb = document.createElement('div');
+                  row.appendChild(fb);
+                }
+                fb.className = 'q-feedback err';
+                fb.innerHTML = `Correct answer: <strong>${escapeHtml(item.answer)}</strong>`;
+              } else if (fb) {
+                fb.remove();
+              }
+            }
+          });
+        }
       });
     });
 
-    // Match
+    // Match - In-place DOM update without full page re-render
     els.main.querySelectorAll('.match-select').forEach(sel => {
       sel.addEventListener('change', () => {
         state.answers[`${sel.dataset.mid}_m${sel.dataset.pi}`] = sel.value;
@@ -4102,18 +4331,73 @@ window.COURSE_STORAGE_KEY = "scorm_Lesson_3__Products___Account_O";
     });
     els.main.querySelectorAll('.check-match-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        state.answers[`${btn.dataset.mid}_checked`] = true;
+        const mid = btn.dataset.mid;
+        state.answers[`${mid}_checked`] = true;
         persist();
-        renderChapter();
+
+        const card = btn.closest('.quiz-card');
+        if (card) {
+          const ch = COURSE_CHAPTERS[state.currentChapter];
+          const block = (ch && ch.blocks) ? ch.blocks.find(b => b.id === mid) : null;
+          const pairs = (block && block.pairs) ? block.pairs : [];
+
+          card.querySelectorAll('.match-row').forEach((row, pi) => {
+            const sel = row.querySelector('.match-select');
+            const pair = pairs[pi];
+            if (sel && pair) {
+              const isOk = (sel.value === pair.answer);
+              sel.classList.remove('ok', 'err');
+              sel.classList.add(isOk ? 'ok' : 'err');
+
+              let fb = row.querySelector('.q-feedback');
+              if (!isOk) {
+                if (!fb) {
+                  fb = document.createElement('div');
+                  row.appendChild(fb);
+                }
+                fb.className = 'q-feedback err';
+                fb.innerHTML = `Best match: <strong>${escapeHtml(pair.answer)}</strong>`;
+              } else if (fb) {
+                fb.remove();
+              }
+            }
+          });
+        }
       });
     });
 
-    // KYC Sorter
+    // KYC Sorter - In-place DOM update without full page re-render
     els.main.querySelectorAll('.sort-choice').forEach(btn => {
       btn.addEventListener('click', () => {
-        state.answers[`${btn.dataset.sid}_s${btn.dataset.di}`] = (btn.dataset.val === 'true');
+        const sid = btn.dataset.sid;
+        const di = Number(btn.dataset.di);
+        const val = (btn.dataset.val === 'true');
+        state.answers[`${sid}_s${di}`] = val;
         persist();
-        renderChapter();
+
+        const item = btn.closest('.sorter-item');
+        if (item) {
+          const ch = COURSE_CHAPTERS[state.currentChapter];
+          const block = (ch && ch.blocks) ? ch.blocks.find(b => b.id === sid) : null;
+          const doc = (block && block.docs) ? block.docs[di] : null;
+          const isCorrect = doc ? (val === doc.valid) : false;
+
+          item.querySelectorAll('.sort-choice').forEach(b => {
+            b.classList.remove('selected-ok', 'selected-err');
+            const bVal = (b.dataset.val === 'true');
+            if (bVal === val) {
+              b.classList.add(isCorrect ? 'selected-ok' : 'selected-err');
+            }
+          });
+
+          let fb = item.querySelector('.q-feedback');
+          if (!fb) {
+            fb = document.createElement('div');
+            item.appendChild(fb);
+          }
+          fb.className = `q-feedback ${isCorrect ? 'ok' : 'err'}`;
+          fb.textContent = `${isCorrect ? '✓ Spot on! ' : '✕ Note: '}${doc ? doc.note : ''}`;
+        }
       });
     });
 
@@ -4206,26 +4490,74 @@ window.COURSE_STORAGE_KEY = "scorm_Lesson_3__Products___Account_O";
   els.closeDrawerBtn.addEventListener('click', closeDrawer);
   els.backdrop.addEventListener('click', closeDrawer);
 
+  function showCompletionBanner(scorePct) {
+    let banner = document.getElementById('scormCompletionBanner');
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'scormCompletionBanner';
+      banner.style.cssText = 'position:fixed;top:18px;left:50%;transform:translateX(-50%);z-index:99999;background:#064e3b;color:#ecfdf5;border:1.5px solid #10b981;border-radius:12px;padding:12px 20px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:10px;box-shadow:0 12px 30px rgba(0,0,0,0.4);font-family:sans-serif;max-width:90%;text-align:center;transition:opacity 0.3s ease;';
+      document.body.appendChild(banner);
+    }
+    banner.innerHTML = '<span style="font-size:18px;color:#34d399;">✓</span><span>Module Completed (' + scorePct + '%) — SCORM 2004 Status: COMPLETED. Returning to Home...</span>';
+    banner.style.display = 'flex';
+    banner.style.opacity = '1';
+    setTimeout(() => {
+      if (banner) {
+        banner.style.opacity = '0';
+        setTimeout(() => { banner.style.display = 'none'; }, 300);
+      }
+    }, 3500);
+  }
+
+  function handleCompleteCourse() {
+    state.completed = true;
+    for (let i = 0; i < COURSE_CHAPTERS.length; i++) {
+      if (!state.visited.includes(i)) state.visited.push(i);
+    }
+    const { pct } = computeScore();
+    scormApi.saveState({
+      currentChapter: 0,
+      visited: state.visited,
+      answers: state.answers,
+      notes: state.notes,
+      videoPreviews: state.videoPreviews,
+      completed: true,
+      progressMeasure: 1.0,
+      scoreScaled: pct / 100
+    });
+    scormApi.setValue('cmi.completion_status', 'completed');
+    scormApi.setValue('cmi.success_status', pct >= 60 ? 'passed' : 'completed');
+    scormApi.setValue('cmi.progress_measure', '1.00');
+    scormApi.setValue('cmi.location', '0');
+    scormApi.commit();
+
+    try {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({
+          type: 'SCORM_COMPLETION',
+          status: 'completed',
+          successStatus: pct >= 60 ? 'passed' : 'completed',
+          score: pct
+        }, '*');
+      }
+    } catch(e) {}
+
+    showCompletionBanner(pct);
+    closeDrawer();
+    goToChapter(0);
+  }
+
   els.prevBtn.addEventListener('click', () => goToChapter(state.currentChapter - 1));
   els.nextBtn.addEventListener('click', () => {
     if (state.currentChapter < COURSE_CHAPTERS.length - 1) {
       goToChapter(state.currentChapter + 1);
     } else {
-      state.completed = true;
-      persist();
-      scormApi.finish();
-      const { pct } = computeScore();
-      alert(`Congratulations! SCORM 2004 module submitted.\nChapters Completed: ${state.visited.length}/${COURSE_CHAPTERS.length}\nQuiz Score: ${pct}%`);
+      handleCompleteCourse();
     }
   });
 
   els.finishCourseBtn.addEventListener('click', () => {
-    state.completed = true;
-    persist();
-    scormApi.finish();
-    closeDrawer();
-    const { pct } = computeScore();
-    alert(`Course status saved as COMPLETED in SCORM 2004.\nQuiz Score: ${pct}%`);
+    handleCompleteCourse();
   });
 
   window.addEventListener('beforeunload', () => {
