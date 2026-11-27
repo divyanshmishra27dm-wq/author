@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Smartphone, Monitor, RotateCcw, Activity, ChevronDown, ChevronUp, Sparkles, BookOpen, FileCheck } from 'lucide-react';
+import { Smartphone, Monitor, RotateCcw, Activity, ChevronDown, ChevronUp, Sparkles, BookOpen, FileCheck, Download, FileCode, Check } from 'lucide-react';
 import { CourseData, ViewportMode } from '../types/course';
 import { UploadedCourseInfo } from './FileUpload';
-import { BACKEND_URL } from '../utils/apiConfig';
+import { BACKEND_URL, getApiUrl } from '../utils/apiConfig';
 
 export interface AvailableCourse {
   name: string;
@@ -49,6 +49,7 @@ export const PlayerPreview: React.FC<PlayerPreviewProps> = ({
     successStatus: 'unknown',
     scoreRaw: '0',
     scoreScaled: '0.00',
+    progressMeasure: '0.00',
     location: 'Chapter 1'
   });
 
@@ -57,7 +58,11 @@ export const PlayerPreview: React.FC<PlayerPreviewProps> = ({
     : (uploadedCourse?.previewUrl || '');
   const cleanPath = safePreviewUrl.split('?')[0].replace(/^\//, '');
   const existingQuery = safePreviewUrl.includes('?') ? safePreviewUrl.split('?')[1] : '';
-  const safeFilename = encodeURIComponent(decodeURIComponent(cleanPath));
+  const effectivePath = cleanPath || (availableCourses?.[0]?.preview_url?.replace(/^\//, '') || 'Lesson 1.html');
+  const safeFilename = effectivePath
+    .split('/')
+    .map(segment => encodeURIComponent(decodeURIComponent(segment)))
+    .join('/');
   const queryParams = new URLSearchParams(existingQuery);
   queryParams.set('_t', String(reloadKey || Date.now()));
   if (reloadKey > 0) {
@@ -110,6 +115,7 @@ export const PlayerPreview: React.FC<PlayerPreviewProps> = ({
               if (elem === 'cmi.success_status') updated.successStatus = val;
               if (elem === 'cmi.score.raw') updated.scoreRaw = val;
               if (elem === 'cmi.score.scaled') updated.scoreScaled = val;
+              if (elem === 'cmi.progress_measure') updated.progressMeasure = val;
               if (elem === 'cmi.location') updated.location = val;
               return updated;
             });
@@ -126,7 +132,28 @@ export const PlayerPreview: React.FC<PlayerPreviewProps> = ({
     };
 
     iframe.addEventListener('load', handleIframeLoad);
-    return () => { iframe.removeEventListener('load', handleIframeLoad); };
+
+    const handleMessage = (e: MessageEvent) => {
+      if (e.data && e.data.type === 'SCORM_COMPLETION') {
+        logScorm('Complete', 'cmi.completion_status', 'completed');
+        logScorm('Score', 'cmi.score.raw', String(e.data.score || '100'));
+        logScorm('Progress', 'cmi.progress_measure', '1.00');
+        setScormState(prev => ({
+          ...prev,
+          completionStatus: 'completed',
+          successStatus: e.data.successStatus || 'passed',
+          scoreRaw: String(e.data.score || '100'),
+          progressMeasure: '1.00',
+          location: 'Chapter 1'
+        }));
+      }
+    };
+    window.addEventListener('message', handleMessage);
+
+    return () => {
+      iframe.removeEventListener('load', handleIframeLoad);
+      window.removeEventListener('message', handleMessage);
+    };
   }, [reloadKey, currentPreviewUrl]);
 
   const logScorm = (action: string, element: string, value: string) => {
@@ -135,6 +162,62 @@ export const PlayerPreview: React.FC<PlayerPreviewProps> = ({
       { timestamp: timeStr, action, element, value },
       ...prev.slice(0, 24)
     ]);
+  };
+
+  const [downloadMsg, setDownloadMsg] = useState<string | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  // Identify current previewed course
+  const currentCourse = availableCourses?.find(c =>
+    (safePreviewUrl && (c.preview_url === safePreviewUrl || safePreviewUrl.includes(encodeURIComponent(c.name)) || safePreviewUrl.includes(c.name))) ||
+    (c.name && cleanPath.includes(c.name))
+  ) || availableCourses?.[0];
+
+  const handleDownloadCurrentScorm = () => {
+    setIsDownloading(true);
+    try {
+      const courseName = currentCourse?.name || cleanPath.replace(/\.html$/, '');
+      const zipUrl = currentCourse?.scorm_zip_url || `/${encodeURIComponent(courseName)}_SCORM2004.zip`;
+      const cleanTitle = (currentCourse?.title || courseName).replace(/[^a-zA-Z0-9_\- ]/g, '_').trim();
+      const zipName = `${cleanTitle}_SCORM2004.zip`;
+
+      const fullUrl = getApiUrl(zipUrl);
+      const a = document.createElement('a');
+      a.href = fullUrl;
+      a.download = zipName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      setDownloadMsg(`✓ Downloaded SCORM 2004 Package: ${zipName}`);
+      setTimeout(() => setDownloadMsg(null), 4000);
+    } catch (e) {
+      console.error('Download error:', e);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const handleDownloadCurrentHtml = () => {
+    try {
+      const courseName = currentCourse?.name || cleanPath.replace(/\.html$/, '');
+      const htmlUrl = currentCourse?.preview_url || `/${encodeURIComponent(courseName)}.html`;
+      const cleanTitle = (currentCourse?.title || courseName).replace(/[^a-zA-Z0-9_\- ]/g, '_').trim();
+      const htmlName = `${cleanTitle}.html`;
+
+      const fullUrl = getApiUrl(htmlUrl);
+      const a = document.createElement('a');
+      a.href = fullUrl;
+      a.download = htmlName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      setDownloadMsg(`✓ Downloaded Standalone HTML: ${htmlName}`);
+      setTimeout(() => setDownloadMsg(null), 4000);
+    } catch (e) {
+      console.error('Download error:', e);
+    }
   };
 
   return (
@@ -214,8 +297,37 @@ export const PlayerPreview: React.FC<PlayerPreviewProps> = ({
             <span>SCORM 2004 Inspector</span>
             {inspectorOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
           </button>
+
+          {scormState.completionStatus === 'completed' ? (
+            <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-950/80 border border-emerald-500/50 text-xs font-bold text-emerald-300 shadow-sm animate-pulse">
+              <span className="h-2 w-2 rounded-full bg-emerald-400" />
+              <span>SCORM: Completed ✓</span>
+            </span>
+          ) : (
+            <span className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-[11px] font-medium text-slate-400">
+              <span>Status: {scormState.completionStatus}</span>
+            </span>
+          )}
+
+          <button
+            onClick={handleDownloadCurrentScorm}
+            disabled={isDownloading}
+            title="Download certified SCORM 2004 4th Edition package for the PPT being previewed"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-emerald-600 text-xs font-bold text-white shadow-md hover:from-blue-500 hover:to-emerald-500 transition-all cursor-pointer"
+          >
+            <Download className="h-3.5 w-3.5" />
+            <span>{isDownloading ? 'Downloading...' : 'Download SCORM 2004'}</span>
+          </button>
         </div>
       </div>
+
+      {/* Success Notification Banner */}
+      {downloadMsg && (
+        <div className="w-full max-w-6xl mb-3 flex items-center gap-2 rounded-xl bg-emerald-950/70 border border-emerald-500/50 px-4 py-2 text-xs font-semibold text-emerald-200 shadow-lg animate-fadeIn">
+          <Check className="h-4 w-4 shrink-0 text-emerald-400" />
+          <span>{downloadMsg}</span>
+        </div>
+      )}
 
       {/* SCORM Inspector Drawer */}
       {inspectorOpen && (
@@ -232,7 +344,7 @@ export const PlayerPreview: React.FC<PlayerPreviewProps> = ({
             </span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-3">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mb-3">
             <div className="bg-slate-950 rounded-lg p-2 border border-slate-800">
               <div className="text-[10px] uppercase font-bold text-slate-400">cmi.completion_status</div>
               <div className={`text-xs font-bold mt-0.5 ${scormState.completionStatus === 'completed' ? 'text-emerald-400' : 'text-amber-400'}`}>
@@ -242,6 +354,12 @@ export const PlayerPreview: React.FC<PlayerPreviewProps> = ({
             <div className="bg-slate-950 rounded-lg p-2 border border-slate-800">
               <div className="text-[10px] uppercase font-bold text-slate-400">cmi.success_status</div>
               <div className="text-xs font-bold text-slate-200 mt-0.5">{scormState.successStatus}</div>
+            </div>
+            <div className="bg-slate-950 rounded-lg p-2 border border-slate-800">
+              <div className="text-[10px] uppercase font-bold text-slate-400">cmi.progress_measure</div>
+              <div className={`text-xs font-bold mt-0.5 ${scormState.progressMeasure === '1.00' || scormState.completionStatus === 'completed' ? 'text-emerald-400' : 'text-blue-400'}`}>
+                {scormState.progressMeasure === '1.00' || scormState.completionStatus === 'completed' ? '1.00 (100%)' : `${(parseFloat(scormState.progressMeasure || '0') * 100).toFixed(0)}%`}
+              </div>
             </div>
             <div className="bg-slate-950 rounded-lg p-2 border border-slate-800">
               <div className="text-[10px] uppercase font-bold text-slate-400">cmi.score.raw</div>

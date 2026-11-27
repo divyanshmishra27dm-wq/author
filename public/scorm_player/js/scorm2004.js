@@ -149,9 +149,6 @@ var SCORM2004 = (function () {
       if (stateObj.currentChapter !== undefined) {
         setValue('cmi.location', String(stateObj.currentChapter));
       }
-      if (typeof stateObj.progressMeasure === 'number') {
-        setValue('cmi.progress_measure', stateObj.progressMeasure.toFixed(2));
-      }
       if (typeof stateObj.scoreScaled === 'number') {
         setValue('cmi.score.scaled', stateObj.scoreScaled.toFixed(2));
         setValue('cmi.score.raw', String(Math.round(stateObj.scoreScaled * 100)));
@@ -160,8 +157,15 @@ var SCORM2004 = (function () {
       }
       if (stateObj.completed) {
         setValue('cmi.completion_status', 'completed');
-        setValue('cmi.success_status', stateObj.scoreScaled >= 0.6 ? 'passed' : 'completed');
+        setValue('cmi.success_status', (stateObj.scoreScaled || 0) >= 0.6 ? 'passed' : 'completed');
+        setValue('cmi.progress_measure', '1.00');
         setValue('cmi.exit', 'normal');
+      } else {
+        setValue('cmi.completion_status', 'incomplete');
+        if (typeof stateObj.progressMeasure === 'number') {
+          setValue('cmi.progress_measure', stateObj.progressMeasure.toFixed(2));
+        }
+        setValue('cmi.exit', 'suspend');
       }
       commit();
     } catch (e) {

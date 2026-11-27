@@ -9,7 +9,7 @@ import urllib.parse
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, PlainTextResponse
+from fastapi.responses import FileResponse, PlainTextResponse, Response
 from converter import convert_pptx_to_b2b, generate_standalone_html, build_scorm2004_zip, ingest_scorm_zip
 
 app = FastAPI(title="B2B PPTX to Rich Mobile SCORM Converter")
@@ -217,8 +217,18 @@ def list_courses():
             except Exception:
                 pass
 
-    courses.sort(key=lambda x: x["mtime"], reverse=True)
-    return {"success": True, "courses": courses}
+    # Prefer names with spaces over underscores when sorting
+    courses.sort(key=lambda x: (x["mtime"], ' ' in x["name"]), reverse=True)
+    seen_norms = set()
+    deduped = []
+    for c in courses:
+        norm = re.sub(r'[\s_]+', '_', c["name"]).lower()
+        if norm in seen_norms:
+            continue
+        seen_norms.add(norm)
+        deduped.append(c)
+
+    return {"success": True, "courses": deduped}
 
 @app.get("/api/media")
 def list_media():
@@ -304,6 +314,97 @@ async def update_course_endpoint(payload: dict):
         "total_chapters": len(course_data["chapters"]),
         "title": course_data["title"]
     }
+
+@app.post("/api/course/export_scorm")
+async def export_scorm_endpoint(payload: dict):
+    """
+    Dynamically exports and packages the requested course data into a SCORM 2004 4th Edition Zip.
+    """
+    course_name = payload.get("course_name", "Course")
+    raw_name = os.path.basename(course_name).split('?')[0]
+    raw_name = re.sub(r'\.html$', '', raw_name, flags=re.IGNORECASE)
+    clean_name = re.sub(r'[^a-zA-Z0-9_\- ]', '_', raw_name).strip() or "Course"
+
+    course_data = payload.get("course_data", {})
+    if not course_data or "chapters" not in course_data:
+        # Check if pre-compiled zip already exists
+        norm_req = re.sub(r'[\s_]+', '_', clean_name).lower()
+        for f in os.listdir(PUBLIC_DIR):
+            if f.endswith('_SCORM2004.zip'):
+                f_base = f[:-14]
+                if re.sub(r'[\s_]+', '_', f_base).lower() == norm_req:
+                    return FileResponse(os.path.join(PUBLIC_DIR, f), filename=f, media_type="application/zip")
+        return PlainTextResponse("Course data missing or invalid", status_code=400)
+
+    if "title" not in course_data:
+        course_data["title"] = clean_name
+
+    # Build fresh SCORM 2004 zip
+    pub_zip_path = os.path.join(PUBLIC_DIR, f"{clean_name}_SCORM2004.zip")
+    media_dir = os.path.join(PUBLIC_DIR, "media")
+    build_scorm2004_zip(course_data, pub_zip_path, media_dir=media_dir)
+
+    if os.path.exists(DIST_DIR):
+        try:
+            shutil.copy2(pub_zip_path, os.path.join(DIST_DIR, f"{clean_name}_SCORM2004.zip"))
+        except Exception:
+            pass
+
+    return FileResponse(pub_zip_path, filename=f"{clean_name}_SCORM2004.zip", media_type="application/zip")
+
+@app.post("/api/course/export_html")
+async def export_html_endpoint(payload: dict):
+    """
+    Dynamically exports and packages the requested course data into a Standalone Single-File HTML.
+    """
+    course_name = payload.get("course_name", "Course")
+    raw_name = os.path.basename(course_name).split('?')[0]
+    raw_name = re.sub(r'\.html$', '', raw_name, flags=re.IGNORECASE)
+    clean_name = re.sub(r'[^a-zA-Z0-9_\- ]', '_', raw_name).strip() or "Course"
+
+    course_data = payload.get("course_data", {})
+    if not course_data or "chapters" not in course_data:
+        norm_req = re.sub(r'[\s_]+', '_', clean_name).lower()
+        for f in os.listdir(PUBLIC_DIR):
+            if f.endswith('.html') and not f.startswith('index'):
+                f_base = os.path.splitext(f)[0]
+                if re.sub(r'[\s_]+', '_', f_base).lower() == norm_req:
+                    return FileResponse(os.path.join(PUBLIC_DIR, f), filename=f, media_type="text/html")
+        return PlainTextResponse("Course data missing or invalid", status_code=400)
+
+    if "title" not in course_data:
+        course_data["title"] = clean_name
+
+    html_content = generate_standalone_html(course_data)
+    pub_html_path = os.path.join(PUBLIC_DIR, f"{clean_name}.html")
+    with open(pub_html_path, "w", encoding="utf-8") as f:
+        f.write(html_content)
+
+    return Response(
+        content=html_content,
+        media_type="text/html",
+        headers={"Content-Disposition": f'attachment; filename="{clean_name}.html"'}
+    )
+
+@app.get("/api/course/download_scorm")
+async def download_scorm_by_name(name: str):
+    """
+    Direct endpoint to download the exact SCORM 2004 zip corresponding to a course name or filename.
+    """
+    raw_name = urllib.parse.unquote(name).split('?')[0]
+    raw_name = re.sub(r'\.html$', '', raw_name, flags=re.IGNORECASE)
+    clean_name = re.sub(r'[^a-zA-Z0-9_\- ]', '_', raw_name).strip() or "Course"
+
+    norm_req = re.sub(r'[\s_]+', '_', clean_name).lower()
+    for f in os.listdir(PUBLIC_DIR):
+        if f.endswith('_SCORM2004.zip'):
+            f_base = f[:-14]
+            if re.sub(r'[\s_]+', '_', f_base).lower() == norm_req:
+                return FileResponse(os.path.join(PUBLIC_DIR, f), filename=f, media_type="application/zip")
+            if norm_req in re.sub(r'[\s_]+', '_', f_base).lower():
+                return FileResponse(os.path.join(PUBLIC_DIR, f), filename=f, media_type="application/zip")
+
+    return PlainTextResponse(f"SCORM package for {clean_name} not found", status_code=404)
 
 @app.post("/api/upload_audio")
 async def upload_audio_endpoint(file: UploadFile = File(...)):
@@ -497,13 +598,11 @@ async def serve_static_or_spa(full_path: str):
     if unquoted:
         pub_file = os.path.join(PUBLIC_DIR, unquoted)
         if os.path.isfile(pub_file):
-            return FileResponse(pub_file)
             return FileResponse(pub_file, headers=no_cache_headers)
 
         if os.path.exists(DIST_DIR):
             dist_file = os.path.join(DIST_DIR, unquoted)
             if os.path.isfile(dist_file):
-                return FileResponse(dist_file)
                 return FileResponse(dist_file, headers=no_cache_headers)
 
         # Match case-insensitively or with normalized underscores
@@ -512,13 +611,11 @@ async def serve_static_or_spa(full_path: str):
             if os.path.exists(d):
                 for f in os.listdir(d):
                     if re.sub(r'[\s_]+', '_', f).lower() == norm:
-                        return FileResponse(os.path.join(d, f))
                         return FileResponse(os.path.join(d, f), headers=no_cache_headers)
 
     if os.path.exists(DIST_DIR):
         index_file = os.path.join(DIST_DIR, "index.html")
         if os.path.isfile(index_file):
-            return FileResponse(index_file)
             return FileResponse(index_file, headers=no_cache_headers)
 
     return PlainTextResponse("Page Not Found", status_code=404)

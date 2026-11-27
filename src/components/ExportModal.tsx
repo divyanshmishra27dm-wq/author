@@ -2,12 +2,15 @@ import React, { useState } from 'react';
 import { X, Download, FileCode, Package, Check, ShieldCheck, Sparkles, BookOpen, FileCheck, Loader2 } from 'lucide-react';
 import { CourseData, RichCourseData } from '../types/course';
 import { UploadedCourseInfo } from './FileUpload';
+import { AvailableCourse } from './PlayerPreview';
 import { getApiUrl, getAuthHeaders } from '../utils/apiConfig';
 
 interface ExportModalProps {
   course: CourseData;
   uploadedCourse?: UploadedCourseInfo | null;
   richCourse?: RichCourseData;
+  currentPreviewUrl?: string;
+  availableCourses?: AvailableCourse[];
   onClose: () => void;
   onUpdateCourse: (updated: CourseData) => void;
 }
@@ -15,28 +18,68 @@ interface ExportModalProps {
 export const ExportModal: React.FC<ExportModalProps> = ({
   uploadedCourse,
   richCourse,
+  currentPreviewUrl,
+  availableCourses = [],
   onClose
 }) => {
-  const [selectedCourse, setSelectedCourse] = useState<'uploaded' | 'day2' | 'day3'>(
-    uploadedCourse || (richCourse && richCourse.chapters && richCourse.chapters.length > 0) ? 'uploaded' : 'day2'
-  );
+  // Automatically default to the course matching current preview
+  const defaultSelectedCourse = (() => {
+    if (availableCourses && availableCourses.length > 0) {
+      if (currentPreviewUrl) {
+        const found = availableCourses.find(c =>
+          currentPreviewUrl.includes(encodeURIComponent(c.name)) ||
+          currentPreviewUrl === c.preview_url ||
+          currentPreviewUrl.includes(c.name)
+        );
+        if (found) return found.name;
+      }
+      return availableCourses[0].name;
+    }
+    if (uploadedCourse) return 'uploaded';
+    return 'day2';
+  })();
+
+  const [selectedCourse, setSelectedCourse] = useState<string>(defaultSelectedCourse);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isExportingScorm, setIsExportingScorm] = useState(false);
   const [isExportingHtml, setIsExportingHtml] = useState(false);
 
   const getFiles = () => {
+    const matchedCourse = availableCourses?.find(c => c.name === selectedCourse);
+    if (matchedCourse) {
+      const cleanTitle = matchedCourse.title.replace(/[^a-zA-Z0-9_\- ]/g, '_').trim();
+      return {
+        scormZip: matchedCourse.scorm_zip_url,
+        zipName: `${cleanTitle}_SCORM2004.zip`,
+        htmlFile: matchedCourse.preview_url,
+        htmlName: `${cleanTitle}.html`,
+        title: matchedCourse.title,
+        meta: `${matchedCourse.total_chapters} Chapters · Interactive Mobile Micro-Learning · SCORM 2004 4th Edition`
+      };
+    }
+
     if (selectedCourse === 'uploaded') {
       const title = (richCourse && richCourse.title) || (uploadedCourse && uploadedCourse.title) || 'Course';
-      const cleanTitle = title.replace(/[^a-zA-Z0-9_-]/g, '_');
+      const cleanTitle = title.replace(/[^a-zA-Z0-9_\- ]/g, '_').trim();
       const numChapters = (richCourse && richCourse.chapters ? richCourse.chapters.length : 0) || (uploadedCourse ? uploadedCourse.totalChapters : 0);
+      const zipUrl = (uploadedCourse && uploadedCourse.scormZipUrl) || `/${encodeURIComponent(cleanTitle)}_SCORM2004.zip`;
       return {
-        scormZip: (uploadedCourse && uploadedCourse.scormZipUrl) || `/${cleanTitle}_SCORM2004.zip`,
+        scormZip: zipUrl,
         zipName: `${cleanTitle}_SCORM2004.zip`,
-        htmlFile: (uploadedCourse && uploadedCourse.htmlUrl) || `/${cleanTitle}.html`,
+        htmlFile: (uploadedCourse && uploadedCourse.htmlUrl) || `/${encodeURIComponent(cleanTitle)}.html`,
         htmlName: `${cleanTitle}.html`,
         title: title,
         meta: `${numChapters} Chapters · Interactive Mobile Micro-Learning · SCORM 2004 4th Edition`
+      };
+    } else if (selectedCourse === 'lesson1' || selectedCourse === 'Lesson 1' || selectedCourse === 'Lesson_1') {
+      return {
+        scormZip: '/Lesson%201_SCORM2004.zip',
+        zipName: 'Lesson_1_Importance_of_CASA_SCORM2004.zip',
+        htmlFile: '/Lesson%201.html',
+        htmlName: 'Lesson_1_Importance_of_CASA.html',
+        title: 'HDFC Academy · Lesson 1: Importance of CASA',
+        meta: '6 Chapters · CASA Foundations, NIM Economics & Employee Levers · SCORM 2004 4th Edition'
       };
     } else if (selectedCourse === 'day3') {
       return {
@@ -102,9 +145,10 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         }
       }
 
-      // Fallback or static selection: trigger download from URL
+      // Download from backend URL
+      const fullZipUrl = getApiUrl(info.scormZip);
       const a = document.createElement('a');
-      a.href = info.scormZip;
+      a.href = fullZipUrl;
       a.download = info.zipName;
       document.body.appendChild(a);
       a.click();
@@ -112,8 +156,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       setSuccessMsg(`✓ SCORM 2004 4th Edition Package downloaded: ${info.zipName}`);
     } catch (err: any) {
       console.warn('Backend dynamic SCORM export fallback:', err);
+      const fullZipUrl = getApiUrl(info.scormZip);
       const a = document.createElement('a');
-      a.href = info.scormZip;
+      a.href = fullZipUrl;
       a.download = info.zipName;
       document.body.appendChild(a);
       a.click();
@@ -151,8 +196,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         }
       }
 
+      const fullHtmlUrl = getApiUrl(info.htmlFile);
       const a = document.createElement('a');
-      a.href = info.htmlFile;
+      a.href = fullHtmlUrl;
       a.download = info.htmlName;
       document.body.appendChild(a);
       a.click();
@@ -160,8 +206,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       setSuccessMsg(`✓ Standalone Single-File HTML downloaded: ${info.htmlName}`);
     } catch (err: any) {
       console.warn('Backend dynamic HTML export fallback:', err);
+      const fullHtmlUrl = getApiUrl(info.htmlFile);
       const a = document.createElement('a');
-      a.href = info.htmlFile;
+      a.href = fullHtmlUrl;
       a.download = info.htmlName;
       document.body.appendChild(a);
       a.click();
@@ -174,83 +221,133 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
   const currentInfo = getFiles();
 
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fadeIn">
-        <div className="relative w-full max-w-2xl rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
-          {/* Header */}
-          <div className="flex items-center justify-between pb-4 border-b border-slate-800">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-400">
-                  SCORM 2004 4th Edition &amp; HTML Exporter
-                </span>
-              </div>
-              <h3 className="text-lg font-bold text-white mt-1 flex items-center gap-2">
-                <Download className="h-5 w-5 text-blue-400" />
-                Export Mobile Micro-Learning Course
-              </h3>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Production-ready SCORM 2004 packages and standalone offline HTML presentations.
-              </p>
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fadeIn">
+      <div className="relative w-full max-w-3xl rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
+        {/* Header */}
+        <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-400">
+                SCORM 2004 4th Edition &amp; HTML Exporter
+              </span>
             </div>
-            <button
-              onClick={onClose}
-              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
-            >
-              <X className="h-5 w-5" />
-            </button>
+            <h3 className="text-lg font-bold text-white mt-1 flex items-center gap-2">
+              <Download className="h-5 w-5 text-blue-400" />
+              Export Mobile Micro-Learning Course
+            </h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Production-ready SCORM 2004 packages and standalone offline HTML presentations.
+            </p>
           </div>
+          <button
+            onClick={onClose}
+            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
 
-          {/* Course Package Selector */}
-          <div className="mt-4 p-3 rounded-xl bg-slate-950 border border-slate-800">
-            <label className="text-xs font-bold text-slate-300 block mb-2">Select Course Package to Export:</label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                {uploadedCourse && (
+        {/* Course Package Selector */}
+        <div className="mt-4 p-3 rounded-xl bg-slate-950 border border-slate-800">
+          <label className="text-xs font-bold text-slate-300 block mb-2">Select Course / Presentation to Export:</label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-52 overflow-y-auto pr-1">
+            {availableCourses && availableCourses.length > 0 ? (
+              availableCourses.map((c) => {
+                const isCurrentPreview = currentPreviewUrl && (
+                  currentPreviewUrl.includes(encodeURIComponent(c.name)) ||
+                  currentPreviewUrl === c.preview_url ||
+                  currentPreviewUrl.includes(c.name)
+                );
+                const isSelected = selectedCourse === c.name;
+                return (
                   <button
-                    onClick={() => { setSelectedCourse('uploaded'); setSuccessMsg(null); }}
-                    className={`flex items-center gap-2 p-2.5 rounded-lg border text-left text-xs font-semibold transition-all ${selectedCourse === 'uploaded'
-                        ? 'border-emerald-500 bg-emerald-950/40 text-emerald-200'
-                        : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-white'
-                      }`}
+                    key={c.name}
+                    onClick={() => { setSelectedCourse(c.name); setSuccessMsg(null); }}
+                    className={`flex items-start gap-2 p-2.5 rounded-lg border text-left text-xs font-semibold transition-all relative ${isSelected
+                      ? 'border-emerald-500 bg-emerald-950/40 text-emerald-200 ring-1 ring-emerald-500/50 shadow'
+                      : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-white'
+                    }`}
                   >
-                    <FileCheck className="h-4 w-4 shrink-0 text-emerald-400" />
-                    <div className="truncate">
-                      <div className="font-bold truncate">Uploaded Course</div>
-                      <div className="text-[10px] text-slate-400">{uploadedCourse.totalChapters} Chapters</div>
+                    <FileCheck className={`h-4 w-4 shrink-0 mt-0.5 ${isSelected ? 'text-emerald-400' : 'text-slate-500'}`} />
+                    <div className="truncate flex-1 min-w-0">
+                      <div className="font-bold truncate flex items-center gap-1.5">
+                        <span className="truncate">{c.title}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-[10px] text-slate-400">{c.total_chapters} Chapters</span>
+                        {isCurrentPreview && (
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                            PREVIEWING
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </button>
-                )}
-
+                );
+              })
+            ) : (
+              uploadedCourse && (
                 <button
-                  onClick={() => { setSelectedCourse('day2'); setSuccessMsg(null); }}
-                  className={`flex items-center gap-2 p-2.5 rounded-lg border text-left text-xs font-semibold transition-all ${selectedCourse === 'day2'
-                      ? 'border-blue-500 bg-blue-950/40 text-blue-200'
-                      : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-white'
-                    }`}
+                  onClick={() => { setSelectedCourse('uploaded'); setSuccessMsg(null); }}
+                  className={`flex items-center gap-2 p-2.5 rounded-lg border text-left text-xs font-semibold transition-all ${selectedCourse === 'uploaded'
+                    ? 'border-emerald-500 bg-emerald-950/40 text-emerald-200'
+                    : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-white'
+                  }`}
                 >
-                  <BookOpen className="h-4 w-4 shrink-0 text-blue-400" />
-                  <div>
-                    <div className="font-bold">Day 2 Reference</div>
-                    <div className="text-[10px] text-slate-400">129 Slides · 10 Modules</div>
+                  <FileCheck className="h-4 w-4 shrink-0 text-emerald-400" />
+                  <div className="truncate">
+                    <div className="font-bold truncate">Uploaded Course</div>
+                    <div className="text-[10px] text-slate-400">{uploadedCourse.totalChapters} Chapters</div>
                   </div>
                 </button>
+              )
+            )}
 
-                <button
-                  onClick={() => { setSelectedCourse('day3'); setSuccessMsg(null); }}
-                  className={`flex items-center gap-2 p-2.5 rounded-lg border text-left text-xs font-semibold transition-all ${selectedCourse === 'day3'
-                      ? 'border-blue-500 bg-blue-950/40 text-blue-200'
-                      : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-white'
-                    }`}
-                >
-                  <BookOpen className="h-4 w-4 shrink-0 text-indigo-400" />
-                  <div>
-                    <div className="font-bold">Day 3 Reference</div>
-                    <div className="text-[10px] text-slate-400">49 Slides · 9 Modules</div>
-                  </div>
-                </button>
+            <button
+              onClick={() => { setSelectedCourse('day2'); setSuccessMsg(null); }}
+              className={`flex items-center gap-2 p-2.5 rounded-lg border text-left text-xs font-semibold transition-all ${selectedCourse === 'day2'
+                ? 'border-blue-500 bg-blue-950/40 text-blue-200'
+                : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-white'
+              }`}
+            >
+              <BookOpen className="h-4 w-4 shrink-0 text-blue-400" />
+              <div>
+                <div className="font-bold">Day 2 Reference</div>
+                <div className="text-[10px] text-slate-400">129 Slides · 10 Modules</div>
               </div>
-            </div>
+            </button>
+
+            <button
+              onClick={() => { setSelectedCourse('lesson1'); setSuccessMsg(null); }}
+              className={`flex items-center gap-2 p-2.5 rounded-lg border text-left text-xs font-semibold transition-all ${selectedCourse === 'lesson1' || selectedCourse === 'Lesson 1'
+                ? 'border-emerald-500 bg-emerald-950/40 text-emerald-200'
+                : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-white'
+              }`}
+            >
+              <BookOpen className="h-4 w-4 shrink-0 text-emerald-400" />
+              <div>
+                <div className="font-bold">Lesson 1: CASA</div>
+                <div className="text-[10px] text-slate-400">6 Slides · 6 Chapters</div>
+              </div>
+            </button>
+
+            <button
+              onClick={() => { setSelectedCourse('day3'); setSuccessMsg(null); }}
+              className={`flex items-center gap-2 p-2.5 rounded-lg border text-left text-xs font-semibold transition-all ${selectedCourse === 'day3'
+                ? 'border-blue-500 bg-blue-950/40 text-blue-200'
+                : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-white'
+              }`}
+            >
+              <BookOpen className="h-4 w-4 shrink-0 text-indigo-400" />
+              <div>
+                <div className="font-bold">Day 3 Reference</div>
+                <div className="text-[10px] text-slate-400">49 Slides · 9 Modules</div>
+              </div>
+            </button>
+          </div>
+        </div>
 
             {/* Selected Course Meta Banner */}
             <div className="mt-3 px-3.5 py-2 rounded-lg bg-blue-950/30 border border-blue-500/20 text-xs text-blue-300">

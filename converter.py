@@ -1620,6 +1620,9 @@ window.COURSE_STORAGE_KEY = "{storage_key}";
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
   <title>{html.escape(course_data.get('title', 'Course'))}</title>
   <link rel="stylesheet" href="css/style.css" />
+  <style>
+{css_content}
+  </style>
 </head>
 <body>
   <div class="app-shell">

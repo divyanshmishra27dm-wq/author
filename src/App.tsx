@@ -55,7 +55,7 @@ export function App() {
         return sanitizeUrl(saved);
       }
     } catch (e) { }
-    return '';
+    return '/Lesson 1.html';
   });
 
   // Dynamic Rich Course Data (Direct 1:1 with SCORM 2004 Engine chapters & blocks)
@@ -402,6 +402,8 @@ export function App() {
           course={course}
           uploadedCourse={uploadedCourse}
           richCourse={richCourse}
+          currentPreviewUrl={currentPreviewUrl}
+          availableCourses={availableCourses}
           onClose={() => setShowExportModal(false)}
           onUpdateCourse={setCourse}
         />

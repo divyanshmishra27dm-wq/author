@@ -24,7 +24,11 @@ export default defineConfig({
         target: 'http://127.0.0.1:8000',
         changeOrigin: true
       },
-      '^/.*\\.(png|jpg|jpeg|gif|webp|svg|mp3|mp4|wav|ogg|m4a|webm|mov)$': {
+      '/scorm_player': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true
+      },
+      '^/.*\\.(png|jpg|jpeg|gif|webp|svg|mp3|mp4|wav|ogg|m4a|webm|mov)(\\?.*)?$': {
         target: 'http://127.0.0.1:8000',
         changeOrigin: true,
         bypass: (req) => {
@@ -35,17 +39,17 @@ export default defineConfig({
           return undefined;
         }
       },
-      '^/.*\\.zip$': {
+      '^/.*\\.zip(\\?.*)?$': {
         target: 'http://127.0.0.1:8000',
         changeOrigin: true
       },
-      '^/.*\\.html$': {
+      '^/.*\\.html(\\?.*)?$': {
         target: 'http://127.0.0.1:8000',
         changeOrigin: true,
         bypass: (req) => {
           const url = req.url || '';
-          const pathname = url.split('?')[0];
-          if (pathname === '/' || pathname === '/index.html' || pathname.startsWith('/src/')) {
+          const pathname = decodeURIComponent(url.split('?')[0]);
+          if (pathname === '/' || pathname === '/index.html' || pathname.startsWith('/src/') || pathname.startsWith('/@') || pathname.startsWith('/node_modules/')) {
             return req.url;
           }
           return undefined;
